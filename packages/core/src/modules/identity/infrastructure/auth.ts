@@ -102,7 +102,8 @@ export function createAuth({ db, config, audit, pseudonymize }: AuthDeps) {
       },
     },
     socialProviders: socialProvidersFrom(config),
-    rateLimit: { enabled: true, window: 60, max: 30 },
+    // Em teste, o better-auth vê todo cliente como 127.0.0.1 e limita a 3 cadastros a cada 10 s.
+    rateLimit: { enabled: config.NODE_ENV !== 'test', window: 60, max: 30 },
     advanced: {
       useSecureCookies: deployed,
       cookiePrefix: 'linkediner',

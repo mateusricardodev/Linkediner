@@ -6,7 +6,7 @@ Copiloto de carreira que ajuda profissionais de tecnologia a encontrar, adaptar 
 
 ## Como rodar localmente
 
-Pré-requisitos: Node.js 22.12+, pnpm 10 (`corepack enable`) e Docker.
+Pré-requisitos: Node.js 24+, pnpm 10 (`corepack enable`) e Docker.
 
 ```bash
 pnpm install
