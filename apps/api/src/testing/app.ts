@@ -23,6 +23,7 @@ import {
   ResumeService,
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
+import { DrizzleJobRepository, JobService, type StructureJobPayload } from '@linkediner/core/jobs';
 import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
@@ -54,6 +55,12 @@ export async function startTestApp() {
     jobs: [] as ExtractJobPayload[],
     enqueue: async (job: ExtractJobPayload) => {
       queue.jobs.push(job);
+    },
+  };
+  const jobQueue = {
+    jobs: [] as StructureJobPayload[],
+    enqueue: async (job: StructureJobPayload) => {
+      jobQueue.jobs.push(job);
     },
   };
   const resumeQueue = {
@@ -91,6 +98,7 @@ export async function startTestApp() {
         deleteForDocument: (userId, documentId) =>
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
+      jobs: new JobService(new DrizzleJobRepository(db), consents, jobQueue, audit),
       resumeExport: new ResumeExportService({
         resumes: resumeRepository,
         users: userReader,
@@ -153,6 +161,7 @@ export async function startTestApp() {
     consents,
     queue,
     resumeQueue,
+    jobQueue,
     scores,
     signUp,
     call,

@@ -35,6 +35,12 @@ import {
   S3ObjectStorage,
 } from '@linkediner/core/documents';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
+import {
+  DrizzleJobRepository,
+  JOBS_STRUCTURE_QUEUE,
+  JobService,
+  type StructureJobPayload,
+} from '@linkediner/core/jobs';
 import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
 
@@ -93,6 +99,12 @@ const app = await buildServer({
       deleteForDocument: (userId, documentId) =>
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
+    jobs: new JobService(
+      new DrizzleJobRepository(database.db),
+      consents,
+      await createQueue<StructureJobPayload>(boss, JOBS_STRUCTURE_QUEUE),
+      audit,
+    ),
     resumeExport: new ResumeExportService({
       resumes: resumeRepository,
       users: userReader,

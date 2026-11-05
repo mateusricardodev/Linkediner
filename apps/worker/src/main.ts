@@ -7,7 +7,9 @@ import {
   extractProfileV1,
   FakeAiProvider,
   generateResumeV1,
+  structureJobV1,
 } from '@linkediner/core/ai';
+import { DrizzleJobRepository, EMPTY_JOB_OUTPUT, StructureJob } from '@linkediner/core/jobs';
 import { DrizzleResumeRepository, GenerateResume } from '@linkediner/core/resumes';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import {
@@ -31,6 +33,7 @@ import {
 } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { documentsExtract } from './handlers/documents-extract';
+import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { privacyExpireDocuments } from './handlers/privacy-expire-documents';
@@ -58,6 +61,7 @@ if (ai instanceof FakeAiProvider) {
   logger.warn('provedor de IA simulado: a extração não gera fatos');
   ai.respond('extract_profile', () => EMPTY_EXTRACTION);
   ai.respond('generate_resume', () => ({ summary: [], bullets: [] }));
+  ai.respond('structure_job', () => EMPTY_JOB_OUTPUT);
 }
 const generations = new DrizzleAiGenerationLog(database.db);
 const factRepository = new DrizzleFactRepository(database.db);
@@ -86,6 +90,16 @@ const tasks = [
       factRepository,
       new DrizzleScoreRepository(database.db),
     ),
+  }),
+  jobsStructure({
+    structure: new StructureJob({
+      jobs: new DrizzleJobRepository(database.db),
+      consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+      ai,
+      prompt: structureJobV1,
+      generations,
+      audit,
+    }),
   }),
   resumesGenerate({
     generate: new GenerateResume({

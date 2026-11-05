@@ -10,6 +10,7 @@
     "./privacy": "./src/modules/privacy/index.ts",
     "./identity": "./src/modules/identity/index.ts",
     "./identity/users": "./src/modules/identity/infrastructure/user-reader.ts",
+    "./jobs": "./src/modules/jobs/index.ts",
     "./profile": "./src/modules/profile/index.ts",
     "./resumes": "./src/modules/resumes/index.ts",
     "./resumes/export": "./src/modules/resumes/export.ts",

@@ -18,3 +18,4 @@ export { createAiProvider } from './infrastructure/create-ai-provider';
 export { DrizzleAiGenerationLog } from './infrastructure/drizzle-ai-generation-log';
 export { extractProfileV1 } from './prompts/extract-profile/v1';
 export { generateResumeV1 } from './prompts/generate-resume/v1';
+export { structureJobV1 } from './prompts/structure-job/v1';
