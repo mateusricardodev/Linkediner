@@ -1,0 +1,17 @@
+# ADRs — Registro de decisões de arquitetura
+
+Formato: contexto, decisão, alternativas e consequências. Para mudar uma decisão, crie um novo ADR que substitua o anterior. Não edite o conteúdo de um ADR aceito.
+
+| # | Decisão | Status |
+|---|---|---|
+| 0001 | [Banco de dados e armazenamento de arquivos](0001-banco-de-dados.md) | Proposto |
+| 0002 | [Monólito modular em vez de microserviços](0002-monolito-modular.md) | Proposto |
+| 0003 | [Stack TypeScript: Next.js, Fastify, Drizzle e pnpm/Turborepo](0003-stack-typescript.md) | Proposto |
+| 0004 | [Abstração de provedor de IA, com Gemini como primeira implementação](0004-provedor-de-ia.md) | Proposto |
+| 0005 | [Filas e tarefas assíncronas com pg-boss no Postgres](0005-filas-pg-boss.md) | Proposto |
+| 0006 | [Fontes de vagas por adaptadores independentes, sem scraping](0006-fontes-de-vagas.md) | Proposto |
+| 0007 | [Score explicável: a IA extrai sinais e uma rubrica determinística pontua](0007-score-explicavel.md) | Proposto |
+| 0008 | [Retenção de 30 dias, exclusão completa e crypto-shredding](0008-retencao-e-exclusao.md) | Proposto |
+| 0009 | [Autenticação com OAuth/OIDC e sessões no servidor](0009-autenticacao.md) | Proposto |
+| 0010 | [Planos por entitlements e ledger de consumo](0010-planos-e-quotas.md) | Proposto |
+| 0011 | [Design tokens com fonte da verdade no repositório](0011-design-tokens.md) | Proposto |
