@@ -14,3 +14,11 @@ export {
   UpdateCareerGoalBody,
   UpdateProfileBody,
 } from './profile';
+export {
+  DocumentDto,
+  DocumentKind,
+  DocumentStatus,
+  DownloadResponse,
+  RequestUploadBody,
+  RequestUploadResponse,
+} from './documents';

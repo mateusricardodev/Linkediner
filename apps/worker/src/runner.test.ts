@@ -1,6 +1,7 @@
 import { Writable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { createLogger } from '@linkediner/observability';
+import { privacyExpireDocuments } from './handlers/privacy-expire-documents';
 import { systemHeartbeat } from './handlers/system-heartbeat';
 import { runTask } from './runner';
 
@@ -30,5 +31,15 @@ describe('runTask', () => {
     await expect(
       runTask(systemHeartbeat({ ping }), { id: 'job-3', data: {} }, logger),
     ).rejects.toThrow('db fora');
+  });
+});
+
+describe('privacy.expire_documents', () => {
+  it('roda a expiração e é agendada diariamente', async () => {
+    const run = vi.fn(async () => ({ deleted: 3 }));
+    const task = privacyExpireDocuments({ expire: { run } });
+    await runTask(task, { id: 'job-4', data: {} }, logger);
+    expect(run).toHaveBeenCalledOnce();
+    expect(task.cron).toMatch(/^\d+ \d+ \* \* \*$/);
   });
 });
