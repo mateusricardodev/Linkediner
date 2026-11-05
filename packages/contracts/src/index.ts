@@ -1,3 +1,16 @@
 export { ProblemDetails } from './problem';
 export { HealthResponse, ReadinessResponse } from './health';
 export { ConsentPurpose, ConsentStatusDto, MeResponse, UpdateConsentBody } from './me';
+export {
+  CareerGoalDto,
+  CreateCareerGoalBody,
+  Currency,
+  LinkKind,
+  ProfileDto,
+  ProfileLinkDto,
+  ReplaceLinksBody,
+  SalaryPeriod,
+  Seniority,
+  UpdateCareerGoalBody,
+  UpdateProfileBody,
+} from './profile';

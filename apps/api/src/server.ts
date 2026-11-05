@@ -20,13 +20,15 @@ import { registerErrorHandler } from './plugins/error-handler';
 import { registerOriginCheck } from './plugins/origin-check';
 import { healthRoutes, type HealthDeps } from './routes/health';
 import { meRoutes, type MeDeps } from './routes/me';
+import { profileRoutes } from './routes/profile';
+import type { ProfileService } from '@linkediner/core/profile';
 
 export interface ServerDeps {
   config: Pick<AppConfig, 'NODE_ENV' | 'WEB_ORIGIN'>;
   logger: Logger;
   health: HealthDeps;
   /** Autenticação e rotas de conta. Opcional para permitir testes da base sem banco. */
-  account?: { auth: Auth } & MeDeps;
+  account?: { auth: Auth; profile: ProfileService } & MeDeps;
 }
 
 export async function buildServer(deps: ServerDeps) {
@@ -75,6 +77,7 @@ export async function buildServer(deps: ServerDeps) {
     registerOriginCheck(app, deps.config.WEB_ORIGIN);
     await registerAuth(app, deps.account.auth);
     await app.register(meRoutes(deps.account));
+    await app.register(profileRoutes(deps.account));
   }
 
   return app;

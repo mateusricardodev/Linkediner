@@ -8,7 +8,8 @@
     "./ai": "./src/modules/ai/index.ts",
     "./audit": "./src/modules/audit/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
-    "./identity": "./src/modules/identity/index.ts"
+    "./identity": "./src/modules/identity/index.ts",
+    "./profile": "./src/modules/profile/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
