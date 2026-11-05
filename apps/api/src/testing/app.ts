@@ -13,6 +13,12 @@ import {
 } from '@linkediner/core/profile';
 import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
 import {
+  DocxResumeRenderer,
+  FREE_PLAN_EXPORT_POLICY,
+  PdfResumeRenderer,
+  ResumeExportService,
+} from '@linkediner/core/resumes/export';
+import {
   DrizzleResumeRepository,
   ResumeService,
   type GenerateResumeJob,
@@ -36,6 +42,8 @@ export async function startTestApp() {
   const documentRepository = new DrizzleDocumentRepository(db);
   const factRepository = new DrizzleFactRepository(db);
   const profileRepository = new DrizzleProfileRepository(db);
+  const resumeRepository = new DrizzleResumeRepository(db);
+  const userReader = new DrizzleUserReader(db);
   const scores = new ProfileScoreService(
     profileRepository,
     factRepository,
@@ -74,7 +82,7 @@ export async function startTestApp() {
           WEB_ORIGIN: WEB,
         },
       }),
-      users: new DrizzleUserReader(db),
+      users: userReader,
       consents,
       profile: new ProfileService(profileRepository),
       scores,
@@ -83,13 +91,15 @@ export async function startTestApp() {
         deleteForDocument: (userId, documentId) =>
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
-      resumes: new ResumeService(
-        new DrizzleResumeRepository(db),
-        factRepository,
-        consents,
-        resumeQueue,
+      resumeExport: new ResumeExportService({
+        resumes: resumeRepository,
+        users: userReader,
+        profiles: profileRepository,
+        renderers: { pdf: new PdfResumeRenderer(), docx: new DocxResumeRenderer() },
+        policy: FREE_PLAN_EXPORT_POLICY,
         audit,
-      ),
+      }),
+      resumes: new ResumeService(resumeRepository, factRepository, consents, resumeQueue, audit),
       extraction: new ExtractionRequests(documentRepository, consents, queue),
     },
   });

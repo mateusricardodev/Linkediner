@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-export const ResumeStatus = z.enum(['generating', 'draft', 'failed']).meta({ id: 'ResumeStatus' });
+export const ResumeStatus = z
+  .enum(['generating', 'draft', 'approved', 'failed'])
+  .meta({ id: 'ResumeStatus' });
 
 export const ResumeItemDto = z
   .object({
@@ -44,6 +46,7 @@ export const ResumeDto = z
     content: ResumeContentDto.nullable(),
     /** Motivo da falha: no_facts, consent_revoked ou processing_error. */
     failureCode: z.string().nullable(),
+    approvedAt: z.iso.datetime().nullable(),
     createdAt: z.iso.datetime(),
   })
   .meta({ id: 'Resume' });
@@ -56,3 +59,7 @@ export const DecideResumeItemBody = z
     z.object({ action: z.literal('remove') }).strict(),
   ])
   .meta({ id: 'DecideResumeItemBody' });
+
+export const ExportResumeQuery = z
+  .object({ format: z.enum(['pdf', 'docx']) })
+  .meta({ id: 'ExportResumeQuery' });

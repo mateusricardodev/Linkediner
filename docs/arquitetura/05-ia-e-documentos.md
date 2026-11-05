@@ -16,10 +16,10 @@
 
 ### Saída (currículos gerados)
 
-- O currículo é montado a partir dos fatos aprovados, num template HTML/CSS, e convertido para PDF com Playwright/Chromium no worker.
+- O currículo é montado a partir das frases comprovadas ou confirmadas e gerado com `pdfkit`, pela API ([ADR 0014](../adr/0014-exportacao-com-pdfkit.md)).
 - Templates compatíveis com ATS: uma coluna, texto selecionável e sem tabelas complexas.
 - Marca d'água no plano gratuito, aplicada na renderização e controlada por entitlement.
-- Exportação também em DOCX (via `docx`) e texto puro.
+- Exportação também em DOCX (via `docx`).
 
 ## 8. Integração com IA
 

@@ -12,6 +12,7 @@
     "./identity/users": "./src/modules/identity/infrastructure/user-reader.ts",
     "./profile": "./src/modules/profile/index.ts",
     "./resumes": "./src/modules/resumes/index.ts",
+    "./resumes/export": "./src/modules/resumes/export.ts",
     "./documents": "./src/modules/documents/index.ts",
     "./extraction": "./src/modules/extraction/index.ts",
     "./extraction/worker": "./src/modules/extraction/worker.ts",
@@ -28,12 +29,15 @@
     "@linkediner/db": "workspace:*",
     "@node-rs/argon2": "2.2.2",
     "better-auth": "1.7.17",
+    "docx": "9.15.2",
     "mammoth": "1.13.0",
+    "pdfkit": "0.20.2",
     "unpdf": "2.1.0",
     "uuid": "14.0.3",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@types/pdfkit": "0.17.7",
     "jszip": "3.10.1",
     "testcontainers": "12.2.1"
   }

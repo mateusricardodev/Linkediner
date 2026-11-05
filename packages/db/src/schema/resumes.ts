@@ -1,9 +1,9 @@
 import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './identity';
 
-export const resumeStatus = pgEnum('resume_status', ['generating', 'draft', 'failed']);
+export const resumeStatus = pgEnum('resume_status', ['generating', 'draft', 'approved', 'failed']);
 
-/** Currículo gerado. Só depois de aprovado poderá ser exportado (M-08). */
+/** Currículo gerado. Só depois de aprovado pode ser exportado. Editar exige aprovar de novo. */
 export const resumes = pgTable(
   'resumes',
   {
@@ -15,6 +15,7 @@ export const resumes = pgTable(
     content: jsonb().$type<unknown>(),
     /** Motivo da falha (código estável, sem conteúdo). */
     failureCode: text(),
+    approvedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true })
       .notNull()
