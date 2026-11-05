@@ -22,7 +22,7 @@ import { healthRoutes, type HealthDeps } from './routes/health';
 import { meRoutes, type MeDeps } from './routes/me';
 import { profileRoutes } from './routes/profile';
 import type { ExtractionRequests } from '@linkediner/core/extraction';
-import type { FactService, ProfileService } from '@linkediner/core/profile';
+import type { FactService, ProfileScoreService, ProfileService } from '@linkediner/core/profile';
 import type { DocumentService } from '@linkediner/core/documents';
 import { documentRoutes } from './routes/documents';
 
@@ -35,6 +35,7 @@ export interface ServerDeps {
     auth: Auth;
     profile: ProfileService;
     facts: FactService;
+    scores: ProfileScoreService;
     documents: DocumentService;
     extraction: ExtractionRequests;
   } & MeDeps;

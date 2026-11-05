@@ -153,6 +153,21 @@ describe('extração de currículo', () => {
     });
   });
 
+  it('os fatos extraídos sobem o score, sem repetir o histórico', async () => {
+    const cookie = await t.signUp('score-extracao@example.com');
+    await grantAi(cookie);
+    await upload(cookie);
+    await runQueuedJobs();
+    const first = (await t.call(cookie, 'GET', '/v1/profile/score')).json();
+    const criterion = (name: string) =>
+      first.factors.find((f: { criterion: string }) => f.criterion === name);
+    expect(first.score).toBeGreaterThan(0);
+    expect(criterion('experience').factIds).toHaveLength(1);
+    expect(criterion('skills').factIds).toHaveLength(2);
+    const again = (await t.call(cookie, 'GET', '/v1/profile/score')).json();
+    expect(again.history).toHaveLength(1);
+  });
+
   it('o texto enviado à IA veio do PDF real e sem o nome do titular', async () => {
     const cookie = await t.signUp('titular@example.com');
     await grantAi(cookie);

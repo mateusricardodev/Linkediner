@@ -7,16 +7,19 @@ import {
   ProblemDetails,
   ProfileDto,
   ProfileFactDto,
+  ProfileScoreResponse,
   ReplaceLinksBody,
   UpdateCareerGoalBody,
   UpdateProfileBody,
 } from '@linkediner/contracts';
 import type { ConsentService } from '@linkediner/core/privacy';
-import type {
-  CareerGoal,
-  FactService,
-  ProfileFact,
-  ProfileService,
+import {
+  SCORE_DISCLAIMER,
+  type CareerGoal,
+  type FactService,
+  type ProfileFact,
+  type ProfileScoreService,
+  type ProfileService,
 } from '@linkediner/core/profile';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
@@ -24,6 +27,7 @@ import { requireConsents } from '../plugins/require-consents';
 export interface ProfileDeps {
   profile: ProfileService;
   facts: FactService;
+  scores: Pick<ProfileScoreService, 'recalculate'>;
   consents: Pick<ConsentService, 'status'>;
 }
 
@@ -66,6 +70,32 @@ export const profileRoutes =
           ...(summary !== undefined ? { summary } : {}),
           ...(yearsExperience !== undefined ? { yearsExperience } : {}),
         });
+      },
+    );
+
+    app.get(
+      '/v1/profile/score',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Score do perfil, com fatores, recomendações e evolução',
+          response: { 200: ProfileScoreResponse, ...errors },
+        },
+      },
+      async (req) => {
+        const { current, history } = await deps.scores.recalculate(actorOf(req).userId);
+        return {
+          score: current.score,
+          rubricVersion: current.rubricVersion,
+          calculatedAt: current.createdAt.toISOString(),
+          factors: current.factors,
+          history: history.map((h) => ({
+            score: h.score,
+            calculatedAt: h.createdAt.toISOString(),
+          })),
+          disclaimer: SCORE_DISCLAIMER,
+        };
       },
     );
 

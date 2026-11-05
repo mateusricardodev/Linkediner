@@ -6,7 +6,9 @@ import { ExtractionRequests, type ExtractJobPayload } from '@linkediner/core/ext
 import {
   DrizzleFactRepository,
   DrizzleProfileRepository,
+  DrizzleScoreRepository,
   FactService,
+  ProfileScoreService,
   ProfileService,
 } from '@linkediner/core/profile';
 import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
@@ -28,6 +30,12 @@ export async function startTestApp() {
   const consents = new ConsentService(new DrizzleConsentRepository(db), audit);
   const documentRepository = new DrizzleDocumentRepository(db);
   const factRepository = new DrizzleFactRepository(db);
+  const profileRepository = new DrizzleProfileRepository(db);
+  const scores = new ProfileScoreService(
+    profileRepository,
+    factRepository,
+    new DrizzleScoreRepository(db),
+  );
   // Fila em memória: os testes decidem quando processar cada job.
   const queue = {
     jobs: [] as ExtractJobPayload[],
@@ -57,7 +65,8 @@ export async function startTestApp() {
       }),
       users: new DrizzleUserReader(db),
       consents,
-      profile: new ProfileService(new DrizzleProfileRepository(db)),
+      profile: new ProfileService(profileRepository),
+      scores,
       facts: new FactService(factRepository, audit),
       documents: new DocumentService(documentRepository, s3.storage, audit, {
         deleteForDocument: (userId, documentId) =>
@@ -115,6 +124,7 @@ export async function startTestApp() {
     audit,
     consents,
     queue,
+    scores,
     signUp,
     call,
     stop: async () => {

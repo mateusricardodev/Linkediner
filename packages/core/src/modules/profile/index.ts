@@ -34,4 +34,17 @@ export { FactService, type FactDecision } from './application/fact-service';
 export { DrizzleFactRepository } from './infrastructure/drizzle-fact-repository';
 export type { ProfileRepository } from './application/ports/profile-repository';
 export { ProfileService, type ProfileView } from './application/profile-service';
+export {
+  RUBRIC_V1_WEIGHTS,
+  RUBRIC_VERSION,
+  SCORE_DISCLAIMER,
+  computeProfileScore,
+  type CriterionId,
+  type ScoreFactor,
+  type ScoreInput,
+  type ScoreResult,
+} from './domain/score';
+export type { ScoreRepository, StoredScore } from './application/ports/score-repository';
+export { ProfileScoreService, type ProfileScoreView } from './application/score-service';
+export { DrizzleScoreRepository } from './infrastructure/drizzle-score-repository';
 export { DrizzleProfileRepository } from './infrastructure/drizzle-profile-repository';

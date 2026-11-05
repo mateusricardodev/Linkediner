@@ -12,6 +12,7 @@ const logger = createLogger({
   level: 'silent',
   destination: new Writable({ write: (_c, _e, cb) => cb() }),
 });
+const scores = { recalculate: vi.fn(async () => ({})) };
 const payload = {
   userId: '0193b2b0-0000-7000-8000-00000000000a',
   documentId: '0193b2b0-0000-7000-8000-0000000000d1',
@@ -19,14 +20,14 @@ const payload = {
 
 describe('documents.extract', () => {
   it('a fila criada pela API é igual à registrada pelo worker', () => {
-    const task = documentsExtract({ extract: { run: vi.fn() } });
+    const task = documentsExtract({ extract: { run: vi.fn() }, scores });
     expect(task.name).toBe(DOCUMENTS_EXTRACT_QUEUE.name);
     expect(deadLetterQueue(task.name)).toBe(DOCUMENTS_EXTRACT_QUEUE.deadLetter);
   });
 
   it('recusa payload com dados além dos IDs', async () => {
     const run = vi.fn();
-    const task = documentsExtract({ extract: { run } });
+    const task = documentsExtract({ extract: { run }, scores });
     await expect(
       runTask(task, { id: 'j', data: { ...payload, text: 'conteúdo do currículo' } }, logger),
     ).rejects.toThrow(/Payload inválido/);
@@ -39,9 +40,47 @@ describe('documents.extract', () => {
     [2, true],
   ])('tentativa com retryCount %i: última = %s', async (retryCount, isLastAttempt) => {
     const run = vi.fn(async () => 'processed' as const);
-    const task = documentsExtract({ extract: { run } });
+    const task = documentsExtract({ extract: { run }, scores });
     await runTask(task, { id: 'j', data: payload, retryCount }, logger);
     expect(run).toHaveBeenCalledWith(payload, { isLastAttempt });
+  });
+});
+
+describe('score depois da extração', () => {
+  const task = (
+    outcome: 'processed' | 'failed' | 'skipped',
+    recalculate = vi.fn(async () => ({})),
+  ) => ({
+    recalculate,
+    task: documentsExtract({
+      extract: { run: vi.fn(async () => outcome) },
+      scores: { recalculate },
+    }),
+  });
+
+  it('recalcula o score quando a extração termina', async () => {
+    const t = task('processed');
+    await runTask(t.task, { id: 'j', data: payload }, logger);
+    expect(t.recalculate).toHaveBeenCalledWith(payload.userId);
+  });
+
+  it.each(['failed', 'skipped'] as const)(
+    'não recalcula quando o resultado é %s',
+    async (outcome) => {
+      const t = task(outcome);
+      await runTask(t.task, { id: 'j', data: payload }, logger);
+      expect(t.recalculate).not.toHaveBeenCalled();
+    },
+  );
+
+  it('falha no score não refaz a extração', async () => {
+    const t = task(
+      'processed',
+      vi.fn(async () => {
+        throw new Error('banco fora');
+      }),
+    );
+    await expect(runTask(t.task, { id: 'j', data: payload }, logger)).resolves.toBeUndefined();
   });
 });
 
