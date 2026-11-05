@@ -1,6 +1,9 @@
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
-import { createLogger } from '@linkediner/observability';
+import { DrizzleAuditLog } from '@linkediner/core/audit';
+import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
+import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
+import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { buildServer } from './server';
 
 const config = loadConfig();
@@ -10,11 +13,18 @@ const logger = createLogger({
   pretty: config.NODE_ENV === 'development',
 });
 const database = createDb(config.DATABASE_URL);
+const pseudonymize = createPseudonymizer(config.LOG_PSEUDONYM_SECRET);
+const audit = new DrizzleAuditLog(database.db, pseudonymize);
 
 const app = await buildServer({
   config,
   logger,
   health: { checks: { database: () => pingDb(database.db) } },
+  account: {
+    auth: createAuth({ db: database.db, config, audit, pseudonymize }),
+    users: new DrizzleUserReader(database.db),
+    consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+  },
 });
 
 const shutdown = async (signal: string) => {

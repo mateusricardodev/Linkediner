@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import pino, { type DestinationStream, type Logger, type LoggerOptions } from 'pino';
 import { redact } from './redaction';
 
@@ -34,8 +35,18 @@ export function createLogger({
       error: (err: unknown) => redact(err),
     },
   };
-  if (pretty && !destination) {
+  if (pretty && !destination && prettyAvailable()) {
     return pino({ ...options, transport: { target: 'pino-pretty', options: { colorize: true } } });
   }
   return destination ? pino(options, destination) : pino(options);
+}
+
+/** pino-pretty é dependência só de desenvolvimento. Sem ele (ex.: build empacotado), o log sai em JSON. */
+function prettyAvailable(): boolean {
+  try {
+    createRequire(import.meta.url).resolve('pino-pretty');
+    return true;
+  } catch {
+    return false;
+  }
 }

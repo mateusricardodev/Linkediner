@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigError, loadConfig } from './index';
 
-const base = { DATABASE_URL: 'postgres://u:p@localhost:5432/db' };
+const base = { DATABASE_URL: 'postgres://u:p@localhost:5432/db', AUTH_SECRET: 'a'.repeat(32) };
 
 describe('loadConfig', () => {
   it('aplica valores padrão em desenvolvimento', () => {
@@ -21,8 +21,20 @@ describe('loadConfig', () => {
     }
   });
 
+  it('exige ID e segredo de OAuth juntos', () => {
+    expect(() => loadConfig({ ...base, GITHUB_CLIENT_ID: 'id' })).toThrow(/GITHUB_CLIENT_SECRET/);
+    expect(
+      loadConfig({ ...base, GITHUB_CLIENT_ID: 'id', GITHUB_CLIENT_SECRET: 's' }).GITHUB_CLIENT_ID,
+    ).toBe('id');
+  });
+
+  it('exige AUTH_SECRET com pelo menos 32 caracteres', () => {
+    expect(() => loadConfig({ ...base, AUTH_SECRET: 'curto' })).toThrow(/AUTH_SECRET/);
+  });
+
   it('exige plano pago de IA em produção (ADR 0004)', () => {
     const prod = {
+      API_PUBLIC_URL: 'https://api.linkediner.dev',
       ...base,
       NODE_ENV: 'production',
       AI_PROVIDER: 'gemini',

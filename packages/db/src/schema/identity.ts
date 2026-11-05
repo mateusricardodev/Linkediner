@@ -1,5 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 const timestamps = {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -14,13 +24,73 @@ export const userStatus = pgEnum('user_status', ['active', 'pending_deletion', '
 export const users = pgTable('users', {
   id: uuid().primaryKey(),
   email: text().notNull().unique(),
+  emailVerified: boolean().notNull().default(false),
   name: text(),
+  image: text(),
   locale: text().notNull().default('pt-BR'),
   timezone: text().notNull().default('America/Sao_Paulo'),
   dataRegion: text().notNull().default('br'),
   status: userStatus().notNull().default('active'),
   ...timestamps,
 });
+
+/**
+ * Tabelas de autenticação, no formato esperado pelo Better Auth (ADR 0009).
+ * Acessadas só pelo módulo identity com o papel dono do banco: o papel da aplicação não tem permissão nelas.
+ */
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid().primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    /** Guardamos só o hash do IP (docs/arquitetura/03-dados.md). */
+    ipAddress: text(),
+    userAgent: text(),
+    ...timestamps,
+  },
+  (t) => [index().on(t.userId)],
+);
+
+/**
+ * Identidades de login (OAuth ou senha). Tokens de provedores externos não são guardados:
+ * só precisamos da identidade (ADR 0009). `password` guarda apenas o hash Argon2id.
+ */
+export const authIdentities = pgTable(
+  'auth_identities',
+  {
+    id: uuid().primaryKey(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    providerId: text().notNull(),
+    accountId: text().notNull(),
+    accessToken: text(),
+    refreshToken: text(),
+    idToken: text(),
+    accessTokenExpiresAt: timestamp({ withTimezone: true }),
+    refreshTokenExpiresAt: timestamp({ withTimezone: true }),
+    scope: text(),
+    password: text(),
+    ...timestamps,
+  },
+  (t) => [index().on(t.userId), uniqueIndex().on(t.providerId, t.accountId)],
+);
+
+export const verifications = pgTable(
+  'verifications',
+  {
+    id: uuid().primaryKey(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (t) => [index().on(t.identifier)],
+);
 
 /** Finalidades de consentimento (docs/arquitetura/07-seguranca-e-privacidade.md). */
 export const consentPurpose = pgEnum('consent_purpose', [

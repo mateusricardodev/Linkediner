@@ -35,6 +35,13 @@ pnpm dev
 | Documentação da API (OpenAPI) | http://localhost:4000/docs |
 | Mailpit (e-mails locais)      | http://localhost:8025      |
 
+## Autenticação
+
+- Login por e-mail e senha (Argon2id) e por OAuth (Google, GitHub e LinkedIn via OpenID Connect).
+- Cada provedor OAuth só é ativado quando o ID e o segredo estão no `.env`.
+- Sessão em cookie HttpOnly. As rotas do Better Auth ficam em `/v1/auth/*`.
+- Depois do cadastro, o usuário precisa aceitar termos e privacidade (`PUT /v1/me/consents/{purpose}`) para usar o produto.
+
 ## Comandos
 
 | Comando                             | O que faz                                                                   |

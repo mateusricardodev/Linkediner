@@ -10,6 +10,8 @@ export const ProblemDetails = z
     detail: z.string().optional(),
     instance: z.string().optional(),
     requestId: z.string().optional(),
+    /** Informações adicionais seguras para o cliente (ex.: consentimentos que faltam). */
+    details: z.record(z.string(), z.unknown()).optional(),
     errors: z.array(z.object({ path: z.string(), message: z.string() })).optional(),
   })
   .meta({ id: 'ProblemDetails' });
