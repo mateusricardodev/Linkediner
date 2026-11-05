@@ -86,6 +86,11 @@ export function tokenize(text: string): string[] {
     .map((token) => SYNONYMS[token] ?? token);
 }
 
+/** Termos do requisito que dá para comparar, sem palavras genéricas. */
+export function requirementTerms(text: string): string[] {
+  return [...new Set(tokenize(text).filter((t) => !STOPWORDS.has(t)))];
+}
+
 const DURATION = /\b\d+\s*\+?\s*(anos?|years?)\b/;
 
 /** A empresa e as datas ficam de fora: ter trabalhado no Google não comprova saber "Google Cloud". */
@@ -122,7 +127,7 @@ export function matchRequirement(
   kind: RequirementMatch['kind'],
   facts: IndexedFact[],
 ): RequirementMatch {
-  const terms = [...new Set(tokenize(text).filter((t) => !STOPWORDS.has(t)))];
+  const terms = requirementTerms(text);
   if (terms.length === 0) return { text, kind, status: 'unverified', factIds: [] };
 
   const supporting = facts.filter((f) => terms.some((t) => f.tokens.has(t)));
@@ -151,7 +156,7 @@ function requirementRatio(list: RequirementMatch[]): number | null {
   return comparable.reduce((total, r) => total + CREDIT[r.status], 0) / comparable.length;
 }
 
-const LADDER: Seniority[] = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
+export const LADDER: Seniority[] = ['intern', 'junior', 'mid', 'senior', 'staff', 'principal'];
 
 /** Compara o nível da vaga com o objetivo declarado pela pessoa, e não com a idade ou o tempo de carreira. */
 function seniorityRatio(job: Seniority | null, goal: Seniority | undefined): number | null {

@@ -41,7 +41,12 @@ import {
   JobService,
   type StructureJobPayload,
 } from '@linkediner/core/jobs';
-import { DrizzleMatchRepository, MatchingService } from '@linkediner/core/matching';
+import {
+  DrizzleFeedbackRepository,
+  DrizzleMatchRepository,
+  FeedbackService,
+  MatchingService,
+} from '@linkediner/core/matching';
 import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
 
@@ -101,6 +106,13 @@ const app = await buildServer({
       deleteForDocument: (userId, documentId) =>
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
+    feedback: new FeedbackService(
+      new DrizzleFeedbackRepository(database.db),
+      jobRepository,
+      factRepository,
+      profileRepository,
+      audit,
+    ),
     matching: new MatchingService(
       jobRepository,
       factRepository,

@@ -151,7 +151,7 @@ sequenceDiagram
 ### F7 — Feedback da vaga
 
 1. O usuário escolhe um motivo (Gostei, Muito sênior, Salário incompatível...).
-2. Grava em `job_feedback` e dispara `matching.update_preferences`.
+2. Grava em `job_feedback`. As preferências são calculadas a partir das avaliações, na hora da consulta ([ADR 0017](../adr/0017-preferencias-derivadas-do-feedback.md)).
 3. O ajuste no MVP é simples e explicável:
    - `company_blocked` adiciona a empresa a `blocked_companies`;
    - `too_senior` reduz o peso de vagas acima da senioridade do objetivo;

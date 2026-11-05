@@ -3,12 +3,19 @@ import { z } from 'zod';
 import {
   ImportJobBody,
   JobDto,
+  JobFeedbackBody,
+  JobFeedbackResponse,
   JobMatchQuery,
   JobMatchResponse,
   ProblemDetails,
+  RecommendationsResponse,
 } from '@linkediner/contracts';
 import type { Job, JobService } from '@linkediner/core/jobs';
-import { MATCH_DISCLAIMER, type MatchingService } from '@linkediner/core/matching';
+import {
+  MATCH_DISCLAIMER,
+  type FeedbackService,
+  type MatchingService,
+} from '@linkediner/core/matching';
 import type { ConsentService } from '@linkediner/core/privacy';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
@@ -16,6 +23,7 @@ import { requireConsents } from '../plugins/require-consents';
 export interface JobDeps {
   jobs: JobService;
   matching: Pick<MatchingService, 'forJob'>;
+  feedback: FeedbackService;
   consents: Pick<ConsentService, 'status'>;
 }
 
@@ -28,7 +36,7 @@ const errors = {
 };
 const Params = z.object({ id: z.uuid() });
 
-/** Importação manual de vagas (M-09) e compatibilidade com o perfil (M-10). */
+/** Importação manual de vagas (M-09), compatibilidade (M-10), feedback e recomendações (M-11). */
 export const jobRoutes =
   (deps: JobDeps): FastifyPluginAsyncZod =>
   async (app) => {
@@ -76,6 +84,63 @@ export const jobRoutes =
         },
       },
       async (req) => toDto(await deps.jobs.get(actorOf(req).userId, req.params.id)),
+    );
+
+    app.get(
+      '/v1/jobs/recommendations',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Vagas ordenadas pela compatibilidade e pelas suas avaliações',
+          querystring: JobMatchQuery,
+          response: { 200: RecommendationsResponse, ...errors },
+        },
+      },
+      async (req) => {
+        const { items, hidden } = await deps.feedback.recommendations(
+          actorOf(req).userId,
+          req.query.goalId,
+        );
+        return {
+          items: items.map((item) => ({ ...item, job: toDto(item.job) })),
+          hidden,
+          disclaimer: MATCH_DISCLAIMER,
+        };
+      },
+    );
+
+    app.get(
+      '/v1/jobs/:id/feedback',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Sua avaliação da vaga',
+          params: Params,
+          response: { 200: JobFeedbackResponse, 409: ProblemDetails, ...errors },
+        },
+      },
+      async (req) => ({
+        reasons: await deps.feedback.forJob(actorOf(req).userId, req.params.id),
+      }),
+    );
+
+    app.put(
+      '/v1/jobs/:id/feedback',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Avalia a vaga. A lista substitui a anterior, e lista vazia limpa',
+          params: Params,
+          body: JobFeedbackBody,
+          response: { 200: JobFeedbackResponse, 409: ProblemDetails, ...errors },
+        },
+      },
+      async (req) => ({
+        reasons: await deps.feedback.set(actorOf(req).userId, req.params.id, req.body.reasons),
+      }),
     );
 
     app.get(
