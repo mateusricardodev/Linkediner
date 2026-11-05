@@ -31,7 +31,8 @@
 | `GET /v1/resumes/{id}`, `POST /v1/resumes/{id}/approve`, `GET /v1/resumes/{id}/export?format=pdf\|docx` | Revisão, aprovação e exportação |
 | `POST /v1/jobs/import` | Importar vaga pelo texto colado. O link é só referência e nunca é acessado ([ADR 0015](../adr/0015-vagas-importadas-por-usuario.md)) |
 | `GET /v1/jobs/recommendations?goalId=` | Vagas recomendadas, com score e explicação |
-| `GET /v1/jobs/{id}` | Detalhe com compatibilidade |
+| `GET /v1/jobs/{id}` | Detalhe da vaga |
+| `GET /v1/jobs/{id}/match?goalId=` | Compatibilidade requisito por requisito ([ADR 0016](../adr/0016-compatibilidade-v1-por-regras.md)) |
 | `POST /v1/jobs/{id}/feedback` | Feedback da vaga |
 | `POST /v1/applications` | Criar candidatura e gerar material |
 | `GET /v1/applications?state=` | Lista para o dashboard |
