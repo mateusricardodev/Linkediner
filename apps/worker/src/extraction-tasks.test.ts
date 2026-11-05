@@ -2,8 +2,10 @@ import { Writable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { DOCUMENTS_EXTRACT_QUEUE } from '@linkediner/core/extraction';
 import { createLogger } from '@linkediner/observability';
+import { JOBS_STRUCTURE_QUEUE } from '@linkediner/core/jobs';
 import { RESUMES_GENERATE_QUEUE } from '@linkediner/core/resumes';
 import { documentsExtract } from './handlers/documents-extract';
+import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { runTask } from './runner';
@@ -107,6 +109,32 @@ describe('resumes.generate', () => {
   it('informa quando é a última tentativa', async () => {
     const run = vi.fn(async () => 'draft' as const);
     const task = resumesGenerate({ generate: { run } });
+    await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
+    expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
+  });
+});
+
+describe('jobs.structure', () => {
+  const job = { userId: payload.userId, jobId: payload.documentId };
+
+  it('a fila criada pela API é igual à registrada pelo worker', () => {
+    const task = jobsStructure({ structure: { run: vi.fn() } });
+    expect(task.name).toBe(JOBS_STRUCTURE_QUEUE.name);
+    expect(deadLetterQueue(task.name)).toBe(JOBS_STRUCTURE_QUEUE.deadLetter);
+  });
+
+  it('recusa payload com o texto da vaga', async () => {
+    const run = vi.fn();
+    const task = jobsStructure({ structure: { run } });
+    await expect(
+      runTask(task, { id: 'j', data: { ...job, text: 'texto' } }, logger),
+    ).rejects.toThrow(/Payload inválido/);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('informa quando é a última tentativa', async () => {
+    const run = vi.fn(async () => 'ready' as const);
+    const task = jobsStructure({ structure: { run } });
     await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
   });

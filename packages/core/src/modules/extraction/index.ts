@@ -6,3 +6,4 @@ export {
 } from './domain/extraction-rules';
 export type { ExtractionQueue, TextExtractor } from './application/ports';
 export { ExtractionRequests } from './application/extraction-requests';
+export { REDACTED_MARK, redactSensitiveData } from './domain/redact';

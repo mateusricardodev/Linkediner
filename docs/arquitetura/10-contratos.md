@@ -29,7 +29,7 @@
 | `POST /v1/resumes` | Gerar currículo melhorado (sem vaga). Assíncrono: responde 202 |
 | `PATCH /v1/resumes/{id}/items/{itemId}` | Confirmar, corrigir ou remover uma frase |
 | `GET /v1/resumes/{id}`, `POST /v1/resumes/{id}/approve`, `GET /v1/resumes/{id}/export?format=pdf\|docx` | Revisão, aprovação e exportação |
-| `POST /v1/jobs/import` | Importar vaga (texto ou URL) |
+| `POST /v1/jobs/import` | Importar vaga pelo texto colado. O link é só referência e nunca é acessado ([ADR 0015](../adr/0015-vagas-importadas-por-usuario.md)) |
 | `GET /v1/jobs/recommendations?goalId=` | Vagas recomendadas, com score e explicação |
 | `GET /v1/jobs/{id}` | Detalhe com compatibilidade |
 | `POST /v1/jobs/{id}/feedback` | Feedback da vaga |

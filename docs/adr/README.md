@@ -18,3 +18,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0012 | [Extração só com texto verificável](0012-extracao-so-com-texto-verificavel.md) | Proposto |
 | 0013 | [Score do perfil v1 sem chamada de IA](0013-score-v1-sem-ia.md) | Proposto |
 | 0014 | [Exportação de currículos com pdfkit e docx](0014-exportacao-com-pdfkit.md) | Proposto |
+| 0015 | [Vagas importadas por usuário, sem acessar o link](0015-vagas-importadas-por-usuario.md) | Proposto |

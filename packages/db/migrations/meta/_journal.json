@@ -113,6 +113,20 @@
       "when": 1793905354567,
       "tag": "0015_resume_approval",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793906338102,
+      "tag": "0016_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793906339235,
+      "tag": "0017_jobs_rls",
+      "breakpoints": true
     }
   ]
 }

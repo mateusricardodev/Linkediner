@@ -32,3 +32,4 @@ export {
   ResumeItemDto,
   ResumeStatus,
 } from './resumes';
+export { ImportJobBody, JobDto, JobStatus, RemotePolicy } from './jobs';
