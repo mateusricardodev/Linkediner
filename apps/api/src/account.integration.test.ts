@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
+import { DrizzleProfileRepository, ProfileService } from '@linkediner/core/profile';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { actorOf, requireActor } from './plugins/auth';
@@ -68,6 +69,7 @@ beforeAll(async () => {
       }),
       users: new DrizzleUserReader(db),
       consents,
+      profile: new ProfileService(new DrizzleProfileRepository(db)),
     },
   });
   // Rota de exemplo do produto, protegida por login + consentimentos obrigatórios.

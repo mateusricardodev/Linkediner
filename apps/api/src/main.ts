@@ -3,6 +3,7 @@ import { createDb, pingDb } from '@linkediner/db';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
+import { DrizzleProfileRepository, ProfileService } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { buildServer } from './server';
 
@@ -24,6 +25,7 @@ const app = await buildServer({
     auth: createAuth({ db: database.db, config, audit, pseudonymize }),
     users: new DrizzleUserReader(database.db),
     consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+    profile: new ProfileService(new DrizzleProfileRepository(database.db)),
   },
 });
 
