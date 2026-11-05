@@ -1,0 +1,3 @@
+# Falsos positivos já revisados: senha fictícia dos testes de integração (ver commit seguinte, que usa gitleaks:allow).
+e0202c1d54dcfe2e2c6df742de6577de1fcc9cea:apps/api/src/account.integration.test.ts:generic-api-key:30
+e0202c1d54dcfe2e2c6df742de6577de1fcc9cea:apps/api/src/account.integration.test.ts:generic-api-key:91
