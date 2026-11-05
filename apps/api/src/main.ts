@@ -10,6 +10,12 @@ import {
   type ExtractJobPayload,
 } from '@linkediner/core/extraction';
 import {
+  DocxResumeRenderer,
+  FREE_PLAN_EXPORT_POLICY,
+  PdfResumeRenderer,
+  ResumeExportService,
+} from '@linkediner/core/resumes/export';
+import {
   DrizzleResumeRepository,
   RESUMES_GENERATE_QUEUE,
   ResumeService,
@@ -65,6 +71,8 @@ const consents = new ConsentService(new DrizzleConsentRepository(database.db), a
 const documentRepository = new DrizzleDocumentRepository(database.db);
 const factRepository = new DrizzleFactRepository(database.db);
 const profileRepository = new DrizzleProfileRepository(database.db);
+const resumeRepository = new DrizzleResumeRepository(database.db);
+const userReader = new DrizzleUserReader(database.db);
 
 const app = await buildServer({
   config,
@@ -72,7 +80,7 @@ const app = await buildServer({
   health: { checks: { database: () => pingDb(database.db) } },
   account: {
     auth: createAuth({ db: database.db, config, audit, pseudonymize }),
-    users: new DrizzleUserReader(database.db),
+    users: userReader,
     consents,
     profile: new ProfileService(profileRepository),
     scores: new ProfileScoreService(
@@ -85,8 +93,16 @@ const app = await buildServer({
       deleteForDocument: (userId, documentId) =>
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
+    resumeExport: new ResumeExportService({
+      resumes: resumeRepository,
+      users: userReader,
+      profiles: profileRepository,
+      renderers: { pdf: new PdfResumeRenderer(), docx: new DocxResumeRenderer() },
+      policy: FREE_PLAN_EXPORT_POLICY,
+      audit,
+    }),
     resumes: new ResumeService(
-      new DrizzleResumeRepository(database.db),
+      resumeRepository,
       factRepository,
       consents,
       await createQueue<GenerateResumeJob>(boss, RESUMES_GENERATE_QUEUE),

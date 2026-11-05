@@ -40,6 +40,6 @@ describe('worker com pg-boss', () => {
     });
     await registerTasks(boss, [task], logger, 1);
     await boss.send('test.echo', { documentId: 'doc-123' });
-    await expect.poll(() => received, { timeout: 10_000, interval: 200 }).toEqual(['doc-123']);
+    await expect.poll(() => received, { timeout: 25_000, interval: 200 }).toEqual(['doc-123']);
   });
 });

@@ -7,7 +7,12 @@ export interface ResumeRepository {
   list(userId: string): Promise<Resume[]>;
   saveDraft(userId: string, id: string, content: ResumeContent): Promise<void>;
   markFailed(userId: string, id: string, failureCode: string): Promise<void>;
-  /** Altera o conteúdo numa transação com bloqueio, para duas edições não se sobrescreverem. */
+  /** Marca como aprovado. Devolve null se o currículo não estiver mais em rascunho. */
+  approve(userId: string, id: string, at: Date): Promise<Resume | null>;
+  /**
+   * Altera o conteúdo numa transação com bloqueio, para duas edições não se sobrescreverem.
+   * Alterar um currículo aprovado o devolve a rascunho: a aprovação vale só para o que foi revisado.
+   */
   updateContent(
     userId: string,
     id: string,

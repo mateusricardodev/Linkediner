@@ -20,7 +20,7 @@ export const RESUME_FAILURES = {
   processingError: 'processing_error',
 } as const;
 
-export type ResumeStatus = 'generating' | 'draft' | 'failed';
+export type ResumeStatus = 'generating' | 'draft' | 'approved' | 'failed';
 
 /**
  * grounded: comprovada pelos fatos citados. suggested: precisa da confirmação do usuário e fica
@@ -62,6 +62,7 @@ export interface Resume {
   status: ResumeStatus;
   content: ResumeContent | null;
   failureCode: string | null;
+  approvedAt: Date | null;
   createdAt: Date;
 }
 

@@ -327,8 +327,10 @@ describe('exclusão e retenção', () => {
       (await t.db.pool.query('SELECT count(*)::int AS n FROM ai_generations')).rows[0].n as number;
     const before = await count();
     expect(before).toBeGreaterThan(0);
-    await expect(log.deleteOlderThan(new Date(Date.now() - 60_000))).resolves.toBe(0);
-    await expect(log.deleteOlderThan(new Date(Date.now() + 60_000))).resolves.toBe(before);
+    // Datas bem distantes: o resultado não pode depender de quanto tempo os testes levaram.
+    const day = 24 * 60 * 60 * 1000;
+    await expect(log.deleteOlderThan(new Date(Date.now() - day))).resolves.toBe(0);
+    await expect(log.deleteOlderThan(new Date(Date.now() + day))).resolves.toBe(before);
     expect(await count()).toBe(0);
   });
 });

@@ -25,6 +25,7 @@ import type { ExtractionRequests } from '@linkediner/core/extraction';
 import type { FactService, ProfileScoreService, ProfileService } from '@linkediner/core/profile';
 import type { DocumentService } from '@linkediner/core/documents';
 import type { ResumeService } from '@linkediner/core/resumes';
+import type { ResumeExportService } from '@linkediner/core/resumes/export';
 import { documentRoutes } from './routes/documents';
 import { resumeRoutes } from './routes/resumes';
 
@@ -40,6 +41,7 @@ export interface ServerDeps {
     scores: ProfileScoreService;
     documents: DocumentService;
     resumes: ResumeService;
+    resumeExport: ResumeExportService;
     extraction: ExtractionRequests;
   } & MeDeps;
 }

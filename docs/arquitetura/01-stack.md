@@ -10,7 +10,7 @@ Velocidade de desenvolvimento, custo, escalabilidade, manutenção, integraçõe
 |---|---|---|
 | Velocidade de desenvolvimento | Uma linguagem só no front e no back, com tipos e esquemas compartilhados (Zod) entre API e UI | Exige duas linguagens (Python no back, TS no front) |
 | IA | SDK oficial do Gemini (`@google/genai`), Vercel AI SDK e saída estruturada com Zod. Suficiente: não vamos treinar modelos. | Ecossistema mais rico para ML e treino de modelos |
-| PDFs e documentos | pdf.js/unpdf (texto), mammoth (DOCX), Playwright (gerar PDF). OCR mais fraco. | pdfplumber, PyMuPDF e OCR mais maduros |
+| PDFs e documentos | pdf.js/unpdf (texto), mammoth (DOCX), pdfkit e docx (gerar arquivos). OCR mais fraco. | pdfplumber, PyMuPDF e OCR mais maduros |
 | Integrações (OAuth, pagamentos, APIs de ATS) | Excelente | Excelente |
 | Custo de infraestrutura | Baixo. I/O assíncrono eficiente para muitas chamadas externas. | Baixo |
 | Manutenção | Tipos ponta a ponta reduzem erros de contrato | Tipagem mais fraca entre serviços |
@@ -41,7 +41,7 @@ Velocidade de desenvolvimento, custo, escalabilidade, manutenção, integraçõe
 | Arquivos | Storage compatível com S3 (R2, S3 ou Supabase Storage) | Retenção por regra de ciclo de vida |
 | Autenticação | Biblioteca self-hosted com sessões no nosso Postgres (candidata: Better Auth; alternativa: Auth.js). Validar na Fase 3. | [ADR 0009](../adr/0009-autenticacao.md) |
 | IA | `AiProvider` próprio. Primeira implementação: Gemini via `@google/genai`. | [ADR 0004](../adr/0004-provedor-de-ia.md) |
-| PDF | unpdf/pdf.js (texto), mammoth (DOCX), Playwright/Chromium (geração) | [05 — IA e documentos](05-ia-e-documentos.md) |
+| PDF | unpdf/pdf.js (texto), mammoth (DOCX), pdfkit e docx (geração, [ADR 0014](../adr/0014-exportacao-com-pdfkit.md)) | [05 — IA e documentos](05-ia-e-documentos.md) |
 | Pagamentos | `PaymentProvider`, primeira implementação Stripe | Cobrança internacional. Pix depois. |
 | E-mail | `Mailer`, primeira implementação Resend ou SES | Transacional apenas |
 | Observabilidade | OpenTelemetry + pino (com redação de PII) + Sentry | [08 — Operação](08-operacao.md) |

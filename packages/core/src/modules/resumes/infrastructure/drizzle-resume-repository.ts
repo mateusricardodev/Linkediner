@@ -9,6 +9,7 @@ const toResume = (r: typeof resumes.$inferSelect): Resume => ({
   status: r.status,
   content: (r.content as ResumeContent | null) ?? null,
   failureCode: r.failureCode,
+  approvedAt: r.approvedAt,
   createdAt: r.createdAt,
 });
 
@@ -60,6 +61,17 @@ export class DrizzleResumeRepository implements ResumeRepository {
     );
   }
 
+  approve(userId: string, id: string, at: Date) {
+    return withUserContext(this.db, userId, async (tx) => {
+      const [row] = await tx
+        .update(resumes)
+        .set({ status: 'approved', approvedAt: at })
+        .where(and(this.owned(userId, id), eq(resumes.status, 'draft')))
+        .returning();
+      return row ? toResume(row) : null;
+    });
+  }
+
   updateContent(userId: string, id: string, change: (content: ResumeContent) => void) {
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx.select().from(resumes).where(this.owned(userId, id)).for('update');
@@ -68,7 +80,10 @@ export class DrizzleResumeRepository implements ResumeRepository {
       change(content);
       const [updated] = await tx
         .update(resumes)
-        .set({ content })
+        .set({
+          content,
+          ...(row.status === 'approved' ? { status: 'draft' as const, approvedAt: null } : {}),
+        })
         .where(this.owned(userId, id))
         .returning();
       return toResume(updated!);

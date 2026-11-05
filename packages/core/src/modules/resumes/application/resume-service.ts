@@ -1,7 +1,8 @@
 import type { AuditLog } from '../../audit';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
-import { AppError, newId } from '../../shared';
+import { AppError, newId, systemClock, type Clock } from '../../shared';
+import { pendingSuggestions } from '../domain/export-model';
 import { findItem, RESUME_FAILURES, type Resume } from '../domain/resume';
 import type { ResumeQueue, ResumeRepository } from './ports/resume-repository';
 
@@ -16,6 +17,7 @@ export class ResumeService {
     private readonly consents: Pick<ConsentService, 'status'>,
     private readonly queue: ResumeQueue,
     private readonly audit: AuditLog,
+    private readonly clock: Clock = systemClock,
   ) {}
 
   /** Pede um currículo novo. A geração roda no worker. */
@@ -104,6 +106,31 @@ export class ResumeService {
       entityId: resumeId,
     });
     return updated;
+  }
+
+  /** O usuário aprova o currículo depois de decidir sobre todas as sugestões. */
+  async approve(userId: string, id: string): Promise<Resume> {
+    const resume = await this.get(userId, id);
+    if (resume.status === 'approved') return resume;
+    if (resume.status !== 'draft' || !resume.content) {
+      throw new AppError('CONFLICT', 'O currículo ainda não está pronto para aprovação.');
+    }
+    const pending = pendingSuggestions(resume.content);
+    if (pending > 0) {
+      throw new AppError('CONFLICT', 'Confirme ou remova as sugestões antes de aprovar.', {
+        pendingSuggestions: pending,
+      });
+    }
+    const approved = await this.repo.approve(userId, id, this.clock.now());
+    if (!approved) throw new AppError('CONFLICT', 'O currículo mudou. Revise e tente de novo.');
+    await this.audit.record({
+      actorType: 'user',
+      actorId: userId,
+      action: 'resume.approved',
+      entityType: 'resume',
+      entityId: id,
+    });
+    return approved;
   }
 
   async delete(userId: string, id: string): Promise<void> {

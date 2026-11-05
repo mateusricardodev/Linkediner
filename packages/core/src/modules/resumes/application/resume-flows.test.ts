@@ -27,6 +27,7 @@ function memoryRepo(initial: Resume[] = []) {
         status: 'generating',
         content: null,
         failureCode: null,
+        approvedAt: null,
         createdAt: new Date(0),
       };
       rows.set(id, row);
@@ -46,6 +47,13 @@ function memoryRepo(initial: Resume[] = []) {
       change(row.content);
       return row;
     },
+    approve: async (_u, id, at) => {
+      const row = rows.get(id);
+      if (row?.status !== 'draft') return null;
+      const approved = { ...row, status: 'approved' as const, approvedAt: at };
+      rows.set(id, approved);
+      return approved;
+    },
     delete: async (_u, id) => rows.delete(id),
   };
   return { repo, rows };
@@ -62,6 +70,7 @@ describe('GenerateResume', () => {
     status: 'generating',
     content: null,
     failureCode: null,
+    approvedAt: null,
     createdAt: new Date(0),
   };
 
@@ -199,6 +208,7 @@ describe('ResumeService', () => {
     status: 'draft',
     content: draftContent(),
     failureCode: null,
+    approvedAt: null,
     createdAt: new Date(0),
   });
   const bulletOf = (r: Resume, i: number) => r.content!.experiences[0]!.bullets[i]!;
@@ -266,6 +276,27 @@ describe('ResumeService', () => {
     const updated = await service.decideItem(USER, 'r1', 'b1', { action: 'remove' });
     expect(bulletOf(updated, 0).status).toBe('removed');
     expect(addConfirmed).not.toHaveBeenCalled();
+  });
+
+  it('não aprova com sugestões pendentes e informa quantas faltam', async () => {
+    const { service } = setup({ initial: [draft()] });
+    await expect(service.approve(USER, 'r1')).rejects.toMatchObject({
+      code: 'CONFLICT',
+      details: { pendingSuggestions: 1 },
+    });
+  });
+
+  it('aprova depois de decidir as sugestões, e aprovar de novo não muda nada', async () => {
+    const { service } = setup({ initial: [draft()] });
+    await service.decideItem(USER, 'r1', 'b1', { action: 'remove' });
+    const approved = await service.approve(USER, 'r1');
+    expect(approved.status).toBe('approved');
+    await expect(service.approve(USER, 'r1')).resolves.toMatchObject({ status: 'approved' });
+  });
+
+  it('não aprova currículo que ainda está sendo gerado', async () => {
+    const { service } = setup({ initial: [{ ...draft(), status: 'generating', content: null }] });
+    await expect(service.approve(USER, 'r1')).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 
   it('frase ou currículo inexistente devolve 404', async () => {
