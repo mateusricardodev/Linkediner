@@ -4,7 +4,7 @@ import type { DocumentKind, DocumentRecord, DocumentStatus } from '../../domain/
 export interface DocumentRepository {
   insert(
     userId: string,
-    doc: Omit<DocumentRecord, 'sha256' | 'uploadedAt' | 'createdAt' | 'status'> & {
+    doc: Omit<DocumentRecord, 'sha256' | 'failureCode' | 'uploadedAt' | 'createdAt' | 'status'> & {
       kind: DocumentKind;
     },
   ): Promise<DocumentRecord>;
@@ -15,8 +15,19 @@ export interface DocumentRepository {
     id: string,
     data: { sha256: string; sizeBytes: number; uploadedAt: Date },
   ): Promise<DocumentRecord>;
-  setStatus(userId: string, id: string, status: DocumentStatus): Promise<void>;
+  /** Muda o estado. O código de falha é limpo quando não informado. */
+  setStatus(
+    userId: string,
+    id: string,
+    status: DocumentStatus,
+    failureCode?: string,
+  ): Promise<void>;
   delete(userId: string, id: string): Promise<boolean>;
+}
+
+/** Dados gerados a partir de um documento, apagados junto quando o usuário o exclui. */
+export interface DocumentDerivedData {
+  deleteForDocument(userId: string, documentId: string): Promise<void>;
 }
 
 /** Operações de sistema para retenção (worker), sem contexto de usuário. */
@@ -27,5 +38,6 @@ export interface DocumentRetentionRepository {
     pendingBefore: Date,
     limit: number,
   ): Promise<{ id: string; userId: string; objectKey: string }[]>;
+  /** Apaga o registro e limpa os trechos do documento guardados nos fatos do perfil. */
   deleteById(id: string): Promise<void>;
 }

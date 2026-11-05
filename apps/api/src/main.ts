@@ -1,15 +1,23 @@
+import { PgBoss } from 'pg-boss';
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
-import { DrizzleProfileRepository, ProfileService } from '@linkediner/core/profile';
+import { ExtractionRequests } from '@linkediner/core/extraction';
+import {
+  DrizzleFactRepository,
+  DrizzleProfileRepository,
+  FactService,
+  ProfileService,
+} from '@linkediner/core/profile';
 import {
   DocumentService,
   DrizzleDocumentRepository,
   S3ObjectStorage,
 } from '@linkediner/core/documents';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
+import { createExtractionQueue } from './pg-boss-extraction-queue';
 import { buildServer } from './server';
 
 const config = loadConfig();
@@ -31,6 +39,20 @@ const storage = new S3ObjectStorage({
 // Em produção o bucket é criado pela infraestrutura, com regra de expiração de 30 dias.
 if (config.NODE_ENV === 'development') await storage.ensureBucket();
 
+// A API só envia jobs: a manutenção e os agendamentos da fila ficam com o worker.
+const boss = new PgBoss({
+  connectionString: config.DATABASE_URL,
+  schema: 'pgboss',
+  supervise: false,
+  schedule: false,
+});
+boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
+await boss.start();
+
+const consents = new ConsentService(new DrizzleConsentRepository(database.db), audit);
+const documentRepository = new DrizzleDocumentRepository(database.db);
+const factRepository = new DrizzleFactRepository(database.db);
+
 const app = await buildServer({
   config,
   logger,
@@ -38,15 +60,25 @@ const app = await buildServer({
   account: {
     auth: createAuth({ db: database.db, config, audit, pseudonymize }),
     users: new DrizzleUserReader(database.db),
-    consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+    consents,
     profile: new ProfileService(new DrizzleProfileRepository(database.db)),
-    documents: new DocumentService(new DrizzleDocumentRepository(database.db), storage, audit),
+    facts: new FactService(factRepository, audit),
+    documents: new DocumentService(documentRepository, storage, audit, {
+      deleteForDocument: (userId, documentId) =>
+        factRepository.deleteUnconfirmedForDocument(userId, documentId),
+    }),
+    extraction: new ExtractionRequests(
+      documentRepository,
+      consents,
+      await createExtractionQueue(boss),
+    ),
   },
 });
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'encerrando');
   await app.close();
+  await boss.stop({ graceful: true, timeout: 10_000 });
   await database.close();
   process.exit(0);
 };

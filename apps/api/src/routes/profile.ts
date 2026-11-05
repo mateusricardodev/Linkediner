@@ -3,25 +3,34 @@ import { z } from 'zod';
 import {
   CareerGoalDto,
   CreateCareerGoalBody,
+  DecideFactBody,
   ProblemDetails,
   ProfileDto,
+  ProfileFactDto,
   ReplaceLinksBody,
   UpdateCareerGoalBody,
   UpdateProfileBody,
 } from '@linkediner/contracts';
 import type { ConsentService } from '@linkediner/core/privacy';
-import type { CareerGoal, ProfileService } from '@linkediner/core/profile';
+import type {
+  CareerGoal,
+  FactService,
+  ProfileFact,
+  ProfileService,
+} from '@linkediner/core/profile';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
 
 export interface ProfileDeps {
   profile: ProfileService;
+  facts: FactService;
   consents: Pick<ConsentService, 'status'>;
 }
 
 const toGoalDto = (g: CareerGoal) => ({ ...g, createdAt: g.createdAt.toISOString() });
 const errors = { 400: ProblemDetails, 401: ProblemDetails, 403: ProblemDetails };
 const GoalParams = z.object({ id: z.uuid() });
+const toFactDto = (f: ProfileFact) => ({ ...f, createdAt: f.createdAt.toISOString() });
 
 /** Perfil profissional e objetivos de carreira (M-02). Exige login e termos/privacidade aceitos. */
 export const profileRoutes =
@@ -57,6 +66,41 @@ export const profileRoutes =
           ...(summary !== undefined ? { summary } : {}),
           ...(yearsExperience !== undefined ? { yearsExperience } : {}),
         });
+      },
+    );
+
+    app.get(
+      '/v1/profile/facts',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Fatos do perfil, com o trecho do documento que comprova cada um',
+          response: { 200: z.array(ProfileFactDto), ...errors },
+        },
+      },
+      async (req) => (await deps.facts.list(actorOf(req).userId)).map(toFactDto),
+    );
+
+    app.patch(
+      '/v1/profile/facts/:id',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Confirma, corrige ou recusa um fato',
+          params: GoalParams,
+          body: DecideFactBody,
+          response: { 200: ProfileFactDto, 404: ProblemDetails, 409: ProblemDetails, ...errors },
+        },
+      },
+      async (req) => {
+        const { verification } = req.body;
+        const decision =
+          verification === 'rejected'
+            ? ({ verification } as const)
+            : ({ verification, ...(req.body.data ? { data: req.body.data } : {}) } as const);
+        return toFactDto(await deps.facts.decide(actorOf(req).userId, req.params.id, decision));
       },
     );
 

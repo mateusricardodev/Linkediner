@@ -9,9 +9,12 @@
     "./audit": "./src/modules/audit/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
     "./identity": "./src/modules/identity/index.ts",
+    "./identity/users": "./src/modules/identity/infrastructure/user-reader.ts",
     "./profile": "./src/modules/profile/index.ts",
     "./documents": "./src/modules/documents/index.ts",
-    "./testing": "./src/testing/s3.ts"
+    "./extraction": "./src/modules/extraction/index.ts",
+    "./extraction/worker": "./src/modules/extraction/worker.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
@@ -19,14 +22,18 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1162.0",
     "@aws-sdk/s3-request-presigner": "3.1162.0",
+    "@google/genai": "2.32.0",
     "@linkediner/config": "workspace:*",
     "@linkediner/db": "workspace:*",
     "@node-rs/argon2": "2.2.2",
     "better-auth": "1.7.17",
+    "mammoth": "1.13.0",
+    "unpdf": "2.1.0",
     "uuid": "14.0.3",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "jszip": "3.10.1",
     "testcontainers": "12.2.1"
   }
 }

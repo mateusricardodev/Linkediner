@@ -52,7 +52,7 @@ export interface AiResult<T> {
 
 /**
  * Porta de IA. O domínio depende só desta interface (ADR 0004).
- * Implementações: FakeAiProvider (testes e ambiente local) e, depois, GeminiProvider.
+ * Implementações: FakeAiProvider (testes e ambiente local) e GeminiProvider.
  */
 export interface AiProvider {
   readonly id: string;

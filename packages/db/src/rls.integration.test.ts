@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { withUserContext } from './client';
-import { auditLogs, consents, users } from './schema';
+import { aiGenerations, auditLogs, consents, users } from './schema';
 import { startTestDatabase } from './testing';
 
 const alice = '0193b2b0-0000-7000-8000-00000000000a';
@@ -111,5 +111,38 @@ describe('tabelas de autenticação', () => {
       );
       expect(message).toMatch(/permission denied/);
     }
+  });
+});
+
+describe('registro de gerações de IA', () => {
+  it('é isolado por usuário e não pode ser alterado pela aplicação', async () => {
+    const id = '0193b2b0-0000-7000-8000-0000000000e1';
+    await withUserContext(ctx.handle.db, alice, (tx) =>
+      tx.insert(aiGenerations).values({
+        id,
+        userId: alice,
+        task: 'extract_profile',
+        provider: 'fake',
+        model: 'fake-model',
+        promptId: 'extract_profile',
+        promptVersion: 1,
+        inputHash: 'hash',
+        output: {},
+        validation: {},
+        tokensIn: 0,
+        tokensOut: 0,
+        latencyMs: 0,
+      }),
+    );
+    const bobSees = await withUserContext(ctx.handle.db, bob, (tx) =>
+      tx.select().from(aiGenerations),
+    );
+    expect(bobSees).toHaveLength(0);
+    const message = await pgErrorOf(
+      withUserContext(ctx.handle.db, alice, (tx) =>
+        tx.update(aiGenerations).set({ model: 'adulterado' }).where(eq(aiGenerations.id, id)),
+      ),
+    );
+    expect(message).toMatch(/permission denied/);
   });
 });

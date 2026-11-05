@@ -54,7 +54,7 @@ erDiagram
 | Tabela | Campos principais | Observações |
 |---|---|---|
 | `career_goals` | id, user_id, title, seniority, target_roles[], locations[], remote_only, salary_min, currency, is_active | Vários objetivos por usuário. Exemplo: "Frontend sênior remoto Brasil" e "Full stack exterior". |
-| `documents` | id, user_id, kind (`resume`, `linkedin_pdf`, `generated_resume`, `cover_letter`), object_key, mime, size, sha256, extraction_status, extracted_text_enc, expires_at, deleted_at | Texto extraído criptografado com a chave do usuário. `expires_at` = criação + 30 dias. |
+| `documents` | id, user_id, kind (`resume`, `linkedin_pdf`, `generated_resume`, `cover_letter`), object_key, mime, size, sha256, status, failure_code, expires_at | O texto extraído não é guardado ([ADR 0012](../adr/0012-extracao-so-com-texto-verificavel.md)). `expires_at` = criação + 30 dias. |
 | `profiles` | id, user_id, headline, summary, years_experience, current_version | Um por usuário |
 | `profile_facts` | id, profile_id, type (`experience`, `skill`, `project`, `education`, `certification`, `language`, `achievement`), data (jsonb), source_document_id, source_span, verification (`extracted`, `user_confirmed`, `suggested`, `rejected`) | **Base da regra anti-invenção:** todo conteúdo gerado precisa apontar para fatos `extracted` ou `user_confirmed`. |
 | `profile_links` | id, profile_id, kind (`linkedin`, `github`, `portfolio`, `other`), url, last_checked_at | |
@@ -109,7 +109,7 @@ erDiagram
 | Dado | Retenção padrão | Na exclusão da conta |
 |---|---|---|
 | Arquivos enviados (PDF, DOCX) | 30 dias (regra de ciclo de vida do storage + job diário) | Apagados imediatamente |
-| Texto extraído | 30 dias, acompanhando o documento | Apagado + chave destruída |
+| Texto extraído | Não é guardado. O trecho que comprova cada fato é apagado junto com o documento. | Apagado |
 | Fatos do perfil e score | Enquanto a conta existir | Apagados |
 | Embeddings | Enquanto a conta existir | Apagados |
 | Gerações de IA | 90 dias (configurável) | Apagadas |

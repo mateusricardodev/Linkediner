@@ -11,7 +11,7 @@
 | R5 | Mudança de termos ou de API de uma fonte | Média | Médio | Adaptadores isolados, disjuntor por fonte, revisão periódica de termos, importação manual como alternativa |
 | R6 | Vazamento de dados entre usuários | Baixa | Crítico | Filtros na aplicação + RLS + testes de acesso cruzado em todo endpoint |
 | R7 | Exclusão incompleta (dados em backup, cache ou provedor externo) | Média | Alto | Crypto-shredding, checklist de expurgo testado, inventário de onde há dado pessoal |
-| R8 | Extração ruim de PDFs com layout complexo ou escaneados | Média | Médio | Parser dedicado para o PDF do LinkedIn, fallback multimodal, revisão dos fatos pelo usuário |
+| R8 | Extração ruim de PDFs com layout complexo ou escaneados | Média | Médio | Parser dedicado para o PDF do LinkedIn e OCR quando houver dados reais para avaliar, revisão dos fatos pelo usuário |
 | R9 | Score percebido como injusto ou opaco | Média | Médio | Rubrica determinística, explicações, aviso de que não é chance de contratação, sem atributos sensíveis |
 | R10 | Postgres sobrecarregado com fila + vetores + OLTP | Baixa (MVP) | Médio | Monitorar. Plano de saída: Redis/SQS para a fila e réplica de leitura para métricas. |
 | R11 | Baixa taxa de usuários que informam o resultado (entrevista), o que enfraquece a métrica principal | Alta | Médio | Pedido leve e no momento certo. Integração futura com e-mail (com consentimento) para detectar convites. |

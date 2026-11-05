@@ -11,6 +11,8 @@ export const DocumentDto = z
     id: z.uuid(),
     kind: DocumentKind,
     status: DocumentStatus,
+    /** Motivo da falha na extração: no_text, too_long, unreadable ou processing_error. */
+    failureCode: z.string().nullable(),
     mimeType: z.string(),
     sizeBytes: z.number().int(),
     uploadedAt: z.iso.datetime().nullable(),

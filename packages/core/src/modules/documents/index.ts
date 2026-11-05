@@ -11,6 +11,7 @@ export {
 } from './domain/document';
 export type { ObjectStorage } from './application/ports/object-storage';
 export type {
+  DocumentDerivedData,
   DocumentRepository,
   DocumentRetentionRepository,
 } from './application/ports/document-repository';

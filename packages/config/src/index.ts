@@ -41,6 +41,8 @@ export const envSchema = z
     AI_PROVIDER: z.enum(['fake', 'gemini']).default('fake'),
     AI_TIER: z.enum(['free', 'paid']).default('free'),
     GEMINI_API_KEY: z.string().optional(),
+    /** Modelo usado na extração. Obrigatório com Gemini: nomes de modelo mudam, então não há valor padrão. */
+    AI_MODEL_EXTRACT: z.string().min(1).optional(),
 
     /** Usado para pseudonimizar IDs em logs (HMAC). Obrigatório fora de dev/test. */
     LOG_PSEUDONYM_SECRET: z.string().min(32).optional(),
@@ -56,6 +58,13 @@ export const envSchema = z
         code: 'custom',
         path: ['GEMINI_API_KEY'],
         message: 'Obrigatória quando AI_PROVIDER=gemini.',
+      });
+    }
+    if (env.AI_PROVIDER === 'gemini' && !env.AI_MODEL_EXTRACT) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AI_MODEL_EXTRACT'],
+        message: 'Obrigatório quando AI_PROVIDER=gemini.',
       });
     }
     // ADR 0004: o plano gratuito do Gemini só pode ser usado em protótipo, com dados sintéticos.

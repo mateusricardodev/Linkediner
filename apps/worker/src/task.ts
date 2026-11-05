@@ -5,6 +5,8 @@ export interface TaskContext {
   logger: Logger;
   jobId: string;
   attempt: number;
+  /** Nesta tentativa uma falha já não será repetida pela fila. */
+  isLastAttempt: boolean;
 }
 
 /**

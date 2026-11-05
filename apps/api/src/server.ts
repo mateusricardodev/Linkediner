@@ -21,7 +21,8 @@ import { registerOriginCheck } from './plugins/origin-check';
 import { healthRoutes, type HealthDeps } from './routes/health';
 import { meRoutes, type MeDeps } from './routes/me';
 import { profileRoutes } from './routes/profile';
-import type { ProfileService } from '@linkediner/core/profile';
+import type { ExtractionRequests } from '@linkediner/core/extraction';
+import type { FactService, ProfileService } from '@linkediner/core/profile';
 import type { DocumentService } from '@linkediner/core/documents';
 import { documentRoutes } from './routes/documents';
 
@@ -30,7 +31,13 @@ export interface ServerDeps {
   logger: Logger;
   health: HealthDeps;
   /** Autenticação e rotas de conta. Opcional para permitir testes da base sem banco. */
-  account?: { auth: Auth; profile: ProfileService; documents: DocumentService } & MeDeps;
+  account?: {
+    auth: Auth;
+    profile: ProfileService;
+    facts: FactService;
+    documents: DocumentService;
+    extraction: ExtractionRequests;
+  } & MeDeps;
 }
 
 export async function buildServer(deps: ServerDeps) {

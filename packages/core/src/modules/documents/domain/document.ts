@@ -28,6 +28,7 @@ export interface DocumentRecord {
   mimeType: string;
   sizeBytes: number;
   sha256: string | null;
+  failureCode: string | null;
   uploadedAt: Date | null;
   expiresAt: Date;
   createdAt: Date;

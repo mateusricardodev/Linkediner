@@ -2,7 +2,13 @@ import { Writable } from 'node:stream';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
-import { DrizzleProfileRepository, ProfileService } from '@linkediner/core/profile';
+import { ExtractionRequests, type ExtractJobPayload } from '@linkediner/core/extraction';
+import {
+  DrizzleFactRepository,
+  DrizzleProfileRepository,
+  FactService,
+  ProfileService,
+} from '@linkediner/core/profile';
 import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
 import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
@@ -20,6 +26,15 @@ export async function startTestApp() {
   const pseudonymize = createPseudonymizer('p'.repeat(32));
   const audit = new DrizzleAuditLog(db, pseudonymize);
   const consents = new ConsentService(new DrizzleConsentRepository(db), audit);
+  const documentRepository = new DrizzleDocumentRepository(db);
+  const factRepository = new DrizzleFactRepository(db);
+  // Fila em memória: os testes decidem quando processar cada job.
+  const queue = {
+    jobs: [] as ExtractJobPayload[],
+    enqueue: async (job: ExtractJobPayload) => {
+      queue.jobs.push(job);
+    },
+  };
   const app = await buildServer({
     config: { NODE_ENV: 'test', WEB_ORIGIN: WEB },
     logger: createLogger({
@@ -43,7 +58,12 @@ export async function startTestApp() {
       users: new DrizzleUserReader(db),
       consents,
       profile: new ProfileService(new DrizzleProfileRepository(db)),
-      documents: new DocumentService(new DrizzleDocumentRepository(db), s3.storage, audit),
+      facts: new FactService(factRepository, audit),
+      documents: new DocumentService(documentRepository, s3.storage, audit, {
+        deleteForDocument: (userId, documentId) =>
+          factRepository.deleteUnconfirmedForDocument(userId, documentId),
+      }),
+      extraction: new ExtractionRequests(documentRepository, consents, queue),
     },
   });
 
@@ -94,6 +114,7 @@ export async function startTestApp() {
     storage: s3.storage,
     audit,
     consents,
+    queue,
     signUp,
     call,
     stop: async () => {
