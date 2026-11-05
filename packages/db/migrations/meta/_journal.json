@@ -64,6 +64,20 @@
       "when": 1793845757243,
       "tag": "0008_documents_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793901697399,
+      "tag": "0009_facts",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793901698545,
+      "tag": "0010_facts_rls",
+      "breakpoints": true
     }
   ]
 }

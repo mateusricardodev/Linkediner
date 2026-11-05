@@ -10,7 +10,7 @@ import {
   type DocumentKind,
   type DocumentRecord,
 } from '../domain/document';
-import type { DocumentRepository } from './ports/document-repository';
+import type { DocumentDerivedData, DocumentRepository } from './ports/document-repository';
 import type { ObjectStorage } from './ports/object-storage';
 
 const notFound = () => new AppError('NOT_FOUND', 'Documento não encontrado.');
@@ -20,6 +20,7 @@ export class DocumentService {
     private readonly repo: DocumentRepository,
     private readonly storage: ObjectStorage,
     private readonly audit: AuditLog,
+    private readonly derivedData: DocumentDerivedData,
     private readonly clock: Clock = systemClock,
   ) {}
 
@@ -119,10 +120,11 @@ export class DocumentService {
     });
   }
 
-  /** Exclusão imediata a pedido do usuário: arquivo e registro. */
+  /** Exclusão imediata a pedido do usuário: dados derivados não confirmados, arquivo e registro. */
   async delete(userId: string, id: string): Promise<void> {
     const doc = await this.repo.find(userId, id);
     if (!doc) throw notFound();
+    await this.derivedData.deleteForDocument(userId, id);
     await this.storage.delete(doc.objectKey);
     await this.repo.delete(userId, id);
     await this.audit.record({

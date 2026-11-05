@@ -5,7 +5,7 @@ import type {
   DocumentRetentionRepository,
 } from '../application/ports/document-repository';
 
-const { documents } = schema;
+const { documents, profileFacts } = schema;
 
 const toRecord = (r: typeof documents.$inferSelect): DocumentRecord => ({
   id: r.id,
@@ -15,6 +15,7 @@ const toRecord = (r: typeof documents.$inferSelect): DocumentRecord => ({
   mimeType: r.mimeType,
   sizeBytes: r.sizeBytes,
   sha256: r.sha256,
+  failureCode: r.failureCode,
   uploadedAt: r.uploadedAt,
   expiresAt: r.expiresAt,
   createdAt: r.createdAt,
@@ -70,11 +71,11 @@ export class DrizzleDocumentRepository implements DocumentRepository {
     });
   }
 
-  async setStatus(userId: string, id: string, status: DocumentStatus) {
+  async setStatus(userId: string, id: string, status: DocumentStatus, failureCode?: string) {
     await withUserContext(this.db, userId, (tx) =>
       tx
         .update(documents)
-        .set({ status })
+        .set({ status, failureCode: failureCode ?? null })
         .where(and(eq(documents.id, id), eq(documents.userId, userId))),
     );
   }
@@ -105,6 +106,13 @@ export class DrizzleDocumentRetentionRepository implements DocumentRetentionRepo
   }
 
   async deleteById(id: string) {
-    await this.db.delete(documents).where(eq(documents.id, id));
+    await this.db.transaction(async (tx) => {
+      // O fato continua no perfil, mas o trecho copiado do documento não sobrevive à retenção (ADR 0008).
+      await tx
+        .update(profileFacts)
+        .set({ sourceSpan: null })
+        .where(eq(profileFacts.sourceDocumentId, id));
+      await tx.delete(documents).where(eq(documents.id, id));
+    });
   }
 }

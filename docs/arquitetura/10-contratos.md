@@ -18,9 +18,11 @@
 | `GET/POST /v1/career-goals`, `PATCH/DELETE /v1/career-goals/{id}` | Objetivos de carreira |
 | `POST /v1/documents` | Criar documento e receber URL assinada de upload |
 | `POST /v1/documents/{id}/complete` | Confirmar upload e iniciar a extração |
-| `GET /v1/documents/{id}` | Status da extração |
+| `POST /v1/documents/{id}/extract` | Pedir a análise do documento (exige o consentimento `ai_processing`) |
 | `DELETE /v1/documents/{id}` | Apagar documento e dados derivados |
-| `GET /v1/profile` | Perfil com fatos e estados de verificação |
+| `GET /v1/documents/{id}` | Status da extração |
+| `GET /v1/profile` | Perfil e links |
+| `GET /v1/profile/facts` | Fatos do perfil e estados de verificação |
 | `PATCH /v1/profile/facts/{id}` | Confirmar, editar ou rejeitar um fato |
 | `PUT /v1/profile/links` | Links profissionais |
 | `GET /v1/profile/score` | Score atual + fatores + histórico resumido |

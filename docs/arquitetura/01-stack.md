@@ -16,7 +16,7 @@ Velocidade de desenvolvimento, custo, escalabilidade, manutenção, integraçõe
 | Manutenção | Tipos ponta a ponta reduzem erros de contrato | Tipagem mais fraca entre serviços |
 | Experiência do time | Escolha do time | — |
 
-**Conclusão:** TypeScript atende bem. A extração de texto de PDFs digitais é resolvida em Node, e o caso difícil (PDF escaneado, sem texto) é delegado ao modelo multimodal (o Gemini lê PDF diretamente). Se OCR pesado virar necessidade real, um worker isolado em Python pode ser adicionado atrás da interface `DocumentExtractor`, sem mudar o domínio.
+**Conclusão:** TypeScript atende bem. A extração de texto de PDFs digitais é resolvida em Node, e o caso difícil (PDF escaneado, sem texto) é recusado por enquanto ([ADR 0012](../adr/0012-extracao-so-com-texto-verificavel.md)). Se OCR virar necessidade real, um worker isolado em Python pode ser adicionado atrás da interface `TextExtractor`, sem mudar o domínio.
 
 ## Comparação de frameworks (dentro de TypeScript)
 
@@ -41,7 +41,7 @@ Velocidade de desenvolvimento, custo, escalabilidade, manutenção, integraçõe
 | Arquivos | Storage compatível com S3 (R2, S3 ou Supabase Storage) | Retenção por regra de ciclo de vida |
 | Autenticação | Biblioteca self-hosted com sessões no nosso Postgres (candidata: Better Auth; alternativa: Auth.js). Validar na Fase 3. | [ADR 0009](../adr/0009-autenticacao.md) |
 | IA | `AiProvider` próprio. Primeira implementação: Gemini via `@google/genai`. | [ADR 0004](../adr/0004-provedor-de-ia.md) |
-| PDF | unpdf/pdf.js (texto), mammoth (DOCX), Gemini multimodal (fallback), Playwright/Chromium (geração) | [05 — IA e documentos](05-ia-e-documentos.md) |
+| PDF | unpdf/pdf.js (texto), mammoth (DOCX), Playwright/Chromium (geração) | [05 — IA e documentos](05-ia-e-documentos.md) |
 | Pagamentos | `PaymentProvider`, primeira implementação Stripe | Cobrança internacional. Pix depois. |
 | E-mail | `Mailer`, primeira implementação Resend ou SES | Transacional apenas |
 | Observabilidade | OpenTelemetry + pino (com redação de PII) + Sentry | [08 — Operação](08-operacao.md) |

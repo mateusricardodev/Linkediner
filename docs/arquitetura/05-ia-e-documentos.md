@@ -9,8 +9,8 @@
 | Upload | Direto para o storage via URL assinada (a API não trafega o arquivo). Limite de 10 MB. |
 | Validação | Tipo real verificado pelos primeiros bytes (*magic bytes*), não pela extensão. Aceita PDF e DOCX. Rejeita arquivos criptografados ou com scripts embutidos. |
 | Extração de texto | PDF digital: unpdf/pdf.js. DOCX: mammoth. |
-| PDF escaneado | Se o texto extraído for vazio ou muito curto, o PDF é enviado ao modelo multimodal (o Gemini lê PDF diretamente). Se for preciso OCR dedicado no futuro, entra como outro adaptador de `DocumentExtractor`. |
-| PDF do LinkedIn | Tem layout previsível. Usa um parser específico (seções Experiência, Formação, Competências) antes da IA, o que reduz custo e erro. |
+| PDF escaneado | Sem texto selecionável, o documento falha com `no_text` e a IA não é chamada ([ADR 0012](../adr/0012-extracao-so-com-texto-verificavel.md)). Se for preciso OCR no futuro, entra como outro adaptador de `TextExtractor`. |
+| PDF do LinkedIn | Usa o mesmo caminho do currículo. Um parser específico fica para quando houver PDFs reais para avaliar a extração ([ADR 0012](../adr/0012-extracao-so-com-texto-verificavel.md)). |
 | Isolamento | A extração roda no worker, com limites de tempo e de memória por tarefa. |
 | Armazenamento | O arquivo original expira em 30 dias. O texto extraído é guardado criptografado com a chave do usuário. |
 

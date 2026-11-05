@@ -39,6 +39,7 @@ describe('loadConfig', () => {
       NODE_ENV: 'production',
       AI_PROVIDER: 'gemini',
       GEMINI_API_KEY: 'k',
+      AI_MODEL_EXTRACT: 'modelo-de-teste',
       LOG_PSEUDONYM_SECRET: 'x'.repeat(32),
     };
     expect(() => loadConfig({ ...prod, AI_TIER: 'free' })).toThrow(/AI_TIER/);

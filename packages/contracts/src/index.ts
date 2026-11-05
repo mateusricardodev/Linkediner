@@ -22,3 +22,4 @@ export {
   RequestUploadBody,
   RequestUploadResponse,
 } from './documents';
+export { DecideFactBody, FactType, FactVerification, ProfileFactDto } from './facts';

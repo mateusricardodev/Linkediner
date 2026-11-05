@@ -16,10 +16,12 @@ export async function runTask(
     throw new Error(`Payload inválido para ${task.name}`);
   }
   const started = Date.now();
+  const retryCount = job.retryCount ?? 0;
   await task.handle(parsed.data, {
     logger: log,
     jobId: job.id,
-    attempt: (job.retryCount ?? 0) + 1,
+    attempt: retryCount + 1,
+    isLastAttempt: retryCount >= task.retryLimit,
   });
   log.debug({ durationMs: Date.now() - started }, 'tarefa concluída');
 }
@@ -39,9 +41,13 @@ export async function registerTasks(
       expireInSeconds: task.expireInSeconds,
       deadLetter: dead,
     });
-    await boss.work(task.name, { localConcurrency: concurrency }, async (jobs) => {
-      for (const job of jobs) await runTask(task, job, logger);
-    });
+    await boss.work(
+      task.name,
+      { localConcurrency: concurrency, includeMetadata: true },
+      async (jobs) => {
+        for (const job of jobs) await runTask(task, job, logger);
+      },
+    );
     if (task.cron) await boss.schedule(task.name, task.cron, {});
     logger.info({ task: task.name }, 'tarefa registrada');
   }

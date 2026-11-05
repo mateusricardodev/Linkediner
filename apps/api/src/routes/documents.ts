@@ -8,12 +8,14 @@ import {
   RequestUploadResponse,
 } from '@linkediner/contracts';
 import type { DocumentRecord, DocumentService } from '@linkediner/core/documents';
+import type { ExtractionRequests } from '@linkediner/core/extraction';
 import type { ConsentService } from '@linkediner/core/privacy';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
 
 export interface DocumentDeps {
   documents: DocumentService;
+  extraction: ExtractionRequests;
   consents: Pick<ConsentService, 'status'>;
 }
 
@@ -21,6 +23,7 @@ const toDto = (d: DocumentRecord) => ({
   id: d.id,
   kind: d.kind,
   status: d.status,
+  failureCode: d.failureCode,
   mimeType: d.mimeType,
   sizeBytes: d.sizeBytes,
   uploadedAt: d.uploadedAt?.toISOString() ?? null,
@@ -70,12 +73,32 @@ export const documentRoutes =
         preHandler,
         schema: {
           tags,
-          summary: 'Confirma o upload: valida tamanho e conteúdo do arquivo',
+          summary:
+            'Confirma o upload e inicia a análise, se o processamento por IA estiver autorizado',
           params: Params,
           response: { 200: DocumentDto, 409: ProblemDetails, ...errors },
         },
       },
-      async (req) => toDto(await deps.documents.completeUpload(actorOf(req).userId, req.params.id)),
+      async (req) => {
+        const { userId } = actorOf(req);
+        const document = await deps.documents.completeUpload(userId, req.params.id);
+        return toDto(await deps.extraction.requestIfAllowed(userId, document));
+      },
+    );
+
+    app.post(
+      '/v1/documents/:id/extract',
+      {
+        preHandler,
+        config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+        schema: {
+          tags,
+          summary: 'Pede a análise do documento. Exige o consentimento de processamento por IA',
+          params: Params,
+          response: { 200: DocumentDto, 409: ProblemDetails, 503: ProblemDetails, ...errors },
+        },
+      },
+      async (req) => toDto(await deps.extraction.request(actorOf(req).userId, req.params.id)),
     );
 
     app.get(

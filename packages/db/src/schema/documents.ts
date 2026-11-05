@@ -28,6 +28,8 @@ export const documents = pgTable(
     mimeType: text().notNull(),
     sizeBytes: bigint({ mode: 'number' }).notNull(),
     sha256: text(),
+    /** Motivo da falha na extração (código estável, sem conteúdo do documento). */
+    failureCode: text(),
     uploadedAt: timestamp({ withTimezone: true }),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

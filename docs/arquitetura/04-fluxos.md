@@ -81,8 +81,9 @@ sequenceDiagram
   K->>S: baixa o arquivo
   K->>K: valida o tipo real e extrai texto (unpdf/mammoth)
   alt PDF sem texto (escaneado)
-    K->>G: extração multimodal do PDF
+    K->>K: marca o documento como falho (no_text), sem chamar a IA
   end
+  K->>K: remove dados sensíveis do texto
   K->>G: estruturar em fatos (saída validada por esquema)
   K->>K: valida as referências ao texto original e descarta o que não tem fonte
   K->>K: grava profile_facts (verification = extracted)

@@ -1,13 +1,30 @@
 import { PgBoss } from 'pg-boss';
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
+import {
+  createAiProvider,
+  DrizzleAiGenerationLog,
+  extractProfileV1,
+  FakeAiProvider,
+} from '@linkediner/core/ai';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import {
+  DrizzleDocumentRepository,
   DrizzleDocumentRetentionRepository,
   ExpireDocuments,
   S3ObjectStorage,
 } from '@linkediner/core/documents';
+import {
+  EMPTY_EXTRACTION,
+  ExtractDocument,
+  FileTextExtractor,
+} from '@linkediner/core/extraction/worker';
+import { DrizzleUserReader } from '@linkediner/core/identity/users';
+import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
+import { DrizzleFactRepository } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
+import { documentsExtract } from './handlers/documents-extract';
+import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { privacyExpireDocuments } from './handlers/privacy-expire-documents';
 import { systemHeartbeat } from './handlers/system-heartbeat';
 import { registerTasks } from './runner';
@@ -27,6 +44,13 @@ const storage = new S3ObjectStorage({
   accessKeyId: config.STORAGE_ACCESS_KEY_ID,
   secretAccessKey: config.STORAGE_SECRET_ACCESS_KEY,
 });
+const ai = createAiProvider(config);
+if (ai instanceof FakeAiProvider) {
+  // Sem IA real: o fluxo roda de ponta a ponta, mas nenhum fato é extraído.
+  logger.warn('provedor de IA simulado: a extração não gera fatos');
+  ai.respond('extract_profile', () => EMPTY_EXTRACTION);
+}
+const generations = new DrizzleAiGenerationLog(database.db);
 const boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: 'pgboss' });
 
 boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
@@ -34,6 +58,21 @@ boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
 await boss.start();
 const tasks = [
   systemHeartbeat({ ping: () => pingDb(database.db) }),
+  documentsExtract({
+    extract: new ExtractDocument({
+      documents: new DrizzleDocumentRepository(database.db),
+      storage,
+      text: new FileTextExtractor(),
+      consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+      users: new DrizzleUserReader(database.db),
+      ai,
+      prompt: extractProfileV1,
+      facts: new DrizzleFactRepository(database.db),
+      generations,
+      audit,
+    }),
+  }),
+  privacyExpireAiGenerations({ generations }),
   privacyExpireDocuments({
     expire: new ExpireDocuments(
       new DrizzleDocumentRetentionRepository(database.db),
