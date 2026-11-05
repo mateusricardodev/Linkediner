@@ -33,7 +33,7 @@
 | `GET /v1/jobs/recommendations?goalId=` | Vagas recomendadas, com score e explicação |
 | `GET /v1/jobs/{id}` | Detalhe da vaga |
 | `GET /v1/jobs/{id}/match?goalId=` | Compatibilidade requisito por requisito ([ADR 0016](../adr/0016-compatibilidade-v1-por-regras.md)) |
-| `POST /v1/jobs/{id}/feedback` | Feedback da vaga |
+| `GET` e `PUT /v1/jobs/{id}/feedback` | Avaliação da vaga. A lista substitui a anterior ([ADR 0017](../adr/0017-preferencias-derivadas-do-feedback.md)) |
 | `POST /v1/applications` | Criar candidatura e gerar material |
 | `GET /v1/applications?state=` | Lista para o dashboard |
 | `GET /v1/applications/{id}` | Detalhe, material e histórico |

@@ -16,3 +16,19 @@ export {
   type MatchRepository,
 } from './application/matching-service';
 export { DrizzleMatchRepository } from './infrastructure/drizzle-match-repository';
+export {
+  FEEDBACK_REASONS,
+  learnPreferences,
+  rankJob,
+  snapshotOf,
+  type FeedbackReason,
+  type FeedbackRecord,
+  type JobSnapshot,
+  type LearnedPreferences,
+} from './domain/preferences';
+export {
+  FeedbackService,
+  type FeedbackRepository,
+  type Recommendation,
+} from './application/feedback-service';
+export { DrizzleFeedbackRepository } from './infrastructure/drizzle-feedback-repository';

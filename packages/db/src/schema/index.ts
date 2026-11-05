@@ -6,3 +6,4 @@ export * from './scores';
 export * from './resumes';
 export * from './jobs';
 export * from './matches';
+export * from './feedback';

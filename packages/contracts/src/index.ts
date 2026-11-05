@@ -34,3 +34,9 @@ export {
 } from './resumes';
 export { ImportJobBody, JobDto, JobStatus, RemotePolicy } from './jobs';
 export { JobMatchQuery, JobMatchResponse } from './matching';
+export {
+  FeedbackReason,
+  JobFeedbackBody,
+  JobFeedbackResponse,
+  RecommendationsResponse,
+} from './feedback';

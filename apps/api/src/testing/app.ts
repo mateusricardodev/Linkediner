@@ -24,7 +24,12 @@ import {
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
 import { DrizzleJobRepository, JobService, type StructureJobPayload } from '@linkediner/core/jobs';
-import { DrizzleMatchRepository, MatchingService } from '@linkediner/core/matching';
+import {
+  DrizzleFeedbackRepository,
+  DrizzleMatchRepository,
+  FeedbackService,
+  MatchingService,
+} from '@linkediner/core/matching';
 import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
@@ -100,6 +105,13 @@ export async function startTestApp() {
         deleteForDocument: (userId, documentId) =>
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
+      feedback: new FeedbackService(
+        new DrizzleFeedbackRepository(db),
+        jobRepository,
+        factRepository,
+        profileRepository,
+        audit,
+      ),
       matching: new MatchingService(
         jobRepository,
         factRepository,

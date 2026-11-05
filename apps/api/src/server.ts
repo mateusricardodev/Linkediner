@@ -27,7 +27,7 @@ import type { DocumentService } from '@linkediner/core/documents';
 import type { ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
 import type { JobService } from '@linkediner/core/jobs';
-import type { MatchingService } from '@linkediner/core/matching';
+import type { FeedbackService, MatchingService } from '@linkediner/core/matching';
 import { documentRoutes } from './routes/documents';
 import { jobRoutes } from './routes/jobs';
 import { resumeRoutes } from './routes/resumes';
@@ -45,6 +45,7 @@ export interface ServerDeps {
     documents: DocumentService;
     jobs: JobService;
     matching: MatchingService;
+    feedback: FeedbackService;
     resumes: ResumeService;
     resumeExport: ResumeExportService;
     extraction: ExtractionRequests;
