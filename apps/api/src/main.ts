@@ -4,7 +4,17 @@ import { createDb, pingDb } from '@linkediner/db';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
-import { ExtractionRequests } from '@linkediner/core/extraction';
+import {
+  DOCUMENTS_EXTRACT_QUEUE,
+  ExtractionRequests,
+  type ExtractJobPayload,
+} from '@linkediner/core/extraction';
+import {
+  DrizzleResumeRepository,
+  RESUMES_GENERATE_QUEUE,
+  ResumeService,
+  type GenerateResumeJob,
+} from '@linkediner/core/resumes';
 import {
   DrizzleFactRepository,
   DrizzleProfileRepository,
@@ -19,7 +29,7 @@ import {
   S3ObjectStorage,
 } from '@linkediner/core/documents';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
-import { createExtractionQueue } from './pg-boss-extraction-queue';
+import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
 
 const config = loadConfig();
@@ -75,10 +85,17 @@ const app = await buildServer({
       deleteForDocument: (userId, documentId) =>
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
+    resumes: new ResumeService(
+      new DrizzleResumeRepository(database.db),
+      factRepository,
+      consents,
+      await createQueue<GenerateResumeJob>(boss, RESUMES_GENERATE_QUEUE),
+      audit,
+    ),
     extraction: new ExtractionRequests(
       documentRepository,
       consents,
-      await createExtractionQueue(boss),
+      await createQueue<ExtractJobPayload>(boss, DOCUMENTS_EXTRACT_QUEUE),
     ),
   },
 });

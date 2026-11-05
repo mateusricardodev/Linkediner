@@ -92,6 +92,20 @@
       "when": 1793904408588,
       "tag": "0012_profile_scores_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793904938450,
+      "tag": "0013_resumes",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793904939624,
+      "tag": "0014_resumes_rls",
+      "breakpoints": true
     }
   ]
 }

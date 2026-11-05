@@ -2,7 +2,9 @@ import { Writable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { DOCUMENTS_EXTRACT_QUEUE } from '@linkediner/core/extraction';
 import { createLogger } from '@linkediner/observability';
+import { RESUMES_GENERATE_QUEUE } from '@linkediner/core/resumes';
 import { documentsExtract } from './handlers/documents-extract';
+import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { runTask } from './runner';
 import { deadLetterQueue } from './task';
@@ -81,6 +83,32 @@ describe('score depois da extração', () => {
       }),
     );
     await expect(runTask(t.task, { id: 'j', data: payload }, logger)).resolves.toBeUndefined();
+  });
+});
+
+describe('resumes.generate', () => {
+  const job = { userId: payload.userId, resumeId: payload.documentId };
+
+  it('a fila criada pela API é igual à registrada pelo worker', () => {
+    const task = resumesGenerate({ generate: { run: vi.fn() } });
+    expect(task.name).toBe(RESUMES_GENERATE_QUEUE.name);
+    expect(deadLetterQueue(task.name)).toBe(RESUMES_GENERATE_QUEUE.deadLetter);
+  });
+
+  it('recusa payload com dados além dos IDs', async () => {
+    const run = vi.fn();
+    const task = resumesGenerate({ generate: { run } });
+    await expect(
+      runTask(task, { id: 'j', data: { ...job, text: 'conteúdo' } }, logger),
+    ).rejects.toThrow(/Payload inválido/);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('informa quando é a última tentativa', async () => {
+    const run = vi.fn(async () => 'draft' as const);
+    const task = resumesGenerate({ generate: { run } });
+    await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
+    expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
   });
 });
 

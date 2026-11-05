@@ -1,6 +1,12 @@
 import { and, asc, eq, inArray, schema, withUserContext, type Database } from '@linkediner/db';
 import { newId } from '../../shared';
-import { fingerprintFact, type FactData, type NewFact, type ProfileFact } from '../domain/facts';
+import {
+  fingerprintFact,
+  type FactData,
+  type FactType,
+  type NewFact,
+  type ProfileFact,
+} from '../domain/facts';
 import type { FactRepository } from '../application/ports/fact-repository';
 
 const { profileFacts, profiles } = schema;
@@ -84,6 +90,31 @@ export class DrizzleFactRepository implements FactRepository {
         .onConflictDoNothing({ target: [profileFacts.profileId, profileFacts.fingerprint] })
         .returning({ id: profileFacts.id });
       return { inserted: rows.length };
+    });
+  }
+
+  async addConfirmed(userId: string, fact: { type: FactType; data: FactData }) {
+    await withUserContext(this.db, userId, async (tx) => {
+      await tx
+        .insert(profiles)
+        .values({ id: newId(), userId })
+        .onConflictDoNothing({ target: profiles.userId });
+      const [profile] = await tx
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.userId, userId));
+      await tx
+        .insert(profileFacts)
+        .values({
+          id: newId(),
+          userId,
+          profileId: profile!.id,
+          type: fact.type,
+          data: fact.data,
+          fingerprint: fingerprintFact(fact.type, fact.data),
+          verification: 'user_confirmed',
+        })
+        .onConflictDoNothing({ target: [profileFacts.profileId, profileFacts.fingerprint] });
     });
   }
 

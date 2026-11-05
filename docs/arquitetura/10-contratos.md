@@ -26,7 +26,8 @@
 | `PATCH /v1/profile/facts/{id}` | Confirmar, editar ou rejeitar um fato |
 | `PUT /v1/profile/links` | Links profissionais |
 | `GET /v1/profile/score` | Score atual + fatores + histórico resumido |
-| `POST /v1/resumes` | Gerar currículo melhorado (sem vaga) |
+| `POST /v1/resumes` | Gerar currículo melhorado (sem vaga). Assíncrono: responde 202 |
+| `PATCH /v1/resumes/{id}/items/{itemId}` | Confirmar, corrigir ou remover uma frase |
 | `GET /v1/resumes/{id}`, `POST /v1/resumes/{id}/approve`, `GET /v1/resumes/{id}/export?format=pdf\|docx` | Revisão, aprovação e exportação |
 | `POST /v1/jobs/import` | Importar vaga (texto ou URL) |
 | `GET /v1/jobs/recommendations?goalId=` | Vagas recomendadas, com score e explicação |

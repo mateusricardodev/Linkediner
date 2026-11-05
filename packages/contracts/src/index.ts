@@ -24,3 +24,10 @@ export {
 } from './documents';
 export { DecideFactBody, FactType, FactVerification, ProfileFactDto } from './facts';
 export { ProfileScoreResponse, ScoreCriterion, ScoreFactorDto } from './score';
+export {
+  DecideResumeItemBody,
+  ResumeContentDto,
+  ResumeDto,
+  ResumeItemDto,
+  ResumeStatus,
+} from './resumes';
