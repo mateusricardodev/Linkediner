@@ -20,6 +20,17 @@ export const envSchema = z
     API_HOST: z.string().default('0.0.0.0'),
     API_PORT: z.coerce.number().int().positive().default(4000),
     WEB_ORIGIN: z.url().default('http://localhost:3000'),
+    /** URL pública da API, usada nos callbacks de OAuth. */
+    API_PUBLIC_URL: z.url().default('http://localhost:4000'),
+
+    /** Segredo para assinar sessões e cookies (mínimo 32 caracteres). Sem valor padrão. */
+    AUTH_SECRET: z.string().min(32),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    LINKEDIN_CLIENT_ID: z.string().optional(),
+    LINKEDIN_CLIENT_SECRET: z.string().optional(),
 
     STORAGE_ENDPOINT: z.url().optional(),
     STORAGE_REGION: z.string().default('auto'),
@@ -61,6 +72,24 @@ export const envSchema = z
         code: 'custom',
         path: ['AI_PROVIDER'],
         message: 'O provedor fake não pode ser usado em produção.',
+      });
+    }
+    for (const provider of ['GOOGLE', 'GITHUB', 'LINKEDIN'] as const) {
+      const id = env[`${provider}_CLIENT_ID`];
+      const secret = env[`${provider}_CLIENT_SECRET`];
+      if (Boolean(id) !== Boolean(secret)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [`${provider}_CLIENT_SECRET`],
+          message: `${provider}_CLIENT_ID e ${provider}_CLIENT_SECRET devem ser definidos juntos.`,
+        });
+      }
+    }
+    if (deployed && !env.API_PUBLIC_URL.startsWith('https://')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['API_PUBLIC_URL'],
+        message: 'Deve usar HTTPS em staging e produção.',
       });
     }
     if (deployed && !env.LOG_PSEUDONYM_SECRET) {

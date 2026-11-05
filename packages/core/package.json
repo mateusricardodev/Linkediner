@@ -5,12 +5,19 @@
   "type": "module",
   "exports": {
     "./shared": "./src/modules/shared/index.ts",
-    "./ai": "./src/modules/ai/index.ts"
+    "./ai": "./src/modules/ai/index.ts",
+    "./audit": "./src/modules/audit/index.ts",
+    "./privacy": "./src/modules/privacy/index.ts",
+    "./identity": "./src/modules/identity/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@linkediner/config": "workspace:*",
+    "@linkediner/db": "workspace:*",
+    "@node-rs/argon2": "2.2.2",
+    "better-auth": "1.7.17",
     "uuid": "14.0.3",
     "zod": "4.6.7"
   }

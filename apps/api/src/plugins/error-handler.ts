@@ -1,10 +1,5 @@
-import type {
-  FastifyError,
-  FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
-  FastifyTypeProvider,
-} from 'fastify';
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import type { AnyFastifyInstance } from '../types';
 import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
@@ -27,10 +22,6 @@ function send(
  * Converte qualquer erro em Problem Details (RFC 9457).
  * Erros inesperados viram 500 com mensagem genérica: detalhes internos ficam só no log.
  */
-// Aceita a instância com qualquer logger e type provider (o servidor usa pino + Zod).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyFastifyInstance = FastifyInstance<any, any, any, any, FastifyTypeProvider>;
-
 export function registerErrorHandler(app: AnyFastifyInstance) {
   app.setNotFoundHandler((req, reply) =>
     send(reply, req, {
@@ -62,6 +53,7 @@ export function registerErrorHandler(app: AnyFastifyInstance) {
         title: error.message,
         status: error.status,
         code: error.code,
+        ...(error.details && error.status < 500 ? { details: error.details } : {}),
       });
     }
 

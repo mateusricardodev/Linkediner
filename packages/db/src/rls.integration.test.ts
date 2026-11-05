@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { withUserContext } from './client';
 import { auditLogs, consents, users } from './schema';
@@ -98,5 +98,18 @@ describe('Row Level Security', () => {
       withUserContext(ctx.handle.db, alice, (tx) => tx.select().from(auditLogs)),
     );
     expect(message).toMatch(/permission denied/);
+  });
+});
+
+describe('tabelas de autenticação', () => {
+  it('o papel da aplicação não lê sessões, identidades nem verificações', async () => {
+    for (const table of ['sessions', 'auth_identities', 'verifications']) {
+      const message = await pgErrorOf(
+        withUserContext(ctx.handle.db, alice, (tx) =>
+          tx.execute(sql.raw(`SELECT * FROM ${table}`)),
+        ),
+      );
+      expect(message).toMatch(/permission denied/);
+    }
   });
 });
