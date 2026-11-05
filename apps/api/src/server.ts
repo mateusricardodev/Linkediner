@@ -24,7 +24,9 @@ import { profileRoutes } from './routes/profile';
 import type { ExtractionRequests } from '@linkediner/core/extraction';
 import type { FactService, ProfileScoreService, ProfileService } from '@linkediner/core/profile';
 import type { DocumentService } from '@linkediner/core/documents';
+import type { ResumeService } from '@linkediner/core/resumes';
 import { documentRoutes } from './routes/documents';
+import { resumeRoutes } from './routes/resumes';
 
 export interface ServerDeps {
   config: Pick<AppConfig, 'NODE_ENV' | 'WEB_ORIGIN'>;
@@ -37,6 +39,7 @@ export interface ServerDeps {
     facts: FactService;
     scores: ProfileScoreService;
     documents: DocumentService;
+    resumes: ResumeService;
     extraction: ExtractionRequests;
   } & MeDeps;
 }
@@ -89,6 +92,7 @@ export async function buildServer(deps: ServerDeps) {
     await app.register(meRoutes(deps.account));
     await app.register(profileRoutes(deps.account));
     await app.register(documentRoutes(deps.account));
+    await app.register(resumeRoutes(deps.account));
   }
 
   return app;

@@ -6,7 +6,9 @@ import {
   DrizzleAiGenerationLog,
   extractProfileV1,
   FakeAiProvider,
+  generateResumeV1,
 } from '@linkediner/core/ai';
+import { DrizzleResumeRepository, GenerateResume } from '@linkediner/core/resumes';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import {
   DrizzleDocumentRepository,
@@ -29,6 +31,7 @@ import {
 } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { documentsExtract } from './handlers/documents-extract';
+import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { privacyExpireDocuments } from './handlers/privacy-expire-documents';
 import { systemHeartbeat } from './handlers/system-heartbeat';
@@ -54,6 +57,7 @@ if (ai instanceof FakeAiProvider) {
   // Sem IA real: o fluxo roda de ponta a ponta, mas nenhum fato é extraído.
   logger.warn('provedor de IA simulado: a extração não gera fatos');
   ai.respond('extract_profile', () => EMPTY_EXTRACTION);
+  ai.respond('generate_resume', () => ({ summary: [], bullets: [] }));
 }
 const generations = new DrizzleAiGenerationLog(database.db);
 const factRepository = new DrizzleFactRepository(database.db);
@@ -82,6 +86,17 @@ const tasks = [
       factRepository,
       new DrizzleScoreRepository(database.db),
     ),
+  }),
+  resumesGenerate({
+    generate: new GenerateResume({
+      resumes: new DrizzleResumeRepository(database.db),
+      facts: factRepository,
+      consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+      ai,
+      prompt: generateResumeV1,
+      generations,
+      audit,
+    }),
   }),
   privacyExpireAiGenerations({ generations }),
   privacyExpireDocuments({

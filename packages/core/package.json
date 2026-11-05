@@ -11,6 +11,7 @@
     "./identity": "./src/modules/identity/index.ts",
     "./identity/users": "./src/modules/identity/infrastructure/user-reader.ts",
     "./profile": "./src/modules/profile/index.ts",
+    "./resumes": "./src/modules/resumes/index.ts",
     "./documents": "./src/modules/documents/index.ts",
     "./extraction": "./src/modules/extraction/index.ts",
     "./extraction/worker": "./src/modules/extraction/worker.ts",

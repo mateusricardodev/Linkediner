@@ -1,4 +1,10 @@
-import type { FactData, FactVerification, NewFact, ProfileFact } from '../../domain/facts';
+import type {
+  FactData,
+  FactType,
+  FactVerification,
+  NewFact,
+  ProfileFact,
+} from '../../domain/facts';
 
 /** Toda operação usa o contexto do usuário dono (RLS). */
 export interface FactRepository {
@@ -13,6 +19,8 @@ export interface FactRepository {
     documentId: string,
     facts: NewFact[],
   ): Promise<{ inserted: number }>;
+  /** Adiciona um fato afirmado pelo usuário, sem documento de origem. Se já existir, nada muda. */
+  addConfirmed(userId: string, fact: { type: FactType; data: FactData }): Promise<void>;
   /** Devolve null se a alteração colidir com outro fato igual do usuário. */
   update(
     userId: string,

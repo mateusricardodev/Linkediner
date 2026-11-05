@@ -12,6 +12,11 @@ import {
   ProfileService,
 } from '@linkediner/core/profile';
 import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
+import {
+  DrizzleResumeRepository,
+  ResumeService,
+  type GenerateResumeJob,
+} from '@linkediner/core/resumes';
 import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
@@ -43,6 +48,12 @@ export async function startTestApp() {
       queue.jobs.push(job);
     },
   };
+  const resumeQueue = {
+    jobs: [] as GenerateResumeJob[],
+    enqueue: async (job: GenerateResumeJob) => {
+      resumeQueue.jobs.push(job);
+    },
+  };
   const app = await buildServer({
     config: { NODE_ENV: 'test', WEB_ORIGIN: WEB },
     logger: createLogger({
@@ -72,6 +83,13 @@ export async function startTestApp() {
         deleteForDocument: (userId, documentId) =>
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
+      resumes: new ResumeService(
+        new DrizzleResumeRepository(db),
+        factRepository,
+        consents,
+        resumeQueue,
+        audit,
+      ),
       extraction: new ExtractionRequests(documentRepository, consents, queue),
     },
   });
@@ -124,6 +142,7 @@ export async function startTestApp() {
     audit,
     consents,
     queue,
+    resumeQueue,
     scores,
     signUp,
     call,
