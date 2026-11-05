@@ -10,6 +10,9 @@ import { requireConsents } from './plugins/require-consents';
 import { buildServer } from './server';
 
 const WEB = 'http://localhost:3000';
+// Senha fictícia, usada apenas nestes testes.
+const TEST_PASSWORD = 'senha-forte-123'; // gitleaks:allow
+const WRONG_PASSWORD = 'senha-errada-000'; // gitleaks:allow
 const silent = createLogger({
   service: 'test',
   level: 'silent',
@@ -27,7 +30,7 @@ async function signUp(email: string) {
     method: 'POST',
     url: '/v1/auth/sign-up/email',
     headers: { origin: WEB, 'content-type': 'application/json' },
-    payload: { email, password: 'senha-forte-123', name: 'Pessoa Teste' },
+    payload: { email, password: TEST_PASSWORD, name: 'Pessoa Teste' },
   });
   expect(res.statusCode).toBe(200);
   return cookieFrom(res);
@@ -88,7 +91,7 @@ describe('conta e consentimentos', () => {
       method: 'POST',
       url: '/v1/auth/sign-up/email',
       headers: { origin: WEB, 'content-type': 'application/json' },
-      payload: { email: 'alice@example.com', password: 'senha-forte-123', name: 'Alice' },
+      payload: { email: 'alice@example.com', password: TEST_PASSWORD, name: 'Alice' },
     });
     expect(res.statusCode).toBe(200);
     const session = res.cookies.find((c) => c.name.includes('session_token'));
@@ -160,7 +163,7 @@ describe('conta e consentimentos', () => {
       method: 'POST',
       url: '/v1/auth/sign-in/email',
       headers: { origin: WEB, 'content-type': 'application/json' },
-      payload: { email: 'alice@example.com', password: 'senha-errada-000' },
+      payload: { email: 'alice@example.com', password: WRONG_PASSWORD },
     });
     expect(res.statusCode).toBe(401);
     expect(res.cookies.find((c) => c.name.includes('session_token'))).toBeUndefined();
