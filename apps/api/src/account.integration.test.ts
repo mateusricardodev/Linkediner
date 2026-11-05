@@ -1,27 +1,12 @@
-import { Writable } from 'node:stream';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { DrizzleAuditLog } from '@linkediner/core/audit';
-import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
-import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
-import { DrizzleProfileRepository, ProfileService } from '@linkediner/core/profile';
-import { startTestDatabase } from '@linkediner/db/testing';
-import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { actorOf, requireActor } from './plugins/auth';
 import { requireConsents } from './plugins/require-consents';
-import { buildServer } from './server';
+import { startTestApp, TEST_PASSWORD, WEB } from './testing/app';
 
-const WEB = 'http://localhost:3000';
-// Senha fictícia, usada apenas nestes testes.
-const TEST_PASSWORD = 'senha-forte-123'; // gitleaks:allow
 const WRONG_PASSWORD = 'senha-errada-000'; // gitleaks:allow
-const silent = createLogger({
-  service: 'test',
-  level: 'silent',
-  destination: new Writable({ write: (_c, _e, cb) => cb() }),
-});
 
-let ctx: Awaited<ReturnType<typeof startTestDatabase>>;
-let app: Awaited<ReturnType<typeof buildServer>>;
+let t: Awaited<ReturnType<typeof startTestApp>>;
+let app: Awaited<ReturnType<typeof startTestApp>>['app'];
 
 const cookieFrom = (res: { cookies: { name: string; value: string }[] }) =>
   res.cookies.map((c) => `${c.name}=${c.value}`).join('; ');
@@ -46,44 +31,17 @@ const consent = (cookie: string, purpose: string, granted = true, origin: string
   });
 
 beforeAll(async () => {
-  ctx = await startTestDatabase();
-  const db = ctx.handle.db;
-  const pseudonymize = createPseudonymizer('p'.repeat(32));
-  const audit = new DrizzleAuditLog(db, pseudonymize);
-  const consents = new ConsentService(new DrizzleConsentRepository(db), audit);
-  app = await buildServer({
-    config: { NODE_ENV: 'test', WEB_ORIGIN: WEB },
-    logger: silent,
-    health: { checks: {} },
-    account: {
-      auth: createAuth({
-        db,
-        audit,
-        pseudonymize,
-        config: {
-          NODE_ENV: 'test',
-          AUTH_SECRET: 's'.repeat(32),
-          API_PUBLIC_URL: 'http://localhost:4000',
-          WEB_ORIGIN: WEB,
-        },
-      }),
-      users: new DrizzleUserReader(db),
-      consents,
-      profile: new ProfileService(new DrizzleProfileRepository(db)),
-    },
-  });
+  t = await startTestApp();
+  app = t.app;
   // Rota de exemplo do produto, protegida por login + consentimentos obrigatórios.
   app.get(
     '/v1/exemplo',
-    { preHandler: [requireActor, requireConsents(consents)] },
+    { preHandler: [requireActor, requireConsents(t.consents)] },
     async (req) => ({ userId: actorOf(req).userId }),
   );
 }, 120_000);
 
-afterAll(async () => {
-  await app?.close();
-  await ctx?.stop();
-});
+afterAll(async () => t?.stop());
 
 describe('conta e consentimentos', () => {
   let alice = '';
@@ -174,7 +132,7 @@ describe('conta e consentimentos', () => {
 
 describe('armazenamento seguro', () => {
   it('senha guardada só como hash Argon2id', async () => {
-    const { rows } = await ctx.handle.pool.query(
+    const { rows } = await t.db.pool.query(
       "SELECT password FROM auth_identities WHERE provider_id = 'credential'",
     );
     expect(rows.length).toBeGreaterThan(0);
@@ -182,14 +140,14 @@ describe('armazenamento seguro', () => {
   });
 
   it('IP da sessão guardado só como hash', async () => {
-    const { rows } = await ctx.handle.pool.query('SELECT ip_address FROM sessions');
+    const { rows } = await t.db.pool.query('SELECT ip_address FROM sessions');
     for (const r of rows)
       expect(r.ip_address === null || !/^[\d.:]+$/.test(r.ip_address)).toBe(true);
   });
 
   it('auditoria registra cadastro, sessão e consentimento com ator pseudonimizado', async () => {
-    const { rows: users } = await ctx.handle.pool.query('SELECT id FROM users');
-    const { rows } = await ctx.handle.pool.query('SELECT action, actor_id FROM audit_logs');
+    const { rows: users } = await t.db.pool.query('SELECT id FROM users');
+    const { rows } = await t.db.pool.query('SELECT action, actor_id FROM audit_logs');
     const actions = new Set(rows.map((r) => r.action));
     for (const a of ['user.signed_up', 'session.created', 'consent.granted', 'consent.revoked'])
       expect(actions).toContain(a);
@@ -198,7 +156,7 @@ describe('armazenamento seguro', () => {
   });
 
   it('IDs de usuário são UUID v7', async () => {
-    const { rows } = await ctx.handle.pool.query('SELECT id::text FROM users');
+    const { rows } = await t.db.pool.query('SELECT id::text FROM users');
     for (const r of rows) expect(r.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/);
   });
 });

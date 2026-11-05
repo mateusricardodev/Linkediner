@@ -22,13 +22,15 @@ import { healthRoutes, type HealthDeps } from './routes/health';
 import { meRoutes, type MeDeps } from './routes/me';
 import { profileRoutes } from './routes/profile';
 import type { ProfileService } from '@linkediner/core/profile';
+import type { DocumentService } from '@linkediner/core/documents';
+import { documentRoutes } from './routes/documents';
 
 export interface ServerDeps {
   config: Pick<AppConfig, 'NODE_ENV' | 'WEB_ORIGIN'>;
   logger: Logger;
   health: HealthDeps;
   /** Autenticação e rotas de conta. Opcional para permitir testes da base sem banco. */
-  account?: { auth: Auth; profile: ProfileService } & MeDeps;
+  account?: { auth: Auth; profile: ProfileService; documents: DocumentService } & MeDeps;
 }
 
 export async function buildServer(deps: ServerDeps) {
@@ -78,6 +80,7 @@ export async function buildServer(deps: ServerDeps) {
     await registerAuth(app, deps.account.auth);
     await app.register(meRoutes(deps.account));
     await app.register(profileRoutes(deps.account));
+    await app.register(documentRoutes(deps.account));
   }
 
   return app;

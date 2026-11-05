@@ -3,6 +3,8 @@ import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import { DrizzleProfileRepository, ProfileService } from '@linkediner/core/profile';
+import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
+import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { buildServer } from '../server';
@@ -11,9 +13,9 @@ export const WEB = 'http://localhost:3000';
 // Senha fictícia, usada apenas em testes.
 export const TEST_PASSWORD = 'senha-forte-123'; // gitleaks:allow
 
-/** Sobe Postgres em container e a API completa, como em produção, para testes de integração. */
+/** Sobe Postgres e S3 em containers e a API completa, como em produção, para testes de integração. */
 export async function startTestApp() {
-  const ctx = await startTestDatabase();
+  const [ctx, s3] = await Promise.all([startTestDatabase(), startTestS3()]);
   const db = ctx.handle.db;
   const pseudonymize = createPseudonymizer('p'.repeat(32));
   const audit = new DrizzleAuditLog(db, pseudonymize);
@@ -41,6 +43,7 @@ export async function startTestApp() {
       users: new DrizzleUserReader(db),
       consents,
       profile: new ProfileService(new DrizzleProfileRepository(db)),
+      documents: new DocumentService(new DrizzleDocumentRepository(db), s3.storage, audit),
     },
   });
 
@@ -88,11 +91,14 @@ export async function startTestApp() {
   return {
     app,
     db: ctx.handle,
+    storage: s3.storage,
+    audit,
+    consents,
     signUp,
     call,
     stop: async () => {
       await app.close();
-      await ctx.stop();
+      await Promise.all([ctx.stop(), s3.stop()]);
     },
   };
 }
