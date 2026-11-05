@@ -1,0 +1,16 @@
+{
+  "name": "@linkediner/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./src/generated/tokens.css",
+    "./base.css": "./src/base.css"
+  },
+  "scripts": {
+    "build": "node scripts/build-tokens.mjs"
+  },
+  "devDependencies": {
+    "style-dictionary": "5.3.0"
+  }
+}

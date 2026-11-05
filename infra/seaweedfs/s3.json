@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "linkediner-dev",
+      "credentials": [{ "accessKey": "linkediner", "secretKey": "linkediner-dev" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

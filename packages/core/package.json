@@ -1,0 +1,17 @@
+{
+  "name": "@linkediner/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./shared": "./src/modules/shared/index.ts",
+    "./ai": "./src/modules/ai/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "uuid": "14.0.3",
+    "zod": "4.6.7"
+  }
+}
