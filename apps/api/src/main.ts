@@ -41,6 +41,7 @@ import {
   JobService,
   type StructureJobPayload,
 } from '@linkediner/core/jobs';
+import { DrizzleMatchRepository, MatchingService } from '@linkediner/core/matching';
 import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
 
@@ -77,6 +78,7 @@ const consents = new ConsentService(new DrizzleConsentRepository(database.db), a
 const documentRepository = new DrizzleDocumentRepository(database.db);
 const factRepository = new DrizzleFactRepository(database.db);
 const profileRepository = new DrizzleProfileRepository(database.db);
+const jobRepository = new DrizzleJobRepository(database.db);
 const resumeRepository = new DrizzleResumeRepository(database.db);
 const userReader = new DrizzleUserReader(database.db);
 
@@ -99,8 +101,14 @@ const app = await buildServer({
       deleteForDocument: (userId, documentId) =>
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
+    matching: new MatchingService(
+      jobRepository,
+      factRepository,
+      profileRepository,
+      new DrizzleMatchRepository(database.db),
+    ),
     jobs: new JobService(
-      new DrizzleJobRepository(database.db),
+      jobRepository,
       consents,
       await createQueue<StructureJobPayload>(boss, JOBS_STRUCTURE_QUEUE),
       audit,

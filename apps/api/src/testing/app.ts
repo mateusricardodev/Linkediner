@@ -24,6 +24,7 @@ import {
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
 import { DrizzleJobRepository, JobService, type StructureJobPayload } from '@linkediner/core/jobs';
+import { DrizzleMatchRepository, MatchingService } from '@linkediner/core/matching';
 import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
@@ -43,6 +44,7 @@ export async function startTestApp() {
   const documentRepository = new DrizzleDocumentRepository(db);
   const factRepository = new DrizzleFactRepository(db);
   const profileRepository = new DrizzleProfileRepository(db);
+  const jobRepository = new DrizzleJobRepository(db);
   const resumeRepository = new DrizzleResumeRepository(db);
   const userReader = new DrizzleUserReader(db);
   const scores = new ProfileScoreService(
@@ -98,7 +100,13 @@ export async function startTestApp() {
         deleteForDocument: (userId, documentId) =>
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
-      jobs: new JobService(new DrizzleJobRepository(db), consents, jobQueue, audit),
+      matching: new MatchingService(
+        jobRepository,
+        factRepository,
+        profileRepository,
+        new DrizzleMatchRepository(db),
+      ),
+      jobs: new JobService(jobRepository, consents, jobQueue, audit),
       resumeExport: new ResumeExportService({
         resumes: resumeRepository,
         users: userReader,

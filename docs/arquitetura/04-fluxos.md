@@ -111,7 +111,7 @@ sequenceDiagram
 
 1. O usuário cola o texto ou o link da vaga, ou ela chega por uma fonte autorizada.
 2. A IA estrutura os requisitos. A vaga é deduplicada por `dedupe_hash`.
-3. O matching calcula o score de compatibilidade (rubrica + similaridade de embeddings) com fatores explicáveis: o que combina e quais são as lacunas.
+3. O matching calcula o score de compatibilidade por regras ([ADR 0016](../adr/0016-compatibilidade-v1-por-regras.md)), com fatores explicáveis: o que combina e quais são as lacunas. Os embeddings entram numa versão futura.
 4. O `rank_score` aplica as preferências aprendidas para ordenar as recomendações.
 
 ### F6 — Candidatura (o fluxo central)

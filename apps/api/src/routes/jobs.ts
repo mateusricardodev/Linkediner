@@ -1,13 +1,21 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { ImportJobBody, JobDto, ProblemDetails } from '@linkediner/contracts';
+import {
+  ImportJobBody,
+  JobDto,
+  JobMatchQuery,
+  JobMatchResponse,
+  ProblemDetails,
+} from '@linkediner/contracts';
 import type { Job, JobService } from '@linkediner/core/jobs';
+import { MATCH_DISCLAIMER, type MatchingService } from '@linkediner/core/matching';
 import type { ConsentService } from '@linkediner/core/privacy';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
 
 export interface JobDeps {
   jobs: JobService;
+  matching: Pick<MatchingService, 'forJob'>;
   consents: Pick<ConsentService, 'status'>;
 }
 
@@ -20,7 +28,7 @@ const errors = {
 };
 const Params = z.object({ id: z.uuid() });
 
-/** Importação manual de vagas (M-09). */
+/** Importação manual de vagas (M-09) e compatibilidade com o perfil (M-10). */
 export const jobRoutes =
   (deps: JobDeps): FastifyPluginAsyncZod =>
   async (app) => {
@@ -68,6 +76,34 @@ export const jobRoutes =
         },
       },
       async (req) => toDto(await deps.jobs.get(actorOf(req).userId, req.params.id)),
+    );
+
+    app.get(
+      '/v1/jobs/:id/match',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Compatibilidade entre o perfil e a vaga, requisito por requisito',
+          params: Params,
+          querystring: JobMatchQuery,
+          response: { 200: JobMatchResponse, 409: ProblemDetails, ...errors },
+        },
+      },
+      async (req) => {
+        const match = await deps.matching.forJob(
+          actorOf(req).userId,
+          req.params.id,
+          req.query.goalId,
+        );
+        return {
+          jobId: match.jobId,
+          careerGoalId: match.careerGoalId,
+          ...match.result,
+          calculatedAt: match.calculatedAt.toISOString(),
+          disclaimer: MATCH_DISCLAIMER,
+        };
+      },
     );
 
     app.delete(
