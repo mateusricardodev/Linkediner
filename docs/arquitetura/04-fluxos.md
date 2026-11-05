@@ -96,7 +96,7 @@ sequenceDiagram
 
 1. O worker reúne os fatos do perfil.
 2. O motor de rubrica (determinístico e versionado) calcula o score de 0 a 100 a partir de critérios objetivos: completude, métricas nas experiências, clareza, links verificáveis, aderência ao objetivo.
-3. A IA escreve os textos explicativos e as recomendações, sempre citando os fatos.
+3. Os textos explicativos e as recomendações vêm de modelos fixos em código, sem chamar a IA ([ADR 0013](../adr/0013-score-v1-sem-ia.md)).
 4. Grava em `profile_scores` com `rubric_version`. A interface mostra os fatores positivos, as lacunas e as recomendações, com o aviso de que o score não indica chance de contratação.
 
 ### F4 — Currículo melhorado e aprovação

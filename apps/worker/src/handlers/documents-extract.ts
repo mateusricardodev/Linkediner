@@ -11,6 +11,7 @@ export const documentsExtract = (deps: {
       opts: { isLastAttempt: boolean },
     ): Promise<ExtractOutcome>;
   };
+  scores: { recalculate(userId: string): Promise<unknown> };
 }) =>
   defineTask({
     name: DOCUMENTS_EXTRACT_QUEUE.name,
@@ -20,5 +21,12 @@ export const documentsExtract = (deps: {
     async handle(payload, ctx) {
       const outcome = await deps.extract.run(payload, { isLastAttempt: ctx.isLastAttempt });
       ctx.logger.info({ documentId: payload.documentId, outcome }, 'extração concluída');
+      if (outcome !== 'processed') return;
+      // A extração já terminou: uma falha aqui não pode refazê-la. A leitura do score recalcula depois.
+      try {
+        await deps.scores.recalculate(payload.userId);
+      } catch (err) {
+        ctx.logger.warn({ err, documentId: payload.documentId }, 'falha ao recalcular o score');
+      }
     },
   });

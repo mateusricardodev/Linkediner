@@ -78,6 +78,20 @@
       "when": 1793901698545,
       "tag": "0010_facts_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793904407432,
+      "tag": "0011_profile_scores",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793904408588,
+      "tag": "0012_profile_scores_rls",
+      "breakpoints": true
     }
   ]
 }

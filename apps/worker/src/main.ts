@@ -21,7 +21,12 @@ import {
 } from '@linkediner/core/extraction/worker';
 import { DrizzleUserReader } from '@linkediner/core/identity/users';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
-import { DrizzleFactRepository } from '@linkediner/core/profile';
+import {
+  DrizzleFactRepository,
+  DrizzleProfileRepository,
+  DrizzleScoreRepository,
+  ProfileScoreService,
+} from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { documentsExtract } from './handlers/documents-extract';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
@@ -51,6 +56,7 @@ if (ai instanceof FakeAiProvider) {
   ai.respond('extract_profile', () => EMPTY_EXTRACTION);
 }
 const generations = new DrizzleAiGenerationLog(database.db);
+const factRepository = new DrizzleFactRepository(database.db);
 const boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: 'pgboss' });
 
 boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
@@ -67,10 +73,15 @@ const tasks = [
       users: new DrizzleUserReader(database.db),
       ai,
       prompt: extractProfileV1,
-      facts: new DrizzleFactRepository(database.db),
+      facts: factRepository,
       generations,
       audit,
     }),
+    scores: new ProfileScoreService(
+      new DrizzleProfileRepository(database.db),
+      factRepository,
+      new DrizzleScoreRepository(database.db),
+    ),
   }),
   privacyExpireAiGenerations({ generations }),
   privacyExpireDocuments({

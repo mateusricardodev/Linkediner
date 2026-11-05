@@ -8,7 +8,9 @@ import { ExtractionRequests } from '@linkediner/core/extraction';
 import {
   DrizzleFactRepository,
   DrizzleProfileRepository,
+  DrizzleScoreRepository,
   FactService,
+  ProfileScoreService,
   ProfileService,
 } from '@linkediner/core/profile';
 import {
@@ -52,6 +54,7 @@ await boss.start();
 const consents = new ConsentService(new DrizzleConsentRepository(database.db), audit);
 const documentRepository = new DrizzleDocumentRepository(database.db);
 const factRepository = new DrizzleFactRepository(database.db);
+const profileRepository = new DrizzleProfileRepository(database.db);
 
 const app = await buildServer({
   config,
@@ -61,7 +64,12 @@ const app = await buildServer({
     auth: createAuth({ db: database.db, config, audit, pseudonymize }),
     users: new DrizzleUserReader(database.db),
     consents,
-    profile: new ProfileService(new DrizzleProfileRepository(database.db)),
+    profile: new ProfileService(profileRepository),
+    scores: new ProfileScoreService(
+      profileRepository,
+      factRepository,
+      new DrizzleScoreRepository(database.db),
+    ),
     facts: new FactService(factRepository, audit),
     documents: new DocumentService(documentRepository, storage, audit, {
       deleteForDocument: (userId, documentId) =>

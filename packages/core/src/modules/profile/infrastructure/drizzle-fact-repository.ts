@@ -28,7 +28,8 @@ export class DrizzleFactRepository implements FactRepository {
           .select()
           .from(profileFacts)
           .where(eq(profileFacts.userId, userId))
-          .orderBy(asc(profileFacts.createdAt))
+          // Fatos da mesma extração têm o mesmo created_at: o ID (UUID v7) mantém a ordem estável.
+          .orderBy(asc(profileFacts.createdAt), asc(profileFacts.id))
       ).map(toFact),
     );
   }
