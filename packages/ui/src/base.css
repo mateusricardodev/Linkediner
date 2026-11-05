@@ -1,0 +1,27 @@
+/* Base visual do LinkedIner: tipografia e cores dos tokens (ADR 0011). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  letter-spacing: var(--type-body-tracking);
+  color: var(--color-text-primary);
+  background: var(--color-bg-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}

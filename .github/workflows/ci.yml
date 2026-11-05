@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualidade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Formatação
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Fronteiras entre módulos
+        run: pnpm arch
+
+      # Testes de integração sobem Postgres com pgvector via Testcontainers (Docker do runner).
+      - name: Testes
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  segredos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

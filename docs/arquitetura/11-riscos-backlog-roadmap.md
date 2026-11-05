@@ -40,7 +40,7 @@ Ordem de implementação seguindo a Fase 4 do escopo. Cada item inclui testes.
 |---|---|
 | F-01 | Monorepo pnpm + Turborepo, TS strict, ESLint, Prettier, dependency-cruiser |
 | F-02 | `packages/config` com validação Zod das variáveis + `.env.example` |
-| F-03 | `docker compose` local: Postgres com pgvector, MinIO, Mailpit |
+| F-03 | `docker compose` local: Postgres com pgvector, SeaweedFS (S3), Mailpit |
 | F-04 | `packages/db`: Drizzle, primeira migração (users, consents, audit_logs), RLS base |
 | F-05 | `packages/observability`: logger com redação de PII, OpenTelemetry, Sentry |
 | F-06 | `apps/api`: Fastify, tratamento de erros RFC 9457, health check, OpenAPI |

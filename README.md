@@ -2,7 +2,68 @@
 
 Copiloto de carreira que ajuda profissionais de tecnologia a encontrar, adaptar e acompanhar candidaturas relevantes para vagas remotas, no Brasil e no exterior.
 
-> Nome provisório. Projeto em fase de arquitetura: ainda não há código executável.
+> Nome provisório. Fase atual: fundação do projeto (monorepo, API, worker, banco e web base).
+
+## Como rodar localmente
+
+Pré-requisitos: Node.js 22.12+, pnpm 10 (`corepack enable`) e Docker.
+
+```bash
+pnpm install
+```
+
+```bash
+cp .env.example .env
+```
+
+```bash
+pnpm infra:up
+```
+
+```bash
+pnpm db:migrate
+```
+
+```bash
+pnpm dev
+```
+
+| Serviço                       | Endereço                   |
+| ----------------------------- | -------------------------- |
+| Web (Next.js)                 | http://localhost:3000      |
+| API (Fastify)                 | http://localhost:4000      |
+| Documentação da API (OpenAPI) | http://localhost:4000/docs |
+| Mailpit (e-mails locais)      | http://localhost:8025      |
+
+## Comandos
+
+| Comando                             | O que faz                                                                   |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| `pnpm dev`                          | Sobe web, API e worker em modo desenvolvimento                              |
+| `pnpm test`                         | Testes de unidade e integração (os de integração sobem Postgres via Docker) |
+| `pnpm lint` / `pnpm typecheck`      | ESLint e TypeScript                                                         |
+| `pnpm arch`                         | Verifica as fronteiras entre módulos (ADR 0002)                             |
+| `pnpm format`                       | Formata o código com Prettier                                               |
+| `pnpm db:generate`                  | Gera migração a partir do schema Drizzle                                    |
+| `pnpm db:migrate`                   | Aplica as migrações                                                         |
+| `pnpm infra:up` / `pnpm infra:down` | Sobe ou derruba Postgres, S3 local e Mailpit                                |
+
+## Estrutura
+
+```text
+apps/
+  web/        Next.js: só interface
+  api/        Fastify: HTTP, autenticação, casos de uso síncronos
+  worker/     pg-boss: tarefas assíncronas
+packages/
+  core/       Domínio e casos de uso, por módulo
+  db/         Schema Drizzle, migrações, RLS
+  contracts/  Esquemas Zod da API
+  config/     Validação das variáveis de ambiente
+  observability/  Logger com redação de dados pessoais
+  ui/         Design tokens (claro e escuro)
+infra/        Docker Compose do ambiente local
+```
 
 ## Documentação
 

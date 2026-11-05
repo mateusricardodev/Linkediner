@@ -47,7 +47,7 @@
 | Nível | Ferramenta | O que cobre |
 |---|---|---|
 | Unidade (domínio) | Vitest | Máquina de estados, rubricas de score, regras de quota, validador anti-invenção. Rápidos e sem I/O. |
-| Integração | Vitest + Testcontainers (Postgres com pgvector, MinIO) | Repositórios, políticas de RLS, migrações, handlers de fila |
+| Integração | Vitest + Testcontainers (Postgres com pgvector; S3 local quando o módulo de documentos entrar) | Repositórios, políticas de RLS, migrações, handlers de fila |
 | Contrato de adaptadores | Vitest + respostas gravadas | Cada `JobSourceAdapter` e o `GeminiProvider` contra fixtures. Um teste de contrato compartilhado garante que todo adaptador segue a interface. |
 | API | Vitest + `fastify.inject` | Autenticação, autorização (acesso a dados de outro usuário deve falhar), validação, quotas |
 | Avaliação de IA | Conjunto próprio em `tests/ai-evals` | 30 a 50 currículos sintéticos com fatos esperados. Mede precisão da extração, taxa de invenção (meta: 0 alegações sem fonte aprovadas) e estabilidade do score. Roda a cada mudança de prompt ou de modelo. |
@@ -61,7 +61,7 @@ O CI roda lint, typecheck, testes de unidade, integração e arquitetura em todo
 
 | Ambiente | Como |
 |---|---|
-| **Local** | `docker compose up` sobe Postgres com pgvector, MinIO (S3 local) e Mailpit (e-mail). Apps em modo dev com `pnpm dev`. `FakeAiProvider` por padrão. Gemini opcional, com chave pessoal e dados sintéticos. Seeds com usuários e vagas fictícios. |
+| **Local** | `docker compose up` sobe Postgres com pgvector, SeaweedFS (S3 local) e Mailpit (e-mail). Apps em modo dev com `pnpm dev`. `FakeAiProvider` por padrão. Gemini opcional, com chave pessoal e dados sintéticos. Seeds com usuários e vagas fictícios. |
 | **Staging** | Mesma imagem de produção. Banco e storage separados. Dados somente sintéticos. Deploy automático a cada merge na `main`. |
 | **Produção** | Deploy por tag ou aprovação manual. Migrações rodam antes de subir a nova versão, e precisam ser compatíveis com a versão anterior (expandir e depois contrair). Rollback pela imagem anterior. |
 
