@@ -19,6 +19,7 @@ import {
 } from '@linkediner/core/applications';
 import { DrizzleJobRepository, EMPTY_JOB_OUTPUT, StructureJob } from '@linkediner/core/jobs';
 import { DrizzleResumeRepository, GenerateResume } from '@linkediner/core/resumes';
+import { DrizzleProductEvents, ProductEvents, TrackingAuditLog } from '@linkediner/core/analytics';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import {
   createPaymentProvider,
@@ -70,6 +71,7 @@ import {
   privacyResumePurges,
 } from './handlers/privacy-account';
 import { PgBossPendingTasks } from './pg-boss-pending-tasks';
+import { analyticsExpireEvents } from './handlers/analytics-expire-events';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
@@ -85,7 +87,15 @@ const logger = createLogger({
   pretty: config.NODE_ENV === 'development',
 });
 const database = createDb(config.DATABASE_URL, { max: 4 });
-const audit = new DrizzleAuditLog(database.db, createPseudonymizer(config.LOG_PSEUDONYM_SECRET));
+const pseudonymize = createPseudonymizer(config.LOG_PSEUDONYM_SECRET);
+const productEvents = new DrizzleProductEvents(database.db, pseudonymize);
+// Métricas não derrubam um fluxo: a falha só vai para o log, sem o conteúdo do evento.
+const audit = new TrackingAuditLog(
+  new DrizzleAuditLog(database.db, pseudonymize),
+  new ProductEvents(productEvents, (err) =>
+    logger.warn({ err }, 'falha ao registrar evento de produto'),
+  ),
+);
 const storage = new S3ObjectStorage({
   bucket: config.STORAGE_BUCKET,
   region: config.STORAGE_REGION,
@@ -210,13 +220,14 @@ const tasks = [
   privacyExportUser({
     exporter: new ExportUserData({
       repo: exportRepository,
-      reader: new DrizzleAccountDataReader(database.db, cipher),
+      reader: new DrizzleAccountDataReader(database.db, cipher, pseudonymize),
       storage,
       zip: buildExportZip,
       audit,
     }),
   }),
   privacyExpireExports({ expire: new ExpireExports(exportRepository, storage) }),
+  analyticsExpireEvents({ events: productEvents }),
   privacyExpireAiGenerations({ generations }),
   privacyExpireDocuments({
     expire: new ExpireDocuments(

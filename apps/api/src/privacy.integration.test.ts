@@ -47,7 +47,7 @@ beforeAll(async () => {
   });
   exporter = new ExportUserData({
     repo: new DrizzleDataExportRepository(t.db.db),
-    reader: new DrizzleAccountDataReader(t.db.db, t.cipher),
+    reader: new DrizzleAccountDataReader(t.db.db, t.cipher, t.pseudonymize),
     storage: t.storage,
     zip: buildExportZip,
     audit: t.audit,
@@ -302,7 +302,9 @@ describe('exportação', () => {
     const b = await setup('exp-b@example.com');
     await t.call(a.cookie, 'POST', '/v1/privacy/export');
     expect((await t.call(b.cookie, 'GET', '/v1/privacy/exports')).json()).toEqual([]);
-    const { data } = await new DrizzleAccountDataReader(t.db.db, t.cipher).read(a.userId);
+    const { data } = await new DrizzleAccountDataReader(t.db.db, t.cipher, t.pseudonymize).read(
+      a.userId,
+    );
     expect(JSON.stringify(data)).not.toContain(b.userId);
   });
 

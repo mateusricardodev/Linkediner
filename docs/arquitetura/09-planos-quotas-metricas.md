@@ -73,4 +73,4 @@ Depende de o usuário informar o resultado. Por isso a interface pergunta de for
 | Evolução do score do perfil | Diferença entre o primeiro e o último `profile_scores` por usuário |
 | Funil | recomendação → visualização → candidatura aprovada → enviada → entrevista |
 
-As métricas são calculadas com views SQL no MVP. Um painel interno vem depois. A comunicação do produto nunca promete "contratação garantida".
+As métricas são calculadas com views SQL no MVP ([ADR 0022](../adr/0022-eventos-e-metricas.md)). Um painel interno vem depois. A comunicação do produto nunca promete "contratação garantida".

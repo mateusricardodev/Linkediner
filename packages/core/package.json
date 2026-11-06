@@ -7,6 +7,7 @@
     "./shared": "./src/modules/shared/index.ts",
     "./ai": "./src/modules/ai/index.ts",
     "./applications": "./src/modules/applications/index.ts",
+    "./analytics": "./src/modules/analytics/index.ts",
     "./audit": "./src/modules/audit/index.ts",
     "./billing": "./src/modules/billing/index.ts",
     "./crypto": "./src/modules/crypto/index.ts",
