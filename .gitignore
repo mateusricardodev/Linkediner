@@ -11,3 +11,4 @@ coverage/
 packages/ui/src/generated/
 next-env.d.ts
 *.tsbuildinfo
+packages/ai-evals/reports/

@@ -59,6 +59,8 @@ export const envSchema = z
     GEMINI_API_KEY: z.string().optional(),
     /** Modelo usado na extração. Obrigatório com Gemini: nomes de modelo mudam, então não há valor padrão. */
     AI_MODEL_EXTRACT: z.string().min(1).optional(),
+    /** Modelo das tarefas de redação. Sem ele, usa AI_MODEL_EXTRACT. */
+    AI_MODEL_GENERATE: z.string().min(1).optional(),
 
     /** Usado para pseudonimizar IDs em logs (HMAC). Obrigatório fora de dev/test. */
     LOG_PSEUDONYM_SECRET: z.string().min(32).optional(),

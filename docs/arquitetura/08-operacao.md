@@ -50,12 +50,12 @@
 | Integração | Vitest + Testcontainers (Postgres com pgvector; S3 local quando o módulo de documentos entrar) | Repositórios, políticas de RLS, migrações, handlers de fila |
 | Contrato de adaptadores | Vitest + respostas gravadas | Cada `JobSourceAdapter` e o `GeminiProvider` contra fixtures. Um teste de contrato compartilhado garante que todo adaptador segue a interface. |
 | API | Vitest + `fastify.inject` | Autenticação, autorização (acesso a dados de outro usuário deve falhar), validação, quotas |
-| Avaliação de IA | Conjunto próprio em `tests/ai-evals` | 30 a 50 currículos sintéticos com fatos esperados. Mede precisão da extração, taxa de invenção (meta: 0 alegações sem fonte aprovadas) e estabilidade do score. Roda a cada mudança de prompt ou de modelo. |
+| Avaliação de IA | Conjunto próprio em `packages/ai-evals` ([ADR 0023](../adr/0023-avaliacao-de-ia.md)) | 30 currículos sintéticos com fatos esperados e armadilhas. Mede precisão da extração, taxa de invenção (meta: 0 alegações sem fonte aprovadas) e estabilidade do score. Rodada manual, a cada mudança de prompt ou de modelo. |
 | Privacidade | Integração | Exclusão apaga tudo (inclusive embeddings e storage), expiração de 30 dias funciona, logs não têm PII |
 | Ponta a ponta | Playwright | Fluxos do MVP: cadastro → upload → score → currículo → aprovação → importação de vaga → compatibilidade → feedback → exclusão |
 | Arquitetura | dependency-cruiser | O domínio não importa infraestrutura, e um módulo não acessa arquivos internos de outro |
 
-O CI roda lint, typecheck, testes de unidade, integração e arquitetura em todo PR. Avaliações de IA e testes ponta a ponta rodam no merge e diariamente.
+O CI roda lint, typecheck, testes de unidade, integração e arquitetura em todo PR. A avaliação de IA com o modelo real é manual, porque tem custo. Testes ponta a ponta ainda não existem.
 
 ## 20. Deploy
 

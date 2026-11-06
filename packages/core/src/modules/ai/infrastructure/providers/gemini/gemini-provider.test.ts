@@ -27,6 +27,17 @@ function clientReturning(response: Awaited<ReturnType<GeminiClient['models']['ge
 }
 
 describe('GeminiProvider', () => {
+  it('usa o modelo da tarefa e, sem ele, o padrão', async () => {
+    const { client, generateContent } = clientReturning({
+      text: JSON.stringify({ skills: [], nota: null }),
+    });
+    const ai = new GeminiProvider(client, 'padrao', Date.now, { generate_resume: 'redacao' });
+    await ai.generateStructured({ ...req, task: 'generate_resume' });
+    await ai.generateStructured(req);
+    const models = generateContent.mock.calls.map((call) => (call as unknown[])[0]);
+    expect(models).toMatchObject([{ model: 'redacao' }, { model: 'padrao' }]);
+  });
+
   it('envia prompt, instrução e esquema, e devolve os dados com a versão do prompt', async () => {
     const { client, generateContent } = clientReturning({
       text: JSON.stringify({ skills: ['TypeScript'], nota: null }),
