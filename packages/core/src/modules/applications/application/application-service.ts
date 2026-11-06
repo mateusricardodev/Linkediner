@@ -183,18 +183,22 @@ export class ApplicationService {
     outcome: 'interview_received' | 'rejected' | 'closed',
   ): Promise<Application> {
     const application = await this.load(userId, id);
-    return this.apply(userId, application, [{ to: outcome, actor: 'user' }]);
+    const updated = await this.apply(userId, application, [{ to: outcome, actor: 'user' }]);
+    await this.record(userId, 'application.outcome', id, { outcome });
+    return updated;
   }
 
   /** Desiste da candidatura, em qualquer estado que permita. */
   async close(userId: string, id: string): Promise<Application> {
     const application = await this.load(userId, id);
-    return this.apply(
+    const closed = await this.apply(
       userId,
       application,
       [{ to: 'closed', actor: 'user', reason: 'closed_by_user' }],
       { resolveManualTasks: { at: this.clock.now() } },
     );
+    await this.record(userId, 'application.closed', id);
+    return closed;
   }
 
   /** O currículo como foi aprovado nesta candidatura. */
@@ -262,13 +266,14 @@ export class ApplicationService {
     return updated;
   }
 
-  private record(userId: string, action: string, id: string) {
+  private record(userId: string, action: string, id: string, metadata?: Record<string, unknown>) {
     return this.audit.record({
       actorType: 'user',
       actorId: userId,
       action,
       entityType: 'application',
       entityId: id,
+      ...(metadata ? { metadata } : {}),
     });
   }
 }

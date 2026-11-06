@@ -100,7 +100,7 @@ erDiagram
 | Tabela | Campos principais | Observações |
 |---|---|---|
 | `outbox_events` | id, type, payload (jsonb, sem PII em claro), occurred_at, published_at | Publicação garantida de eventos |
-| `product_events` | id, user_id (pseudônimo), name, properties (jsonb), occurred_at | Base das métricas ([09](09-planos-quotas-metricas.md)) |
+| `product_events` | id, user_ref (pseudônimo), name, properties (jsonb), dedupe_key, occurred_at | Base das métricas ([09](09-planos-quotas-metricas.md)). Retenção de 13 meses |
 | `pgboss.*` | — | Esquema da fila, gerenciado pelo pg-boss |
 
 ## Retenção por tipo de dado
@@ -115,5 +115,6 @@ erDiagram
 | Candidaturas e histórico | Enquanto a conta existir | Apagados |
 | Logs de aplicação | 30 dias, sem PII | Nada a apagar |
 | Auditoria | 5 anos, pseudonimizada | Mantida pseudonimizada, para obrigação legal |
+| Eventos de produto | 13 meses, pseudonimizados | Mantidos sem ligação com a pessoa: o pseudônimo vira um valor aleatório |
 | Backups | 7–30 dias | Conteúdo de carreira ilegível por crypto-shredding. O restante expira com o backup ([ADR 0020](../adr/0020-criptografia-por-usuario.md)) |
 | Chaves por usuário | Enquanto a conta existir, em bucket próprio fora dos backups do banco | Destruídas |

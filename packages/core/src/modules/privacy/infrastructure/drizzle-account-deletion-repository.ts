@@ -3,7 +3,7 @@ import { newId } from '../../shared';
 import type { AccountDeletionRepository } from '../application/account-deletion';
 import type { DeletionRequest } from '../domain/account-data';
 
-const { auditLogs, deletionRequests, sessions, users } = schema;
+const { auditLogs, deletionRequests, productEvents, sessions, users } = schema;
 
 const toRequest = (r: typeof deletionRequests.$inferSelect): DeletionRequest => ({
   id: r.id,
@@ -63,6 +63,11 @@ export class DrizzleAccountDeletionRepository implements AccountDeletionReposito
         entityId: request.id,
         metadata: report,
       });
+      // As métricas seguem valendo no agregado, sem como ligar os eventos a esta conta.
+      await tx
+        .update(productEvents)
+        .set({ userRef: `anon:${newId()}` })
+        .where(eq(productEvents.userRef, request.userRef));
       if (!request.userId) return;
       // `actor_id` já é pseudônimo. O ID real só aparece como entidade nos eventos do próprio usuário.
       await tx

@@ -10,6 +10,7 @@ import {
   ProblemDetails,
   RecommendationsResponse,
 } from '@linkediner/contracts';
+import type { ProductEvents } from '@linkediner/core/analytics';
 import type { Job, JobService } from '@linkediner/core/jobs';
 import {
   MATCH_DISCLAIMER,
@@ -25,6 +26,7 @@ export interface JobDeps {
   matching: Pick<MatchingService, 'forJob'>;
   feedback: FeedbackService;
   consents: Pick<ConsentService, 'status'>;
+  events: Pick<ProductEvents, 'track'>;
 }
 
 const toDto = (j: Job) => ({ ...j, createdAt: j.createdAt.toISOString() });
@@ -83,7 +85,13 @@ export const jobRoutes =
           response: { 200: JobDto, ...errors },
         },
       },
-      async (req) => toDto(await deps.jobs.get(actorOf(req).userId, req.params.id)),
+      async (req) => {
+        const { userId } = actorOf(req);
+        const job = await deps.jobs.get(userId, req.params.id);
+        // Cada vaga conta uma vez: rever a mesma vaga não muda o funil.
+        await deps.events.track(userId, [{ name: 'job_viewed', dedupeKey: `viewed:${job.id}` }]);
+        return toDto(job);
+      },
     );
 
     app.get(
@@ -98,9 +106,14 @@ export const jobRoutes =
         },
       },
       async (req) => {
-        const { items, hidden } = await deps.feedback.recommendations(
-          actorOf(req).userId,
-          req.query.goalId,
+        const { userId } = actorOf(req);
+        const { items, hidden } = await deps.feedback.recommendations(userId, req.query.goalId);
+        await deps.events.track(
+          userId,
+          items.map((item) => ({
+            name: 'job_recommended' as const,
+            dedupeKey: `recommended:${item.job.id}`,
+          })),
         );
         return {
           items: items.map((item) => ({ ...item, job: toDto(item.job) })),

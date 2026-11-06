@@ -17,12 +17,14 @@ import {
   MaterialService,
   type GenerateMaterialJob,
 } from '@linkediner/core/applications';
+import { DrizzleProductEvents, ProductEvents, TrackingAuditLog } from '@linkediner/core/analytics';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import {
   AccountDeletionService,
   DataExportService,
+  DrizzleAccountDataReader,
   DrizzleAccountDeletionRepository,
   DrizzleDataExportRepository,
   type ExportUserJob,
@@ -69,7 +71,8 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
   const [ctx, s3] = await Promise.all([startTestDatabase(), startTestS3()]);
   const db = ctx.handle.db;
   const pseudonymize = createPseudonymizer('p'.repeat(32));
-  const audit = new DrizzleAuditLog(db, pseudonymize);
+  const events = new ProductEvents(new DrizzleProductEvents(db, pseudonymize), () => {});
+  const audit = new TrackingAuditLog(new DrizzleAuditLog(db, pseudonymize), events);
   const consents = new ConsentService(new DrizzleConsentRepository(db), audit);
   const documentRepository = new DrizzleDocumentRepository(db);
   // Bucket separado, como em produção. A chave mestra é aleatória a cada execução.
@@ -218,6 +221,7 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
       extraction: new ExtractionRequests(documentRepository, consents, queue, quota),
       entitlements,
       subscriptions,
+      events,
       accountDeletion: new AccountDeletionService(
         new DrizzleAccountDeletionRepository(db),
         purgeQueue,
@@ -278,6 +282,8 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     app,
     db: ctx.handle,
     storage: s3.storage,
+    pseudonymize,
+    accountDataReader: new DrizzleAccountDataReader(db, cipher, pseudonymize),
     keyStorage,
     masterKeyBase64,
     cipher,

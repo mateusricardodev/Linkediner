@@ -9,6 +9,7 @@ import {
   MaterialService,
   type GenerateMaterialJob,
 } from '@linkediner/core/applications';
+import { DrizzleProductEvents, ProductEvents, TrackingAuditLog } from '@linkediner/core/analytics';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import {
   createPaymentProvider,
@@ -83,7 +84,11 @@ const logger = createLogger({
 });
 const database = createDb(config.DATABASE_URL);
 const pseudonymize = createPseudonymizer(config.LOG_PSEUDONYM_SECRET);
-const audit = new DrizzleAuditLog(database.db, pseudonymize);
+// Métricas não derrubam um fluxo: a falha só vai para o log, sem o conteúdo do evento.
+const events = new ProductEvents(new DrizzleProductEvents(database.db, pseudonymize), (err) =>
+  logger.warn({ err }, 'falha ao registrar evento de produto'),
+);
+const audit = new TrackingAuditLog(new DrizzleAuditLog(database.db, pseudonymize), events);
 const storage = new S3ObjectStorage({
   bucket: config.STORAGE_BUCKET,
   region: config.STORAGE_REGION,
@@ -223,6 +228,7 @@ const app = await buildServer({
       quota,
     ),
     entitlements: quota,
+    events,
     subscriptions: new SubscriptionService(
       new DrizzleSubscriptionRepository(database.db),
       createPaymentProvider(config),

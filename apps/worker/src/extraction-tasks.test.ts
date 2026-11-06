@@ -12,6 +12,7 @@ import {
   privacyPurgeUser,
   privacyResumePurges,
 } from './handlers/privacy-account';
+import { analyticsExpireEvents } from './handlers/analytics-expire-events';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
@@ -120,6 +121,18 @@ describe('resumes.generate', () => {
     const task = resumesGenerate({ generate: { run } });
     await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
+  });
+});
+
+describe('analytics.expire_events', () => {
+  it('apaga os eventos mais antigos que 395 dias', async () => {
+    const deleteOlderThan = vi.fn(async () => 1);
+    const task = analyticsExpireEvents({
+      events: { deleteOlderThan },
+      now: () => new Date('2026-11-06T00:00:00Z'),
+    });
+    await runTask(task, { id: 'j', data: {} }, logger);
+    expect(deleteOlderThan).toHaveBeenCalledWith(new Date('2025-10-07T00:00:00Z'));
   });
 });
 

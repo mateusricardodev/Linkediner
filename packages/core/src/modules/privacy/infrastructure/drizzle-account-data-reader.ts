@@ -73,6 +73,7 @@ export class DrizzleAccountDataReader implements AccountDataReader {
   constructor(
     private readonly db: Database,
     private readonly cipher: FieldCipher,
+    private readonly pseudonymize: (id: string) => string,
   ) {}
 
   async read(userId: string) {
@@ -106,12 +107,23 @@ export class DrizzleAccountDataReader implements AccountDataReader {
       .from(s.authIdentities)
       .where(eq(s.authIdentities.userId, userId));
 
+    // Os eventos não têm user_id: são localizados pelo pseudônimo, que não sai no arquivo.
+    const productEvents = await this.db
+      .select({
+        name: s.productEvents.name,
+        properties: s.productEvents.properties,
+        occurredAt: s.productEvents.occurredAt,
+      })
+      .from(s.productEvents)
+      .where(eq(s.productEvents.userRef, this.pseudonymize(userId)));
+
     const documents = rows.documents as (typeof s.documents.$inferSelect)[];
     return {
       data: {
         ...rows,
         user,
         auth_identities: identities,
+        product_events: productEvents,
         documents: documents.map(stripDocument),
       },
       files: documents
