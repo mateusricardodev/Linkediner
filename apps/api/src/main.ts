@@ -13,6 +13,16 @@ import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import {
+  AccountDeletionService,
+  DataExportService,
+  DrizzleAccountDeletionRepository,
+  DrizzleDataExportRepository,
+  EXPORT_USER_QUEUE,
+  PURGE_USER_QUEUE,
+  type ExportUserJob,
+  type PurgeUserJob,
+} from '@linkediner/core/privacy/account';
+import {
   DOCUMENTS_EXTRACT_QUEUE,
   ExtractionRequests,
   type ExtractJobPayload,
@@ -165,6 +175,18 @@ const app = await buildServer({
       factRepository,
       consents,
       await createQueue<GenerateResumeJob>(boss, RESUMES_GENERATE_QUEUE),
+      audit,
+    ),
+    accountDeletion: new AccountDeletionService(
+      new DrizzleAccountDeletionRepository(database.db),
+      await createQueue<PurgeUserJob>(boss, PURGE_USER_QUEUE),
+      audit,
+      pseudonymize,
+    ),
+    dataExports: new DataExportService(
+      new DrizzleDataExportRepository(database.db),
+      storage,
+      await createQueue<ExportUserJob>(boss, EXPORT_USER_QUEUE),
       audit,
     ),
     extraction: new ExtractionRequests(

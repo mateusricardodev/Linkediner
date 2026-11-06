@@ -22,3 +22,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0016 | [Compatibilidade v1 só por regras, sem embeddings](0016-compatibilidade-v1-por-regras.md) | Proposto |
 | 0017 | [Preferências calculadas a partir do feedback](0017-preferencias-derivadas-do-feedback.md) | Proposto |
 | 0018 | [Material por vaga conferido contra os fatos](0018-material-por-vaga.md) | Proposto |
+| 0019 | [Exclusão da conta e exportação de dados](0019-exclusao-e-exportacao.md) | Proposto |

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger } from '@linkediner/observability';
+import { PgBossPendingTasks } from './pg-boss-pending-tasks';
 import { registerTasks } from './runner';
 import { defineTask } from './task';
 
@@ -41,5 +42,20 @@ describe('worker com pg-boss', () => {
     await registerTasks(boss, [task], logger, 1);
     await boss.send('test.echo', { documentId: 'doc-123' });
     await expect.poll(() => received, { timeout: 25_000, interval: 200 }).toEqual(['doc-123']);
+  });
+
+  it('cancela só as tarefas na fila do usuário que pediu a exclusão', async () => {
+    const queue = 'test.user_tasks';
+    await boss.createQueue(queue);
+    const alvo = { userId: '0193b2b0-0000-7000-8000-00000000000a' };
+    const outra = { userId: '0193b2b0-0000-7000-8000-00000000000b' };
+    await boss.send(queue, alvo);
+    await boss.send(queue, alvo);
+    await boss.send(queue, outra);
+
+    const tasks = new PgBossPendingTasks(boss, [queue]);
+    expect(await tasks.cancelForUser(alvo.userId)).toBe(2);
+    expect(await boss.findJobs(queue, { data: alvo, queued: true })).toEqual([]);
+    expect(await boss.findJobs(queue, { data: outra, queued: true })).toHaveLength(1);
   });
 });

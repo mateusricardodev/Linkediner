@@ -9,6 +9,14 @@ import {
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
+import {
+  AccountDeletionService,
+  DataExportService,
+  DrizzleAccountDeletionRepository,
+  DrizzleDataExportRepository,
+  type ExportUserJob,
+  type PurgeUserJob,
+} from '@linkediner/core/privacy/account';
 import { ExtractionRequests, type ExtractJobPayload } from '@linkediner/core/extraction';
 import {
   DrizzleFactRepository,
@@ -91,6 +99,18 @@ export async function startTestApp() {
       materialQueue.jobs.push(job);
     },
   };
+  const purgeQueue = {
+    jobs: [] as PurgeUserJob[],
+    enqueue: async (job: PurgeUserJob) => {
+      purgeQueue.jobs.push(job);
+    },
+  };
+  const exportQueue = {
+    jobs: [] as ExportUserJob[],
+    enqueue: async (job: ExportUserJob) => {
+      exportQueue.jobs.push(job);
+    },
+  };
   const app = await buildServer({
     config: { NODE_ENV: 'test', WEB_ORIGIN: WEB },
     logger: createLogger({
@@ -161,6 +181,18 @@ export async function startTestApp() {
       }),
       resumes: new ResumeService(resumeRepository, factRepository, consents, resumeQueue, audit),
       extraction: new ExtractionRequests(documentRepository, consents, queue),
+      accountDeletion: new AccountDeletionService(
+        new DrizzleAccountDeletionRepository(db),
+        purgeQueue,
+        audit,
+        pseudonymize,
+      ),
+      dataExports: new DataExportService(
+        new DrizzleDataExportRepository(db),
+        s3.storage,
+        exportQueue,
+        audit,
+      ),
     },
   });
 
@@ -215,6 +247,8 @@ export async function startTestApp() {
     resumeQueue,
     jobQueue,
     materialQueue,
+    purgeQueue,
+    exportQueue,
     scores,
     signUp,
     call,

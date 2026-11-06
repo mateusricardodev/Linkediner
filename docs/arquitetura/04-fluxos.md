@@ -174,6 +174,8 @@ sequenceDiagram
 3. O job gera um relatório em `deletion_requests` e envia a confirmação por e-mail.
 4. Prazo: imediato para dados ativos. Backups ficam ilegíveis por causa da chave destruída.
 
+**O que existe hoje:** os passos 1 a 3 do expurgo e a pseudonimização, com o relatório (ADR 0019). A destruição da chave, o cancelamento da assinatura e o e-mail de confirmação ainda não existem.
+
 ### F9 — Exportação de dados
 
-O usuário pede a exportação. O worker gera um ZIP com JSON e arquivos e devolve uma URL assinada, válida por 7 dias.
+O usuário pede a exportação. O worker gera um ZIP com JSON e arquivos, guardado por 7 dias. A cada consulta, a API devolve uma URL assinada, válida por 5 minutos (ADR 0019).

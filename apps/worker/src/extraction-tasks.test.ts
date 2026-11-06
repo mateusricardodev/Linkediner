@@ -5,7 +5,13 @@ import { createLogger } from '@linkediner/observability';
 import { JOBS_STRUCTURE_QUEUE } from '@linkediner/core/jobs';
 import { RESUMES_GENERATE_QUEUE } from '@linkediner/core/resumes';
 import { MATERIALS_GENERATE_QUEUE } from '@linkediner/core/applications';
+import { EXPORT_USER_QUEUE, PURGE_USER_QUEUE } from '@linkediner/core/privacy/account';
 import { applicationsGenerateMaterial } from './handlers/applications-generate-material';
+import {
+  privacyExportUser,
+  privacyPurgeUser,
+  privacyResumePurges,
+} from './handlers/privacy-account';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
@@ -113,6 +119,45 @@ describe('resumes.generate', () => {
     const task = resumesGenerate({ generate: { run } });
     await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
+  });
+});
+
+describe('privacidade', () => {
+  it('as filas criadas pela API são iguais às registradas pelo worker', () => {
+    const purge = privacyPurgeUser({ purge: { run: vi.fn() } });
+    expect(purge.name).toBe(PURGE_USER_QUEUE.name);
+    expect(deadLetterQueue(purge.name)).toBe(PURGE_USER_QUEUE.deadLetter);
+    const exporter = privacyExportUser({ exporter: { run: vi.fn() } });
+    expect(exporter.name).toBe(EXPORT_USER_QUEUE.name);
+    expect(deadLetterQueue(exporter.name)).toBe(EXPORT_USER_QUEUE.deadLetter);
+  });
+
+  it('o expurgo recebe só o ID do pedido, e a exportação só IDs', async () => {
+    const run = vi.fn();
+    const requestId = payload.documentId;
+    await expect(
+      runTask(
+        privacyPurgeUser({ purge: { run } }),
+        { id: 'j', data: { requestId, email: 'pessoa@example.com' } },
+        logger,
+      ),
+    ).rejects.toThrow(/Payload inválido/);
+    await expect(
+      runTask(
+        privacyExportUser({ exporter: { run } }),
+        { id: 'j', data: { userId: payload.userId, exportId: requestId, nome: 'Pessoa' } },
+        logger,
+      ),
+    ).rejects.toThrow(/Payload inválido/);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('avisa quando as exclusões continuam falhando', async () => {
+    const task = privacyResumePurges({
+      purge: { resumeOpen: vi.fn(async () => ({ resumed: 0, failed: 2 })) },
+    });
+    expect(task.cron).toBeDefined();
+    await expect(runTask(task, { id: 'j', data: {} }, logger)).resolves.toBeUndefined();
   });
 });
 
