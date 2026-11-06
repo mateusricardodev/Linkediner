@@ -1,0 +1,148 @@
+.blocked {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-2xl);
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+  padding: var(--spacing-xl) var(--spacing-md);
+  border-right: 1px solid var(--color-border-separator);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-inline: var(--spacing-sm);
+  font-size: var(--type-headline-size);
+  font-weight: var(--type-headline-weight);
+}
+
+.mark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  font-size: var(--type-callout-size);
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  flex: 1;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  min-height: 40px;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: background-color 120ms ease-out;
+}
+
+.link:hover {
+  background: var(--color-bg-fill);
+}
+
+.active,
+.active:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-text-accent);
+  font-weight: 500;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding-left: var(--spacing-sm);
+  font-size: var(--type-callout-size);
+}
+
+.accountName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.content {
+  min-width: 0;
+  padding: var(--spacing-4xl) var(--spacing-4xl) var(--spacing-5xl);
+}
+
+/* Em telas estreitas, o menu vira uma barra translúcida, com o conteúdo rolando por baixo. */
+@media (max-width: 820px) {
+  .shell {
+    display: block;
+  }
+
+  .sidebar {
+    z-index: 10;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border-separator);
+    background: color-mix(in srgb, var(--color-bg-canvas) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  .brand {
+    padding: 0;
+    font-size: 0;
+  }
+
+  .nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .link {
+    white-space: nowrap;
+  }
+
+  .accountName {
+    display: none;
+  }
+
+  .content {
+    padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-4xl);
+  }
+}
+
+@media (max-width: 820px) and (prefers-reduced-transparency: reduce) {
+  .sidebar {
+    background: var(--color-bg-canvas);
+    backdrop-filter: none;
+  }
+}
