@@ -21,3 +21,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0015 | [Vagas importadas por usuário, sem acessar o link](0015-vagas-importadas-por-usuario.md) | Proposto |
 | 0016 | [Compatibilidade v1 só por regras, sem embeddings](0016-compatibilidade-v1-por-regras.md) | Proposto |
 | 0017 | [Preferências calculadas a partir do feedback](0017-preferencias-derivadas-do-feedback.md) | Proposto |
+| 0018 | [Material por vaga conferido contra os fatos](0018-material-por-vaga.md) | Proposto |

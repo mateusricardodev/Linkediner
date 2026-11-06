@@ -3,15 +3,23 @@ import { z } from 'zod';
 import {
   ApplicationDetail,
   ApplicationDto,
+  ApplicationMaterialDto,
   ApplicationOutcomeBody,
   ApplicationState,
   AttachResumeBody,
   CreateApplicationBody,
   DashboardResponse,
+  DecideMaterialItemBody,
   ExportResumeQuery,
   ProblemDetails,
+  RequestMaterialBody,
 } from '@linkediner/contracts';
-import type { Application, ApplicationService } from '@linkediner/core/applications';
+import type {
+  Application,
+  ApplicationMaterial,
+  ApplicationService,
+  MaterialService,
+} from '@linkediner/core/applications';
 import type { ConsentService } from '@linkediner/core/privacy';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
 import { actorOf, requireActor } from '../plugins/auth';
@@ -19,6 +27,7 @@ import { requireConsents } from '../plugins/require-consents';
 
 export interface ApplicationDeps {
   applications: ApplicationService;
+  materials: MaterialService;
   resumeExport: ResumeExportService;
   consents: Pick<ConsentService, 'status'>;
 }
@@ -38,6 +47,9 @@ const errors = {
   409: ProblemDetails,
 };
 const Params = z.object({ id: z.uuid() });
+const MaterialParams = Params.extend({ materialId: z.uuid() });
+// O conteúdo é um JSON validado pelo esquema de resposta.
+const toMaterialDto = (m: ApplicationMaterial) => m as z.infer<typeof ApplicationMaterialDto>;
 
 /** Candidaturas e dashboard (M-12). Nada é enviado sem a aprovação da pessoa. */
 export const applicationRoutes =
@@ -190,6 +202,92 @@ export const applicationRoutes =
             req.body.outcome,
           ),
         ),
+    );
+
+    app.post(
+      '/v1/applications/:id/materials',
+      {
+        preHandler,
+        config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+        schema: {
+          tags,
+          summary: 'Gera o currículo adaptado à vaga, a carta ou as respostas de formulário',
+          params: Params,
+          body: RequestMaterialBody,
+          response: { 202: ApplicationMaterialDto, ...errors },
+        },
+      },
+      async (req, reply) =>
+        reply.status(202).send(
+          toMaterialDto(
+            await deps.materials.request(actorOf(req).userId, req.params.id, {
+              kind: req.body.kind,
+              questions: req.body.questions,
+            }),
+          ),
+        ),
+    );
+
+    app.get(
+      '/v1/applications/:id/materials',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Material gerado para esta candidatura',
+          params: Params,
+          response: { 200: z.array(ApplicationMaterialDto), ...errors },
+        },
+      },
+      async (req) =>
+        (await deps.materials.list(actorOf(req).userId, req.params.id)).map(toMaterialDto),
+    );
+
+    app.patch(
+      '/v1/applications/:id/materials/:materialId/items/:itemId',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Confirma, corrige ou remove uma frase do material. Só em revisão',
+          params: MaterialParams.extend({ itemId: z.uuid() }),
+          body: DecideMaterialItemBody,
+          response: { 200: ApplicationMaterialDto, ...errors },
+        },
+      },
+      async (req) => {
+        const { body, params } = req;
+        const decision =
+          body.action === 'remove'
+            ? ({ action: 'remove' } as const)
+            : ({ action: 'confirm', ...(body.text ? { text: body.text } : {}) } as const);
+        return toMaterialDto(
+          await deps.materials.decideItem(
+            actorOf(req).userId,
+            params.id,
+            params.materialId,
+            params.itemId,
+            decision,
+          ),
+        );
+      },
+    );
+
+    app.delete(
+      '/v1/applications/:id/materials/:materialId',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Apaga um material. Só em revisão',
+          params: MaterialParams,
+          response: { 204: z.null(), ...errors },
+        },
+      },
+      async (req, reply) => {
+        await deps.materials.delete(actorOf(req).userId, req.params.id, req.params.materialId);
+        return reply.status(204).send(null);
+      },
     );
 
     app.get(

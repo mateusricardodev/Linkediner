@@ -34,6 +34,9 @@ export class FeedbackService {
     private readonly jobs: Pick<JobRepository, 'find' | 'list'>,
     private readonly facts: Pick<FactRepository, 'list'>,
     private readonly profiles: Pick<ProfileRepository, 'listGoals'>,
+    private readonly applications: {
+      list(userId: string): Promise<{ jobId: string | null; submittedAt: Date | null }[]>;
+    },
     private readonly audit: AuditLog,
   ) {}
 
@@ -65,17 +68,22 @@ export class FeedbackService {
     return unique;
   }
 
-  /** Vagas prontas, das mais às menos indicadas. Avaliações mudam a ordem, nunca o score. */
+  /**
+   * Vagas prontas, das mais às menos indicadas. Avaliações mudam a ordem, nunca o score.
+   * Vaga com candidatura já enviada sai da lista, sem a pessoa precisar avaliar.
+   */
   async recommendations(
     userId: string,
     goalId?: string,
   ): Promise<{ items: Recommendation[]; hidden: number }> {
-    const [jobs, facts, goals, feedback] = await Promise.all([
+    const [jobs, facts, goals, feedback, applications] = await Promise.all([
       this.jobs.list(userId),
       this.facts.list(userId),
       this.profiles.listGoals(userId),
       this.feedback.list(userId),
+      this.applications.list(userId),
     ]);
+    const sent = new Set(applications.filter((a) => a.submittedAt).map((a) => a.jobId));
     const goal = goalId ? goals.find((g) => g.id === goalId) : goals.find((g) => g.isActive);
     if (goalId && !goal) throw new AppError('NOT_FOUND', 'Objetivo não encontrado.');
 
@@ -83,6 +91,10 @@ export class FeedbackService {
     const items: Recommendation[] = [];
     let hidden = 0;
     for (const job of jobs.filter((j) => j.status === 'ready')) {
+      if (sent.has(job.id)) {
+        hidden++;
+        continue;
+      }
       const { score } = computeCompatibility({ job, facts, goal });
       const ownReasons = feedback.filter((f) => f.jobId === job.id).map((f) => f.reason);
       const rank = rankJob({ jobId: job.id, score, job, preferences, ownReasons });

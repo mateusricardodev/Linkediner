@@ -8,3 +8,4 @@ export * from './jobs';
 export * from './matches';
 export * from './feedback';
 export * from './applications';
+export * from './materials';

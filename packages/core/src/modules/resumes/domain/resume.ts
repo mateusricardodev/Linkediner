@@ -146,16 +146,30 @@ export function findUnsupportedTerms(
   return [...unsupported];
 }
 
-/** Confere uma frase contra os fatos citados. O que não se comprova vira sugestão, nunca fato. */
+/** Troca as menções exatas por uma palavra comum, para não contarem como nome próprio. */
+function withoutMentions(text: string, mentions: readonly (string | null)[]): string {
+  return mentions.reduce<string>((result, mention) => {
+    if (!mention?.trim()) return result;
+    const pattern = mention.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return result.replace(new RegExp(pattern, 'giu'), 'vaga');
+  }, text);
+}
+
+/**
+ * Confere uma frase contra os fatos citados. O que não se comprova vira sugestão, nunca fato.
+ * `mentions` são nomes que a frase pode citar por inteiro (o cargo e a empresa da vaga). Eles não
+ * comprovam nada: uma vaga de "Dev React" não torna verdadeiro "tenho experiência com React".
+ */
 export function toResumeItem(
   claim: { text: string; factIds: string[] },
   factsById: Map<string, ProfileFact>,
+  mentions: readonly (string | null)[] = [],
 ): ResumeItem {
   const factIds = [...new Set(claim.factIds)].filter((id) => factsById.has(id));
   const base = { id: newId(), text: claim.text, factIds };
   if (factIds.length === 0) return { ...base, status: 'suggested', reason: 'no_source' };
   const cited = factIds.map((id) => factsById.get(id)!);
-  return findUnsupportedTerms(claim.text, cited).length > 0
+  return findUnsupportedTerms(withoutMentions(claim.text, mentions), cited).length > 0
     ? { ...base, status: 'suggested', reason: 'unsupported_value' }
     : { ...base, status: 'grounded', reason: null };
 }

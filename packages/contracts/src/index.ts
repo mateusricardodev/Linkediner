@@ -49,3 +49,10 @@ export {
   CreateApplicationBody,
   DashboardResponse,
 } from './applications';
+export {
+  ApplicationMaterialDto,
+  DecideMaterialItemBody,
+  MaterialContentDto,
+  MaterialKind,
+  RequestMaterialBody,
+} from './materials';

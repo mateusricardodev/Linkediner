@@ -143,7 +143,7 @@ sequenceDiagram
   A-->>U: notificação + atualização do dashboard
 ```
 
-**O que existe hoje (M-12):** o material é o currículo aprovado, congelado na aprovação. Como ainda não há fonte autorizada, toda aprovação vira pendência manual, e o envio automático (`sending`) só existe na máquina de estados. Carta, respostas de formulário e currículo por vaga entram depois.
+**O que existe hoje:** o material é o currículo geral aprovado ou o currículo adaptado à vaga, além da carta e das respostas de formulário (ADR 0018). Tudo é conferido contra os fatos e fica congelado a partir da aprovação. Como ainda não há fonte autorizada, toda aprovação vira pendência manual, e o envio automático (`sending`) só existe na máquina de estados. Candidatura enviada tira a vaga das recomendações.
 
 **Regras invariantes do fluxo:**
 - O worker de envio recusa qualquer candidatura sem um evento `ApplicationApproved` do próprio usuário, verificado de novo antes do envio.

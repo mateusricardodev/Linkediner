@@ -4,6 +4,8 @@ import { DOCUMENTS_EXTRACT_QUEUE } from '@linkediner/core/extraction';
 import { createLogger } from '@linkediner/observability';
 import { JOBS_STRUCTURE_QUEUE } from '@linkediner/core/jobs';
 import { RESUMES_GENERATE_QUEUE } from '@linkediner/core/resumes';
+import { MATERIALS_GENERATE_QUEUE } from '@linkediner/core/applications';
+import { applicationsGenerateMaterial } from './handlers/applications-generate-material';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
@@ -109,6 +111,36 @@ describe('resumes.generate', () => {
   it('informa quando é a última tentativa', async () => {
     const run = vi.fn(async () => 'draft' as const);
     const task = resumesGenerate({ generate: { run } });
+    await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
+    expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
+  });
+});
+
+describe('applications.generate_material', () => {
+  const job = {
+    userId: payload.userId,
+    applicationId: payload.documentId,
+    materialId: '0193b2b0-0000-7000-8000-0000000000e1',
+  };
+
+  it('a fila criada pela API é igual à registrada pelo worker', () => {
+    const task = applicationsGenerateMaterial({ generate: { run: vi.fn() } });
+    expect(task.name).toBe(MATERIALS_GENERATE_QUEUE.name);
+    expect(deadLetterQueue(task.name)).toBe(MATERIALS_GENERATE_QUEUE.deadLetter);
+  });
+
+  it('recusa payload com dados além dos IDs', async () => {
+    const run = vi.fn();
+    const task = applicationsGenerateMaterial({ generate: { run } });
+    await expect(
+      runTask(task, { id: 'j', data: { ...job, questions: ['pergunta'] } }, logger),
+    ).rejects.toThrow(/Payload inválido/);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('informa quando é a última tentativa', async () => {
+    const run = vi.fn(async () => 'ready' as const);
+    const task = applicationsGenerateMaterial({ generate: { run } });
     await runTask(task, { id: 'j', data: job, retryCount: 2 }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
   });

@@ -1,5 +1,11 @@
 import { Writable } from 'node:stream';
-import { ApplicationService, DrizzleApplicationRepository } from '@linkediner/core/applications';
+import {
+  ApplicationService,
+  DrizzleApplicationRepository,
+  DrizzleMaterialRepository,
+  MaterialService,
+  type GenerateMaterialJob,
+} from '@linkediner/core/applications';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
@@ -53,6 +59,8 @@ export async function startTestApp() {
   const jobRepository = new DrizzleJobRepository(db);
   const resumeRepository = new DrizzleResumeRepository(db);
   const userReader = new DrizzleUserReader(db);
+  const applicationRepository = new DrizzleApplicationRepository(db);
+  const materialRepository = new DrizzleMaterialRepository(db);
   const scores = new ProfileScoreService(
     profileRepository,
     factRepository,
@@ -75,6 +83,12 @@ export async function startTestApp() {
     jobs: [] as GenerateResumeJob[],
     enqueue: async (job: GenerateResumeJob) => {
       resumeQueue.jobs.push(job);
+    },
+  };
+  const materialQueue = {
+    jobs: [] as GenerateMaterialJob[],
+    enqueue: async (job: GenerateMaterialJob) => {
+      materialQueue.jobs.push(job);
     },
   };
   const app = await buildServer({
@@ -107,9 +121,19 @@ export async function startTestApp() {
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
       applications: new ApplicationService(
-        new DrizzleApplicationRepository(db),
+        applicationRepository,
         jobRepository,
         resumeRepository,
+        materialRepository,
+        audit,
+      ),
+      materials: new MaterialService(
+        materialRepository,
+        applicationRepository,
+        jobRepository,
+        factRepository,
+        consents,
+        materialQueue,
         audit,
       ),
       feedback: new FeedbackService(
@@ -117,6 +141,7 @@ export async function startTestApp() {
         jobRepository,
         factRepository,
         profileRepository,
+        applicationRepository,
         audit,
       ),
       matching: new MatchingService(
@@ -189,6 +214,7 @@ export async function startTestApp() {
     queue,
     resumeQueue,
     jobQueue,
+    materialQueue,
     scores,
     signUp,
     call,

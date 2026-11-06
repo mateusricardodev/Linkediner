@@ -14,6 +14,7 @@ import {
   type TransitionChange,
   type TransitionStep,
 } from '../domain/application';
+import { pendingInMaterials, type ApplicationMaterial } from '../domain/material';
 
 /** Toda operação usa o contexto do usuário dono (RLS). */
 export interface ApplicationRepository {
@@ -52,6 +53,9 @@ export class ApplicationService {
     private readonly repo: ApplicationRepository,
     private readonly jobs: Pick<JobRepository, 'find'>,
     private readonly resumes: Pick<ResumeRepository, 'find'>,
+    private readonly materials: {
+      list(userId: string, applicationId: string): Promise<ApplicationMaterial[]>;
+    },
     private readonly audit: AuditLog,
     private readonly clock: Clock = systemClock,
   ) {}
@@ -114,9 +118,7 @@ export class ApplicationService {
 
   async submitForApproval(userId: string, id: string): Promise<Application> {
     const application = await this.load(userId, id);
-    if (!application.resumeId) {
-      throw new AppError('CONFLICT', 'Escolha um currículo aprovado antes de seguir.');
-    }
+    await this.resumeForApproval(userId, application);
     return this.apply(userId, application, [{ to: 'awaiting_approval', actor: 'user' }]);
   }
 
@@ -128,13 +130,11 @@ export class ApplicationService {
   /**
    * A aprovação congela o material: o que vai para a candidatura é exatamente o que foi aprovado,
    * mesmo que o currículo seja editado depois. Sem integração autorizada, vira pendência manual.
+   * O currículo adaptado à vaga, se houver, tem prioridade sobre o currículo geral escolhido.
    */
   async approve(userId: string, id: string): Promise<Application> {
     const application = await this.load(userId, id);
-    if (!application.resumeId) {
-      throw new AppError('CONFLICT', 'Escolha um currículo aprovado antes de aprovar.');
-    }
-    const resume = await this.approvedResume(userId, application.resumeId);
+    const resume = await this.resumeForApproval(userId, application);
     const approved = await this.apply(
       userId,
       application,
@@ -198,6 +198,26 @@ export class ApplicationService {
     const application = await this.repo.find(userId, id);
     if (!application) throw notFound();
     return application;
+  }
+
+  /** Nada segue para aprovação com geração em andamento ou frase sem a decisão da pessoa. */
+  private async resumeForApproval(userId: string, application: Application) {
+    const materials = await this.materials.list(userId, application.id);
+    if (materials.some((m) => m.status === 'generating')) {
+      throw new AppError('CONFLICT', 'Aguarde o fim da geração do material.');
+    }
+    const pending = pendingInMaterials(materials);
+    if (pending > 0) {
+      throw new AppError('CONFLICT', 'Confirme ou remova as sugestões do material.', {
+        pendingSuggestions: pending,
+      });
+    }
+    const tailored = materials.find((m) => m.kind === 'resume' && m.status === 'ready');
+    if (tailored?.content) return tailored.content as ResumeContent;
+    if (!application.resumeId) {
+      throw new AppError('CONFLICT', 'Escolha um currículo aprovado ou gere um para esta vaga.');
+    }
+    return this.approvedResume(userId, application.resumeId);
   }
 
   private async approvedResume(userId: string, resumeId: string): Promise<ResumeContent> {
