@@ -68,8 +68,8 @@ beforeAll(async () => {
     users: new DrizzleUserReader(db),
     ai,
     prompt: extractProfileV1,
-    facts: new DrizzleFactRepository(db),
-    generations: new DrizzleAiGenerationLog(db),
+    facts: new DrizzleFactRepository(db, t.cipher),
+    generations: new DrizzleAiGenerationLog(db, t.cipher),
     audit: t.audit,
   });
 }, 180_000);
@@ -322,7 +322,7 @@ describe('exclusão e retenção', () => {
   });
 
   it('o registro de IA antigo é apagado, e o recente fica', async () => {
-    const log = new DrizzleAiGenerationLog(t.db.db);
+    const log = new DrizzleAiGenerationLog(t.db.db, t.cipher);
     const count = async () =>
       (await t.db.pool.query('SELECT count(*)::int AS n FROM ai_generations')).rows[0].n as number;
     const before = await count();

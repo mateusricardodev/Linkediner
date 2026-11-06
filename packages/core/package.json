@@ -8,6 +8,7 @@
     "./ai": "./src/modules/ai/index.ts",
     "./applications": "./src/modules/applications/index.ts",
     "./audit": "./src/modules/audit/index.ts",
+    "./crypto": "./src/modules/crypto/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
     "./privacy/account": "./src/modules/privacy/account.ts",
     "./privacy/account-worker": "./src/modules/privacy/account-worker.ts",

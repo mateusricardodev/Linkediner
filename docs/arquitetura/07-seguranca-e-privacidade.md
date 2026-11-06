@@ -22,7 +22,7 @@
 | Área | Medida |
 |---|---|
 | Transporte | TLS em tudo, HSTS |
-| Repouso | Criptografia do provedor no banco e no storage. Criptografia de aplicação (envelope) para texto extraído e saídas de IA, com uma chave por usuário. |
+| Repouso | Criptografia do provedor no banco e no storage. Criptografia de aplicação (envelope) para fatos, saídas de IA, currículos e materiais, com uma chave por usuário fora do banco ([ADR 0020](../adr/0020-criptografia-por-usuario.md)). |
 | Segredos | Variáveis de ambiente injetadas pelo gerenciador de segredos da plataforma. `.env` só local e no `.gitignore`. Varredura de segredos no CI (gitleaks). |
 | Entrada | Validação com Zod em toda fronteira (HTTP, fila, resposta de IA, resposta de fonte externa) |
 | Uploads | Tipo real verificado, tamanho limitado, processamento isolado no worker, URLs assinadas de curta duração |
@@ -59,5 +59,5 @@
 | Logs | Não contêm PII | Expiram em 30 dias |
 | Tarefas pendentes | Extrações, gerações, envios | Canceladas no pg-boss antes do expurgo |
 | Provedor de IA | Arquivos enviados à API (se houver upload de arquivo) | Apagados via API logo após o uso. Não usamos armazenamento persistente do provedor. |
-| Backups | Cópias do banco | Ilegíveis por crypto-shredding ([ADR 0008](../adr/0008-retencao-e-exclusao.md)) |
+| Backups | Cópias do banco | Conteúdo de carreira ilegível por crypto-shredding. O restante expira com o backup ([ADR 0020](../adr/0020-criptografia-por-usuario.md)) |
 | Auditoria | Registros do usuário | Mantidos com `actor_id` pseudonimizado (obrigação legal) |

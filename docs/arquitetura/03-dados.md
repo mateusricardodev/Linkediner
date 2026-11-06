@@ -44,7 +44,6 @@ erDiagram
 | `auth_identities` | id, user_id, provider (`google`, `github`, `linkedin`, `password`), provider_subject, scopes, created_at | Tokens OAuth, quando necessários, ficam criptografados e com escopo mínimo. Nunca guardamos senha de conta externa. |
 | `sessions` | id, user_id, expires_at, ip_hash, user_agent | Gerenciada pela biblioteca de auth |
 | `consents` | id, user_id, purpose (`terms`, `privacy`, `ai_processing`, `auto_apply`, `marketing`, `model_training`), version, granted, granted_at, revoked_at | Cada concessão ou revogação gera uma nova linha. `model_training` nasce `false` e exige ação explícita e separada. |
-| `user_keys` | user_id, wrapped_dek, kms_key_id, created_at, destroyed_at | Chave por usuário para crypto-shredding ([ADR 0008](../adr/0008-retencao-e-exclusao.md)) |
 | `deletion_requests` | id, user_id, requested_at, status, completed_at, report | Rastreia o expurgo em todos os sistemas |
 | `data_exports` | id, user_id, status, object_key, expires_at | Arquivo de exportação expira em 7 dias |
 | `audit_logs` | id, actor_type, actor_id, action, entity_type, entity_id, metadata (sem PII), ip_hash, created_at | Somente inserção. `actor_id` é pseudonimizado após a exclusão do usuário. |
@@ -116,4 +115,5 @@ erDiagram
 | Candidaturas e histórico | Enquanto a conta existir | Apagados |
 | Logs de aplicação | 30 dias, sem PII | Nada a apagar |
 | Auditoria | 5 anos, pseudonimizada | Mantida pseudonimizada, para obrigação legal |
-| Backups | 7–30 dias | Ilegíveis por crypto-shredding |
+| Backups | 7–30 dias | Conteúdo de carreira ilegível por crypto-shredding. O restante expira com o backup ([ADR 0020](../adr/0020-criptografia-por-usuario.md)) |
+| Chaves por usuário | Enquanto a conta existir, em bucket próprio fora dos backups do banco | Destruídas |

@@ -24,7 +24,7 @@ const fields = (o: Partial<JobFields> = {}): JobFields => ({
 beforeAll(async () => {
   t = await startTestApp();
   jobs = new DrizzleJobRepository(t.db.db);
-  facts = new DrizzleFactRepository(t.db.db);
+  facts = new DrizzleFactRepository(t.db.db, t.cipher);
 }, 180_000);
 
 afterAll(async () => t?.stop());

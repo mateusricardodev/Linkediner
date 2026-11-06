@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigError, loadConfig } from './index';
 
-const base = { DATABASE_URL: 'postgres://u:p@localhost:5432/db', AUTH_SECRET: 'a'.repeat(32) };
+const base = {
+  DATABASE_URL: 'postgres://u:p@localhost:5432/db',
+  AUTH_SECRET: 'a'.repeat(32),
+  DATA_MASTER_KEY: Buffer.alloc(32, 7).toString('base64'),
+};
 
 describe('loadConfig', () => {
   it('aplica valores padrão em desenvolvimento', () => {
@@ -30,6 +34,24 @@ describe('loadConfig', () => {
 
   it('exige AUTH_SECRET com pelo menos 32 caracteres', () => {
     expect(() => loadConfig({ ...base, AUTH_SECRET: 'curto' })).toThrow(/AUTH_SECRET/);
+  });
+
+  it('exige chave mestra de 32 bytes, sem mostrar o valor', () => {
+    const { DATA_MASTER_KEY: _omitida, ...semChave } = base;
+    expect(() => loadConfig(semChave)).toThrow(/DATA_MASTER_KEY/);
+    const curta = Buffer.alloc(16, 7).toString('base64');
+    expect(() => loadConfig({ ...base, DATA_MASTER_KEY: curta })).toThrow(/DATA_MASTER_KEY/);
+    try {
+      loadConfig({ ...base, DATA_MASTER_KEY: curta });
+    } catch (e) {
+      expect(String(e)).not.toContain(curta);
+    }
+  });
+
+  it('recusa guardar as chaves no bucket de documentos, que expira objetos', () => {
+    expect(() =>
+      loadConfig({ ...base, STORAGE_BUCKET: 'mesmo', STORAGE_KEYS_BUCKET: 'mesmo' }),
+    ).toThrow(/STORAGE_KEYS_BUCKET/);
   });
 
   it('exige plano pago de IA em produção (ADR 0004)', () => {

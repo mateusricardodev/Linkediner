@@ -44,7 +44,7 @@ const SUGGESTION = '0193b2b0-0000-7000-8000-0000000000b2';
 
 beforeAll(async () => {
   t = await startTestApp();
-  resumes = new DrizzleResumeRepository(t.db.db);
+  resumes = new DrizzleResumeRepository(t.db.db, t.cipher);
 }, 180_000);
 
 afterAll(async () => t?.stop());

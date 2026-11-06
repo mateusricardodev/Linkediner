@@ -172,9 +172,9 @@ sequenceDiagram
    5. cancela a assinatura no provedor de pagamento;
    6. pseudonimiza a auditoria.
 3. O job gera um relatório em `deletion_requests` e envia a confirmação por e-mail.
-4. Prazo: imediato para dados ativos. Backups ficam ilegíveis por causa da chave destruída.
+4. Prazo: imediato para dados ativos. Nos backups, o conteúdo de carreira fica ilegível porque a chave foi destruída, e o restante expira com o backup (ADR 0020).
 
-**O que existe hoje:** os passos 1 a 3 do expurgo e a pseudonimização, com o relatório (ADR 0019). A destruição da chave, o cancelamento da assinatura e o e-mail de confirmação ainda não existem.
+**O que existe hoje:** o expurgo, com a destruição da chave, a pseudonimização e o relatório (ADR 0019 e 0020). O cancelamento da assinatura e o e-mail de confirmação ainda não existem.
 
 ### F9 — Exportação de dados
 

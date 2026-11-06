@@ -20,6 +20,7 @@ import {
 import { DrizzleJobRepository, EMPTY_JOB_OUTPUT, StructureJob } from '@linkediner/core/jobs';
 import { DrizzleResumeRepository, GenerateResume } from '@linkediner/core/resumes';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
+import { createFieldCipher } from '@linkediner/core/crypto';
 import {
   DrizzleDocumentRepository,
   DrizzleDocumentRetentionRepository,
@@ -95,8 +96,19 @@ if (ai instanceof FakeAiProvider) {
   ai.respond('generate_cover_letter', () => ({ paragraphs: [] }));
   ai.respond('answer_form', () => ({ answers: [] }));
 }
-const generations = new DrizzleAiGenerationLog(database.db);
-const factRepository = new DrizzleFactRepository(database.db);
+const cipher = createFieldCipher({
+  db: database.db,
+  keyStorage: new S3ObjectStorage({
+    bucket: config.STORAGE_KEYS_BUCKET,
+    region: config.STORAGE_REGION,
+    endpoint: config.STORAGE_ENDPOINT,
+    accessKeyId: config.STORAGE_ACCESS_KEY_ID,
+    secretAccessKey: config.STORAGE_SECRET_ACCESS_KEY,
+  }),
+  masterKeyBase64: config.DATA_MASTER_KEY,
+});
+const generations = new DrizzleAiGenerationLog(database.db, cipher);
+const factRepository = new DrizzleFactRepository(database.db, cipher);
 const boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: 'pgboss' });
 
 boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
@@ -105,6 +117,7 @@ await boss.start();
 const purge = new PurgeUser({
   repo: new DrizzleAccountDeletionRepository(database.db),
   storage,
+  keys: cipher,
   // Toda fila cujo payload tem `userId`. A do próprio expurgo fica de fora.
   tasks: new PgBossPendingTasks(boss, [
     DOCUMENTS_EXTRACT_QUEUE.name,
@@ -148,7 +161,7 @@ const tasks = [
   }),
   resumesGenerate({
     generate: new GenerateResume({
-      resumes: new DrizzleResumeRepository(database.db),
+      resumes: new DrizzleResumeRepository(database.db, cipher),
       facts: factRepository,
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       ai,
@@ -159,8 +172,8 @@ const tasks = [
   }),
   applicationsGenerateMaterial({
     generate: new GenerateMaterial({
-      materials: new DrizzleMaterialRepository(database.db),
-      applications: new DrizzleApplicationRepository(database.db),
+      materials: new DrizzleMaterialRepository(database.db, cipher),
+      applications: new DrizzleApplicationRepository(database.db, cipher),
       jobs: new DrizzleJobRepository(database.db),
       facts: factRepository,
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
@@ -179,7 +192,7 @@ const tasks = [
   privacyExportUser({
     exporter: new ExportUserData({
       repo: exportRepository,
-      reader: new DrizzleAccountDataReader(database.db),
+      reader: new DrizzleAccountDataReader(database.db, cipher),
       storage,
       zip: buildExportZip,
       audit,

@@ -22,7 +22,7 @@ Ao implementar, a primeira colide com duas regras obrigatórias do produto: remo
 
 ## Pendência conhecida
 
-O ADR 0008 prevê cifrar as saídas de IA com a chave de cada usuário. `ai_generations.output` e `profile_facts.data` contêm dados profissionais e, por enquanto, têm só a criptografia em repouso do provedor do banco. Eles são apagados em cascata com a conta. A cifragem por usuário entra com o crypto-shredding (M-13) e **precisa estar pronta antes do beta com usuários reais**.
+O ADR 0008 prevê cifrar as saídas de IA com a chave de cada usuário. `ai_generations.output` e `profile_facts.data` contêm dados profissionais e, por enquanto, têm só a criptografia em repouso do provedor do banco. Eles são apagados em cascata com a conta. A cifragem por usuário foi implementada no [ADR 0020](0020-criptografia-por-usuario.md).
 
 ## Alternativas consideradas
 

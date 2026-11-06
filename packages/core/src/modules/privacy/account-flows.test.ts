@@ -86,14 +86,26 @@ function purgeSetup(current: DeletionRequest | null = request()) {
       return 2;
     }),
   };
-  return { purge: new PurgeUser({ repo, storage, tasks, clock }), repo, storage, tasks, order };
+  const keys = {
+    destroy: vi.fn(async () => {
+      order.push('chave');
+    }),
+  };
+  return {
+    purge: new PurgeUser({ repo, storage, tasks, keys, clock }),
+    repo,
+    storage,
+    tasks,
+    keys,
+    order,
+  };
 }
 
 describe('expurgo', () => {
-  it('apaga na ordem: fila, arquivos, banco, e relata só contagens', async () => {
+  it('apaga na ordem: fila, arquivos, chave, banco, e relata só contagens', async () => {
     const { purge, repo, storage, order } = purgeSetup();
     expect(await purge.run({ requestId: 'r1' }, { isLastAttempt: false })).toBe('completed');
-    expect(order).toEqual(['fila', 'arquivos', 'banco']);
+    expect(order).toEqual(['fila', 'arquivos', 'chave', 'banco']);
     expect(storage.deletePrefix).toHaveBeenCalledWith(`users/${USER}/`);
     expect(repo.complete).toHaveBeenCalledWith(request(), { cancelledTasks: 2, deletedFiles: 3 });
   });
@@ -117,6 +129,13 @@ describe('expurgo', () => {
     storage.deletePrefix.mockRejectedValueOnce(new Error('storage fora do ar'));
     await expect(purge.run({ requestId: 'r1' }, { isLastAttempt: true })).rejects.toThrow();
     expect(repo.markFailed).toHaveBeenCalledWith('r1');
+  });
+
+  it('se a chave não pode ser destruída, o pedido não conclui', async () => {
+    const { purge, repo, keys } = purgeSetup();
+    keys.destroy.mockRejectedValueOnce(new Error('storage fora do ar'));
+    await expect(purge.run({ requestId: 'r1' }, { isLastAttempt: false })).rejects.toThrow();
+    expect(repo.complete).not.toHaveBeenCalled();
   });
 
   it('a tarefa periódica retoma pedidos parados e conta os que seguem falhando', async () => {
