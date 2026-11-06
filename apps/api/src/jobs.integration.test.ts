@@ -32,7 +32,7 @@ beforeAll(async () => {
     consents: t.consents,
     ai,
     prompt: structureJobV1,
-    generations: new DrizzleAiGenerationLog(t.db.db),
+    generations: new DrizzleAiGenerationLog(t.db.db, t.cipher),
     audit: t.audit,
   });
 }, 180_000);

@@ -1,10 +1,13 @@
 import { and, asc, desc, eq, schema, sql, withUserContext, type Database } from '@linkediner/db';
+import type { FieldCipher } from '../../crypto';
 import type { ResumeContent } from '../../resumes';
 import { newId } from '../../shared';
 import type { ApplicationRepository } from '../application/application-service';
 import type { Application, JobSummary } from '../domain/application';
 
 const { applications, applicationEvents, manualTasks } = schema;
+
+const SNAPSHOT = 'applications.material_snapshot';
 
 const toApplication = (r: typeof applications.$inferSelect): Application => ({
   id: r.id,
@@ -19,7 +22,10 @@ const toApplication = (r: typeof applications.$inferSelect): Application => ({
 });
 
 export class DrizzleApplicationRepository implements ApplicationRepository {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly cipher: FieldCipher,
+  ) {}
 
   private owned(userId: string, id: string) {
     return and(eq(applications.id, id), eq(applications.userId, userId));
@@ -112,28 +118,38 @@ export class DrizzleApplicationRepository implements ApplicationRepository {
     );
   }
 
-  material(userId: string, id: string) {
+  async material(userId: string, id: string) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx
         .select({ material: applications.materialSnapshot })
         .from(applications)
         .where(this.owned(userId, id));
-      return (row?.material as ResumeContent | null | undefined) ?? null;
+      return c.openJson<ResumeContent | null>(SNAPSHOT, row?.material ?? null) ?? null;
     });
   }
 
-  transition(
+  async transition(
     userId: string,
     id: string,
     from: Application['state'],
     steps: Parameters<ApplicationRepository['transition']>[3],
     change: Parameters<ApplicationRepository['transition']>[4] = {},
   ) {
+    // A chave só é buscada quando há o que cifrar: a maioria das transições não tem material.
+    const { createManualTask, resolveManualTasks, materialSnapshot, ...fields } = change;
+    const snapshot = materialSnapshot
+      ? (await this.cipher.forUser(userId)).sealJson(SNAPSHOT, materialSnapshot)
+      : materialSnapshot;
     return withUserContext(this.db, userId, async (tx) => {
-      const { createManualTask, resolveManualTasks, ...fields } = change;
       const [row] = await tx
         .update(applications)
-        .set({ state: steps.at(-1)?.to ?? from, updatedAt: new Date(), ...fields })
+        .set({
+          state: steps.at(-1)?.to ?? from,
+          updatedAt: new Date(),
+          ...fields,
+          ...(snapshot !== undefined ? { materialSnapshot: snapshot } : {}),
+        })
         .where(and(this.owned(userId, id), eq(applications.state, from)))
         .returning();
       if (!row) return null;

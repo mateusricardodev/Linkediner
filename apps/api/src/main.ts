@@ -10,6 +10,7 @@ import {
   type GenerateMaterialJob,
 } from '@linkediner/core/applications';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
+import { createFieldCipher } from '@linkediner/core/crypto';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import {
@@ -84,8 +85,23 @@ const storage = new S3ObjectStorage({
   accessKeyId: config.STORAGE_ACCESS_KEY_ID,
   secretAccessKey: config.STORAGE_SECRET_ACCESS_KEY,
 });
-// Em produção o bucket é criado pela infraestrutura, com regra de expiração de 30 dias.
-if (config.NODE_ENV === 'development') await storage.ensureBucket();
+const keyStorage = new S3ObjectStorage({
+  bucket: config.STORAGE_KEYS_BUCKET,
+  region: config.STORAGE_REGION,
+  endpoint: config.STORAGE_ENDPOINT,
+  accessKeyId: config.STORAGE_ACCESS_KEY_ID,
+  secretAccessKey: config.STORAGE_SECRET_ACCESS_KEY,
+});
+// Em produção os buckets são criados pela infraestrutura. O de documentos expira objetos em 30 dias.
+if (config.NODE_ENV === 'development') {
+  await storage.ensureBucket();
+  await keyStorage.ensureBucket();
+}
+const cipher = createFieldCipher({
+  db: database.db,
+  keyStorage,
+  masterKeyBase64: config.DATA_MASTER_KEY,
+});
 
 // A API só envia jobs: a manutenção e os agendamentos da fila ficam com o worker.
 const boss = new PgBoss({
@@ -99,13 +115,13 @@ await boss.start();
 
 const consents = new ConsentService(new DrizzleConsentRepository(database.db), audit);
 const documentRepository = new DrizzleDocumentRepository(database.db);
-const factRepository = new DrizzleFactRepository(database.db);
+const factRepository = new DrizzleFactRepository(database.db, cipher);
 const profileRepository = new DrizzleProfileRepository(database.db);
 const jobRepository = new DrizzleJobRepository(database.db);
-const resumeRepository = new DrizzleResumeRepository(database.db);
+const resumeRepository = new DrizzleResumeRepository(database.db, cipher);
 const userReader = new DrizzleUserReader(database.db);
-const applicationRepository = new DrizzleApplicationRepository(database.db);
-const materialRepository = new DrizzleMaterialRepository(database.db);
+const applicationRepository = new DrizzleApplicationRepository(database.db, cipher);
+const materialRepository = new DrizzleMaterialRepository(database.db, cipher);
 
 const app = await buildServer({
   config,

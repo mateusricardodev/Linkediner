@@ -6,7 +6,7 @@
 
 ## Contexto
 
-A LGPD garante à pessoa apagar a conta e levar os próprios dados. O ADR 0008 definiu o objetivo. Aqui ficam as decisões de implementação. A criptografia com uma chave por usuário, que torna os backups ilegíveis, entra em um PR separado.
+A LGPD garante à pessoa apagar a conta e levar os próprios dados. O ADR 0008 definiu o objetivo. Aqui ficam as decisões de implementação. A criptografia por usuário está no [ADR 0020](0020-criptografia-por-usuario.md).
 
 ## Decisão
 
@@ -34,7 +34,7 @@ A LGPD garante à pessoa apagar a conta e levar os próprios dados. O ADR 0008 d
 
 ## Limitações conhecidas
 
-- **Backups:** até a criptografia por usuário entrar, os dados apagados continuam legíveis nos backups até eles expirarem (7 a 30 dias). Isso precisa estar resolvido antes do beta com usuários reais.
+- **Backups:** a criptografia por usuário cobre o conteúdo de carreira ([ADR 0020](0020-criptografia-por-usuario.md)). O restante segue nos backups até eles expirarem (7 a 30 dias).
 - **Confirmação por e-mail (F8):** ainda não existe serviço de e-mail. A pessoa vê a confirmação só na resposta da API.
 - **Assinatura:** o cancelamento no provedor de pagamento entra com os planos (M-14).
 - **Upload em andamento:** uma URL de upload emitida antes da exclusão pode gravar um arquivo depois do expurgo. Ela expira em minutos, e o arquivo some pela regra de ciclo de vida de 30 dias do bucket.

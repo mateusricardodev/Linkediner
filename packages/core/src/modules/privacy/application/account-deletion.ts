@@ -80,6 +80,7 @@ export interface PurgeUserDeps {
   repo: Pick<AccountDeletionRepository, 'find' | 'complete' | 'markFailed' | 'listOpen'>;
   storage: Pick<ObjectStorage, 'deletePrefix'>;
   tasks: PendingTasks;
+  keys: { destroy(userId: string): Promise<void> };
   clock?: Clock;
 }
 
@@ -104,6 +105,8 @@ export class PurgeUser {
       if (request.userId) {
         report.cancelledTasks = await this.deps.tasks.cancelForUser(request.userId);
         report.deletedFiles = await this.deps.storage.deletePrefix(userPrefix(request.userId));
+        // Antes de concluir o pedido: depois disso não se sabe mais de quem era a chave.
+        await this.deps.keys.destroy(request.userId);
       }
       await this.deps.repo.complete(request, report);
       return 'completed';

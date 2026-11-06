@@ -23,3 +23,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0017 | [Preferências calculadas a partir do feedback](0017-preferencias-derivadas-do-feedback.md) | Proposto |
 | 0018 | [Material por vaga conferido contra os fatos](0018-material-por-vaga.md) | Proposto |
 | 0019 | [Exclusão da conta e exportação de dados](0019-exclusao-e-exportacao.md) | Proposto |
+| 0020 | [Criptografia por usuário, com as chaves fora do banco](0020-criptografia-por-usuario.md) | Proposto |

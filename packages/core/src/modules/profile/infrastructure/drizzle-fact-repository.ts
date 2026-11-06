@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, schema, withUserContext, type Database } from '@linkediner/db';
+import type { FieldCipher, UserCipher } from '../../crypto';
 import { newId } from '../../shared';
 import {
   fingerprintFact,
@@ -11,12 +12,15 @@ import type { FactRepository } from '../application/ports/fact-repository';
 
 const { profileFacts, profiles } = schema;
 
-const toFact = (r: typeof profileFacts.$inferSelect): ProfileFact => ({
+const DATA = 'profile_facts.data';
+const SPAN = 'profile_facts.source_span';
+
+const toFact = (c: UserCipher, r: typeof profileFacts.$inferSelect): ProfileFact => ({
   id: r.id,
   type: r.type,
-  data: r.data as FactData,
+  data: c.openJson<FactData>(DATA, r.data),
   sourceDocumentId: r.sourceDocumentId,
-  sourceSpan: r.sourceSpan,
+  sourceSpan: r.sourceSpan === null ? null : c.openText(SPAN, r.sourceSpan),
   verification: r.verification,
   createdAt: r.createdAt,
 });
@@ -25,9 +29,13 @@ const isUniqueViolation = (error: unknown) =>
   (error as { cause?: { code?: string } }).cause?.code === '23505';
 
 export class DrizzleFactRepository implements FactRepository {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly cipher: FieldCipher,
+  ) {}
 
-  list(userId: string) {
+  async list(userId: string) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) =>
       (
         await tx
@@ -36,21 +44,23 @@ export class DrizzleFactRepository implements FactRepository {
           .where(eq(profileFacts.userId, userId))
           // Fatos da mesma extração têm o mesmo created_at: o ID (UUID v7) mantém a ordem estável.
           .orderBy(asc(profileFacts.createdAt), asc(profileFacts.id))
-      ).map(toFact),
+      ).map((row) => toFact(c, row)),
     );
   }
 
-  find(userId: string, factId: string) {
+  async find(userId: string, factId: string) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx
         .select()
         .from(profileFacts)
         .where(and(eq(profileFacts.id, factId), eq(profileFacts.userId, userId)));
-      return row ? toFact(row) : null;
+      return row ? toFact(c, row) : null;
     });
   }
 
-  replaceExtracted(userId: string, documentId: string, facts: NewFact[]) {
+  async replaceExtracted(userId: string, documentId: string, facts: NewFact[]) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
       await tx
         .insert(profiles)
@@ -80,10 +90,10 @@ export class DrizzleFactRepository implements FactRepository {
             userId,
             profileId: profile!.id,
             type: fact.type,
-            data: fact.data,
+            data: c.sealJson(DATA, fact.data),
             fingerprint: fingerprintFact(fact.type, fact.data),
             sourceDocumentId: documentId,
-            sourceSpan: fact.sourceSpan,
+            sourceSpan: c.sealText(SPAN, fact.sourceSpan),
             verification: 'extracted' as const,
           })),
         )
@@ -94,6 +104,7 @@ export class DrizzleFactRepository implements FactRepository {
   }
 
   async addConfirmed(userId: string, fact: { type: FactType; data: FactData }) {
+    const c = await this.cipher.forUser(userId);
     await withUserContext(this.db, userId, async (tx) => {
       await tx
         .insert(profiles)
@@ -110,7 +121,7 @@ export class DrizzleFactRepository implements FactRepository {
           userId,
           profileId: profile!.id,
           type: fact.type,
-          data: fact.data,
+          data: c.sealJson(DATA, fact.data),
           fingerprint: fingerprintFact(fact.type, fact.data),
           verification: 'user_confirmed',
         })
@@ -123,14 +134,16 @@ export class DrizzleFactRepository implements FactRepository {
     factId: string,
     change: Parameters<FactRepository['update']>[2],
   ): Promise<ProfileFact | null> {
+    const c = await this.cipher.forUser(userId);
+    const { data, ...rest } = change;
     try {
       return await withUserContext(this.db, userId, async (tx) => {
         const [row] = await tx
           .update(profileFacts)
-          .set(change)
+          .set({ ...rest, ...(data ? { data: c.sealJson(DATA, data) } : {}) })
           .where(and(eq(profileFacts.id, factId), eq(profileFacts.userId, userId)))
           .returning();
-        return toFact(row!);
+        return toFact(c, row!);
       });
     } catch (error) {
       if (isUniqueViolation(error)) return null;

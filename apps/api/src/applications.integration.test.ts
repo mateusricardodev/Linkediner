@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { DrizzleApplicationRepository } from '@linkediner/core/applications';
 import { DrizzleJobRepository, jobDedupeHash } from '@linkediner/core/jobs';
 import { DrizzleResumeRepository, type ResumeContent } from '@linkediner/core/resumes';
 import { startTestApp } from './testing/app';
@@ -21,7 +22,7 @@ const CONTENT: ResumeContent = {
 beforeAll(async () => {
   t = await startTestApp();
   jobs = new DrizzleJobRepository(t.db.db);
-  resumes = new DrizzleResumeRepository(t.db.db);
+  resumes = new DrizzleResumeRepository(t.db.db, t.cipher);
 }, 180_000);
 
 afterAll(async () => t?.stop());
@@ -162,7 +163,9 @@ describe('fluxo da candidatura', () => {
       'SELECT material_snapshot FROM applications WHERE id = $1',
       [id],
     );
-    expect(rows[0].material_snapshot.skills).toEqual(['TypeScript']);
+    expect(JSON.stringify(rows[0].material_snapshot)).not.toContain('TypeScript');
+    const material = await new DrizzleApplicationRepository(t.db.db, t.cipher).material(userId, id);
+    expect(material?.skills).toEqual(['TypeScript']);
 
     const file = await t.call(cookie, 'GET', `/v1/applications/${id}/resume?format=pdf`);
     expect(file.statusCode).toBe(200);

@@ -50,14 +50,14 @@ beforeAll(async () => {
       ],
     }));
   generate = new GenerateMaterial({
-    materials: new DrizzleMaterialRepository(db),
-    applications: new DrizzleApplicationRepository(db),
+    materials: new DrizzleMaterialRepository(db, t.cipher),
+    applications: new DrizzleApplicationRepository(db, t.cipher),
     jobs: new DrizzleJobRepository(db),
-    facts: new DrizzleFactRepository(db),
+    facts: new DrizzleFactRepository(db, t.cipher),
     consents: t.consents,
     ai,
     prompts: { resume: tailorResumeV1, cover_letter: coverLetterV1, form_answers: formAnswersV1 },
-    generations: new DrizzleAiGenerationLog(db),
+    generations: new DrizzleAiGenerationLog(db, t.cipher),
     audit: t.audit,
   });
 }, 180_000);
@@ -72,7 +72,7 @@ async function setup(email: string, { consent = true, facts = true } = {}) {
   const userId = (await t.call(cookie, 'GET', '/v1/me')).json().user.id as string;
   if (consent) await t.call(cookie, 'PUT', '/v1/me/consents/ai_processing', { granted: true });
   if (facts) {
-    await new DrizzleFactRepository(t.db.db).addConfirmed(userId, {
+    await new DrizzleFactRepository(t.db.db, t.cipher).addConfirmed(userId, {
       type: 'experience',
       data: {
         company: 'Nubank',

@@ -13,7 +13,7 @@ Requisitos: documentos retidos por até 30 dias, exclusão imediata a pedido, po
 - Arquivos: regra de ciclo de vida de 30 dias no storage + job diário que apaga também o texto extraído e o cache derivado.
 - Exclusão de conta: job `privacy.purge_user` com etapas ordenadas e relatório (ver [04 — F8](../arquitetura/04-fluxos.md)).
 - **Crypto-shredding:**
-  - cada usuário tem uma chave de dados (DEK), guardada cifrada por uma chave mestra em KMS;
+  - cada usuário tem uma chave de dados (DEK), guardada cifrada por uma chave mestra em KMS (o [ADR 0020](0020-criptografia-por-usuario.md) ajusta onde as chaves ficam);
   - texto extraído, saídas de IA e outros campos sensíveis são cifrados com essa DEK;
   - na exclusão, a DEK é destruída, e as cópias em backup ficam ilegíveis.
 - Logs sem PII. Auditoria mantida e pseudonimizada.

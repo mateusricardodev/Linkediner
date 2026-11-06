@@ -11,7 +11,9 @@ import {
   PurgeUser,
 } from '@linkediner/core/privacy/account';
 import { buildExportZip } from '@linkediner/core/privacy/account-worker';
+import { createFieldCipher, keyObjectName } from '@linkediner/core/crypto';
 import { DrizzleFactRepository } from '@linkediner/core/profile';
+import { DrizzleResumeRepository } from '@linkediner/core/resumes';
 import { startTestApp, TEST_PASSWORD, WEB } from './testing/app';
 
 // Dados fictícios.
@@ -34,6 +36,7 @@ beforeAll(async () => {
   purge = new PurgeUser({
     repo: new DrizzleAccountDeletionRepository(t.db.db),
     storage: t.storage,
+    keys: t.cipher,
     tasks: {
       cancelForUser: async (userId) => {
         cancelled.push(userId);
@@ -43,7 +46,7 @@ beforeAll(async () => {
   });
   exporter = new ExportUserData({
     repo: new DrizzleDataExportRepository(t.db.db),
-    reader: new DrizzleAccountDataReader(t.db.db),
+    reader: new DrizzleAccountDataReader(t.db.db, t.cipher),
     storage: t.storage,
     zip: buildExportZip,
     audit: t.audit,
@@ -60,7 +63,7 @@ beforeEach(() => {
 async function setup(email: string) {
   const cookie = await t.signUp(email);
   const userId = (await t.call(cookie, 'GET', '/v1/me')).json().user.id as string;
-  await new DrizzleFactRepository(t.db.db).addConfirmed(userId, {
+  await new DrizzleFactRepository(t.db.db, t.cipher).addConfirmed(userId, {
     type: 'skill',
     data: { name: 'React' },
   });
@@ -188,6 +191,71 @@ describe('exclusão da conta', () => {
   });
 });
 
+describe('criptografia por usuário', () => {
+  const rawFact = async (userId: string) =>
+    (await t.db.pool.query('SELECT data FROM profile_facts WHERE user_id = $1', [userId])).rows[0]
+      .data;
+
+  it('o banco guarda o conteúdo cifrado, e a API devolve o conteúdo legível', async () => {
+    const { cookie, userId } = await setup('cif-banco@example.com');
+    expect(JSON.stringify(await rawFact(userId))).not.toContain('React');
+    const facts = (await t.call(cookie, 'GET', '/v1/profile/facts')).json();
+    expect(facts[0].data).toEqual({ name: 'React' });
+
+    const resumes = new DrizzleResumeRepository(t.db.db, t.cipher);
+    const resumeId = crypto.randomUUID();
+    await resumes.insertGenerating(userId, resumeId);
+    await resumes.saveDraft(userId, resumeId, {
+      summary: [],
+      experiences: [],
+      skills: ['Kubernetes'],
+      education: [],
+      certifications: [],
+      projects: [],
+      languages: [],
+    });
+    const { rows } = await t.db.pool.query('SELECT content FROM resumes WHERE id = $1', [resumeId]);
+    expect(JSON.stringify(rows[0].content)).not.toContain('Kubernetes');
+    expect((await resumes.find(userId, resumeId))?.content?.skills).toEqual(['Kubernetes']);
+  });
+
+  it('a chave fica só no bucket de chaves, e cifrada', async () => {
+    const { userId } = await setup('cif-bucket@example.com');
+    const name = keyObjectName(userId);
+    expect(await t.storage.head(name)).toBeNull();
+    const wrapped = await t.keyStorage.getBytes(name);
+    expect(wrapped.byteLength).toBeGreaterThan(32);
+  });
+
+  it('um valor copiado para outra conta não abre', async () => {
+    const a = await setup('cif-a@example.com');
+    const b = await setup('cif-b@example.com');
+    const stolen = await rawFact(a.userId);
+    const other = await t.cipher.forUser(b.userId);
+    expect(() => other.openJson('profile_facts.data', stolen)).toThrow();
+  });
+
+  it('depois do expurgo, a chave some e uma cópia antiga do banco não abre mais', async () => {
+    const email = 'cif-expurgo@example.com';
+    const { cookie, userId } = await setup(email);
+    const backup = await rawFact(userId);
+    await deleteAccount(cookie, email);
+    await purge.run(t.purgeQueue.jobs[0]!, { isLastAttempt: false });
+
+    expect(await t.keyStorage.head(keyObjectName(userId))).toBeNull();
+    // Um processo novo, com a chave mestra certa e sem nada em memória.
+    const fresh = createFieldCipher({
+      db: t.db.db,
+      keyStorage: t.keyStorage,
+      masterKeyBase64: t.masterKeyBase64,
+    });
+    await expect(
+      fresh.forUser(userId).then((c) => c.openJson('profile_facts.data', backup)),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    expect(await t.keyStorage.head(keyObjectName(userId))).toBeNull();
+  });
+});
+
 describe('exportação', () => {
   it('gera o ZIP com os dados, sem senha nem sessão, e baixa pela URL', async () => {
     const email = 'exp-zip@example.com';
@@ -229,7 +297,7 @@ describe('exportação', () => {
     const b = await setup('exp-b@example.com');
     await t.call(a.cookie, 'POST', '/v1/privacy/export');
     expect((await t.call(b.cookie, 'GET', '/v1/privacy/exports')).json()).toEqual([]);
-    const { data } = await new DrizzleAccountDataReader(t.db.db).read(a.userId);
+    const { data } = await new DrizzleAccountDataReader(t.db.db, t.cipher).read(a.userId);
     expect(JSON.stringify(data)).not.toContain(b.userId);
   });
 

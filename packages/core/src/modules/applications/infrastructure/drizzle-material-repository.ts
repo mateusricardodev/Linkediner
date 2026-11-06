@@ -1,30 +1,40 @@
 import { and, asc, eq, schema, withUserContext, type Database } from '@linkediner/db';
+import type { FieldCipher, UserCipher } from '../../crypto';
 import type { ApplicationMaterial, MaterialContent } from '../domain/material';
 import type { MaterialRepository } from '../application/material-service';
 
 const { applicationMaterials } = schema;
 
-const toMaterial = (r: typeof applicationMaterials.$inferSelect): ApplicationMaterial => ({
+const CONTENT = 'application_materials.content';
+
+const toMaterial = (
+  c: UserCipher,
+  r: typeof applicationMaterials.$inferSelect,
+): ApplicationMaterial => ({
   id: r.id,
   applicationId: r.applicationId,
   kind: r.kind,
   status: r.status,
   questions: r.questions,
-  content: (r.content as MaterialContent | null) ?? null,
+  content: c.openJson<MaterialContent | null>(CONTENT, r.content) ?? null,
   failureCode: r.failureCode,
 });
 
 export class DrizzleMaterialRepository implements MaterialRepository {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly cipher: FieldCipher,
+  ) {}
 
   private owned(userId: string, id: string) {
     return and(eq(applicationMaterials.id, id), eq(applicationMaterials.userId, userId));
   }
 
-  upsertGenerating(
+  async upsertGenerating(
     userId: string,
     material: Parameters<MaterialRepository['upsertGenerating']>[1],
   ) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx
         .insert(applicationMaterials)
@@ -39,18 +49,20 @@ export class DrizzleMaterialRepository implements MaterialRepository {
           },
         })
         .returning();
-      return toMaterial(row!);
+      return toMaterial(c, row!);
     });
   }
 
-  find(userId: string, id: string) {
+  async find(userId: string, id: string) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx.select().from(applicationMaterials).where(this.owned(userId, id));
-      return row ? toMaterial(row) : null;
+      return row ? toMaterial(c, row) : null;
     });
   }
 
-  list(userId: string, applicationId: string) {
+  async list(userId: string, applicationId: string) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) =>
       (
         await tx
@@ -63,15 +75,16 @@ export class DrizzleMaterialRepository implements MaterialRepository {
             ),
           )
           .orderBy(asc(applicationMaterials.createdAt), asc(applicationMaterials.id))
-      ).map(toMaterial),
+      ).map((row) => toMaterial(c, row)),
     );
   }
 
   async saveReady(userId: string, id: string, content: MaterialContent) {
+    const c = await this.cipher.forUser(userId);
     await withUserContext(this.db, userId, (tx) =>
       tx
         .update(applicationMaterials)
-        .set({ status: 'ready', content, failureCode: null })
+        .set({ status: 'ready', content: c.sealJson(CONTENT, content), failureCode: null })
         .where(this.owned(userId, id)),
     );
   }
@@ -85,7 +98,8 @@ export class DrizzleMaterialRepository implements MaterialRepository {
     );
   }
 
-  updateContent(userId: string, id: string, change: (content: MaterialContent) => void) {
+  async updateContent(userId: string, id: string, change: (content: MaterialContent) => void) {
+    const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx
         .select()
@@ -93,14 +107,14 @@ export class DrizzleMaterialRepository implements MaterialRepository {
         .where(this.owned(userId, id))
         .for('update');
       if (!row?.content) return null;
-      const content = row.content as MaterialContent;
+      const content = c.openJson<MaterialContent>(CONTENT, row.content);
       change(content);
       const [updated] = await tx
         .update(applicationMaterials)
-        .set({ content })
+        .set({ content: c.sealJson(CONTENT, content) })
         .where(this.owned(userId, id))
         .returning();
-      return toMaterial(updated!);
+      return toMaterial(c, updated!);
     });
   }
 

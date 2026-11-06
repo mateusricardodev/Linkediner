@@ -38,15 +38,15 @@ const respond = (req: { promptInput: Record<string, unknown> }): ResumeOutput =>
 beforeAll(async () => {
   t = await startTestApp();
   const db = t.db.db;
-  facts = new DrizzleFactRepository(db);
+  facts = new DrizzleFactRepository(db, t.cipher);
   ai = new FakeAiProvider().respond('generate_resume', respond);
   generate = new GenerateResume({
-    resumes: new DrizzleResumeRepository(db),
+    resumes: new DrizzleResumeRepository(db, t.cipher),
     facts,
     consents: t.consents,
     ai,
     prompt: generateResumeV1,
-    generations: new DrizzleAiGenerationLog(db),
+    generations: new DrizzleAiGenerationLog(db, t.cipher),
     audit: t.audit,
   });
 }, 180_000);

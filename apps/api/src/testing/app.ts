@@ -1,4 +1,7 @@
+import { randomBytes } from 'node:crypto';
 import { Writable } from 'node:stream';
+import { createFieldCipher } from '@linkediner/core/crypto';
+import { S3ObjectStorage } from '@linkediner/core/documents';
 import {
   ApplicationService,
   DrizzleApplicationRepository,
@@ -62,13 +65,18 @@ export async function startTestApp() {
   const audit = new DrizzleAuditLog(db, pseudonymize);
   const consents = new ConsentService(new DrizzleConsentRepository(db), audit);
   const documentRepository = new DrizzleDocumentRepository(db);
-  const factRepository = new DrizzleFactRepository(db);
+  // Bucket separado, como em produção. A chave mestra é aleatória a cada execução.
+  const keyStorage = new S3ObjectStorage({ ...s3.config, bucket: 'test-keys' });
+  await keyStorage.ensureBucket();
+  const masterKeyBase64 = randomBytes(32).toString('base64');
+  const cipher = createFieldCipher({ db, keyStorage, masterKeyBase64 });
+  const factRepository = new DrizzleFactRepository(db, cipher);
   const profileRepository = new DrizzleProfileRepository(db);
   const jobRepository = new DrizzleJobRepository(db);
-  const resumeRepository = new DrizzleResumeRepository(db);
+  const resumeRepository = new DrizzleResumeRepository(db, cipher);
   const userReader = new DrizzleUserReader(db);
-  const applicationRepository = new DrizzleApplicationRepository(db);
-  const materialRepository = new DrizzleMaterialRepository(db);
+  const applicationRepository = new DrizzleApplicationRepository(db, cipher);
+  const materialRepository = new DrizzleMaterialRepository(db, cipher);
   const scores = new ProfileScoreService(
     profileRepository,
     factRepository,
@@ -241,6 +249,9 @@ export async function startTestApp() {
     app,
     db: ctx.handle,
     storage: s3.storage,
+    keyStorage,
+    masterKeyBase64,
+    cipher,
     audit,
     consents,
     queue,

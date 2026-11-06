@@ -32,6 +32,16 @@ export const envSchema = z
     LINKEDIN_CLIENT_ID: z.string().optional(),
     LINKEDIN_CLIENT_SECRET: z.string().optional(),
 
+    /**
+     * Protege as chaves de cada usuário (ADR 0020): 32 bytes em base64. Sem valor padrão.
+     * Perder este valor torna ilegíveis os dados cifrados de todos os usuários.
+     */
+    DATA_MASTER_KEY: z
+      .string()
+      .refine((v) => Buffer.from(v, 'base64').length === 32, 'Deve ter 32 bytes em base64.'),
+    /** Só para as chaves: fora dos backups do banco, sem versionamento e sem regra de expiração. */
+    STORAGE_KEYS_BUCKET: z.string().default('linkediner-keys'),
+
     STORAGE_ENDPOINT: z.url().optional(),
     STORAGE_REGION: z.string().default('auto'),
     STORAGE_BUCKET: z.string().default('linkediner-documents'),
@@ -99,6 +109,14 @@ export const envSchema = z
         code: 'custom',
         path: ['API_PUBLIC_URL'],
         message: 'Deve usar HTTPS em staging e produção.',
+      });
+    }
+    if (env.STORAGE_KEYS_BUCKET === env.STORAGE_BUCKET) {
+      // O bucket de documentos expira objetos em 30 dias: as chaves sumiriam junto, com os dados.
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STORAGE_KEYS_BUCKET'],
+        message: 'As chaves precisam de um bucket separado do bucket de documentos.',
       });
     }
     if (deployed && !env.LOG_PSEUDONYM_SECRET) {
