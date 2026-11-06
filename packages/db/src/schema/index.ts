@@ -9,3 +9,4 @@ export * from './matches';
 export * from './feedback';
 export * from './applications';
 export * from './materials';
+export * from './privacy';

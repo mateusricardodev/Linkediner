@@ -34,6 +34,20 @@ import {
 import { DrizzleUserReader } from '@linkediner/core/identity/users';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import {
+  DrizzleAccountDataReader,
+  DrizzleAccountDeletionRepository,
+  DrizzleDataExportRepository,
+  EXPORT_USER_QUEUE,
+  ExpireExports,
+  ExportUserData,
+  PurgeUser,
+} from '@linkediner/core/privacy/account';
+import { buildExportZip } from '@linkediner/core/privacy/account-worker';
+import { DOCUMENTS_EXTRACT_QUEUE } from '@linkediner/core/extraction';
+import { MATERIALS_GENERATE_QUEUE } from '@linkediner/core/applications';
+import { JOBS_STRUCTURE_QUEUE } from '@linkediner/core/jobs';
+import { RESUMES_GENERATE_QUEUE } from '@linkediner/core/resumes';
+import {
   DrizzleFactRepository,
   DrizzleProfileRepository,
   DrizzleScoreRepository,
@@ -41,6 +55,13 @@ import {
 } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { applicationsGenerateMaterial } from './handlers/applications-generate-material';
+import {
+  privacyExpireExports,
+  privacyExportUser,
+  privacyPurgeUser,
+  privacyResumePurges,
+} from './handlers/privacy-account';
+import { PgBossPendingTasks } from './pg-boss-pending-tasks';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
@@ -81,6 +102,19 @@ const boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: 'pgboss
 boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
 
 await boss.start();
+const purge = new PurgeUser({
+  repo: new DrizzleAccountDeletionRepository(database.db),
+  storage,
+  // Toda fila cujo payload tem `userId`. A do próprio expurgo fica de fora.
+  tasks: new PgBossPendingTasks(boss, [
+    DOCUMENTS_EXTRACT_QUEUE.name,
+    RESUMES_GENERATE_QUEUE.name,
+    JOBS_STRUCTURE_QUEUE.name,
+    MATERIALS_GENERATE_QUEUE.name,
+    EXPORT_USER_QUEUE.name,
+  ]),
+});
+const exportRepository = new DrizzleDataExportRepository(database.db);
 const tasks = [
   systemHeartbeat({ ping: () => pingDb(database.db) }),
   documentsExtract({
@@ -140,6 +174,18 @@ const tasks = [
       audit,
     }),
   }),
+  privacyPurgeUser({ purge }),
+  privacyResumePurges({ purge }),
+  privacyExportUser({
+    exporter: new ExportUserData({
+      repo: exportRepository,
+      reader: new DrizzleAccountDataReader(database.db),
+      storage,
+      zip: buildExportZip,
+      audit,
+    }),
+  }),
+  privacyExpireExports({ expire: new ExpireExports(exportRepository, storage) }),
   privacyExpireAiGenerations({ generations }),
   privacyExpireDocuments({
     expire: new ExpireDocuments(

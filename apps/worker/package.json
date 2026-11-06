@@ -18,6 +18,7 @@
     "@linkediner/db": "workspace:*",
     "@linkediner/observability": "workspace:*",
     "drizzle-orm": "0.45.4",
+    "jszip": "3.10.1",
     "mammoth": "1.13.0",
     "pg": "8.23.1",
     "pg-boss": "12.38.0",

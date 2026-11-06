@@ -9,6 +9,8 @@
     "./applications": "./src/modules/applications/index.ts",
     "./audit": "./src/modules/audit/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
+    "./privacy/account": "./src/modules/privacy/account.ts",
+    "./privacy/account-worker": "./src/modules/privacy/account-worker.ts",
     "./identity": "./src/modules/identity/index.ts",
     "./identity/users": "./src/modules/identity/infrastructure/user-reader.ts",
     "./jobs": "./src/modules/jobs/index.ts",
@@ -33,6 +35,7 @@
     "@node-rs/argon2": "2.2.2",
     "better-auth": "1.7.17",
     "docx": "9.15.2",
+    "jszip": "3.10.1",
     "mammoth": "1.13.0",
     "pdfkit": "0.20.2",
     "unpdf": "2.1.0",
@@ -41,7 +44,6 @@
   },
   "devDependencies": {
     "@types/pdfkit": "0.17.7",
-    "jszip": "3.10.1",
     "testcontainers": "12.2.1"
   }
 }

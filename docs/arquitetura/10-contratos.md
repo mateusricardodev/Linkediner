@@ -47,8 +47,8 @@
 | `POST /v1/applications/{id}/manual-complete` | Usuário informa que enviou manualmente |
 | `POST /v1/applications/{id}/outcome` | Informar entrevista, rejeição ou encerramento |
 | `GET /v1/dashboard` | Resumo: pendências, enviadas, falhas, bloqueios |
-| `POST /v1/privacy/export` | Pedir exportação |
-| `POST /v1/privacy/delete-account` | Pedir exclusão |
+| `POST /v1/privacy/export`, `GET /v1/privacy/exports` | Pedir a exportação (202) e listar as válidas, com URL de download. Exige login recente |
+| `POST /v1/privacy/delete-account` | Pedir a exclusão (202), confirmando o e-mail. Exige login recente |
 | `POST /v1/billing/checkout`, `POST /v1/billing/webhook` | Assinatura |
 | `GET /v1/events/stream` | SSE com atualizações de status (extração, geração, envio) |
 

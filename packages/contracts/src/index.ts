@@ -56,3 +56,4 @@ export {
   MaterialKind,
   RequestMaterialBody,
 } from './materials';
+export { DataExportDto, DeleteAccountBody, DeletionAcceptedDto } from './privacy';

@@ -2,7 +2,7 @@ import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { AppConfig } from '@linkediner/config';
-import { schema, type Database } from '@linkediner/db';
+import { eq, schema, type Database } from '@linkediner/db';
 import type { AuditLog } from '../../audit';
 import { newId } from '../../shared';
 
@@ -125,12 +125,20 @@ export function createAuth({ db, config, audit, pseudonymize }: AuthDeps) {
       },
       session: {
         create: {
-          before: async (session) => ({
-            data: {
-              ...session,
-              ipAddress: session.ipAddress ? pseudonymize(session.ipAddress) : null,
-            },
-          }),
+          before: async (session) => {
+            // Conta em exclusão não abre sessão nova: o expurgo já está em andamento.
+            const [user] = await db
+              .select({ status: schema.users.status })
+              .from(schema.users)
+              .where(eq(schema.users.id, session.userId));
+            if (user?.status !== 'active') return false;
+            return {
+              data: {
+                ...session,
+                ipAddress: session.ipAddress ? pseudonymize(session.ipAddress) : null,
+              },
+            };
+          },
           after: async (session) => {
             await audit.record({
               actorType: 'user',
@@ -154,10 +162,18 @@ export type Auth = ReturnType<typeof createAuth>;
 export interface Actor {
   userId: string;
   sessionId: string;
+  /** Quando a pessoa entrou. Ações irreversíveis exigem um login recente. */
+  sessionCreatedAt: Date;
 }
 
 /** Resolve o usuário autenticado a partir dos cabeçalhos (cookie de sessão). */
 export async function resolveActor(auth: Auth, headers: Headers): Promise<Actor | null> {
   const result = await auth.api.getSession({ headers });
-  return result ? { userId: result.user.id, sessionId: result.session.id } : null;
+  return result
+    ? {
+        userId: result.user.id,
+        sessionId: result.session.id,
+        sessionCreatedAt: new Date(result.session.createdAt),
+      }
+    : null;
 }

@@ -12,6 +12,7 @@ export interface ObjectStorage {
   ): Promise<string>;
   head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
   getBytes(key: string): Promise<Uint8Array>;
+  putBytes(key: string, bytes: Uint8Array, contentType: string): Promise<void>;
   delete(key: string): Promise<void>;
   /** Apaga todos os objetos sob um prefixo (ex.: tudo de um usuário na exclusão de conta). */
   deletePrefix(prefix: string): Promise<number>;
