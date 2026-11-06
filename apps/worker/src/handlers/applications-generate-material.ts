@@ -14,7 +14,14 @@ export const applicationsGenerateMaterial = (deps: {
 }) =>
   defineTask({
     name: MATERIALS_GENERATE_QUEUE.name,
-    payload: z.object({ userId: z.uuid(), applicationId: z.uuid(), materialId: z.uuid() }).strict(),
+    payload: z
+      .object({
+        userId: z.uuid(),
+        applicationId: z.uuid(),
+        materialId: z.uuid(),
+        usageId: z.uuid(),
+      })
+      .strict(),
     retryLimit: MATERIALS_GENERATE_QUEUE.retryLimit,
     expireInSeconds: MATERIALS_GENERATE_QUEUE.expireInSeconds,
     async handle(payload, ctx) {

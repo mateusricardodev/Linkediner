@@ -1,9 +1,9 @@
 import type { AuditLog } from '../../audit';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
-import { AppError, newId, systemClock, type Clock } from '../../shared';
+import { AppError, newId, systemClock, type Clock, type QuotaGate } from '../../shared';
 import { pendingSuggestions } from '../domain/export-model';
-import { findItem, RESUME_FAILURES, type Resume } from '../domain/resume';
+import { findItem, RESUME_FAILURES, resumeUsageKey, type Resume } from '../domain/resume';
 import type { ResumeQueue, ResumeRepository } from './ports/resume-repository';
 
 export type ItemDecision = { action: 'confirm'; text?: string } | { action: 'remove' };
@@ -17,6 +17,7 @@ export class ResumeService {
     private readonly consents: Pick<ConsentService, 'status'>,
     private readonly queue: ResumeQueue,
     private readonly audit: AuditLog,
+    private readonly quota: QuotaGate,
     private readonly clock: Clock = systemClock,
   ) {}
 
@@ -40,11 +41,14 @@ export class ResumeService {
     const existing = (await this.repo.list(userId)).find((r) => r.status === 'generating');
     if (existing) return existing;
 
-    const resume = await this.repo.insertGenerating(userId, newId());
+    const id = newId();
+    await this.quota.consume(userId, 'resume.improved', resumeUsageKey(id));
+    const resume = await this.repo.insertGenerating(userId, id);
     try {
       await this.queue.enqueue({ userId, resumeId: resume.id });
     } catch {
       await this.repo.markFailed(userId, resume.id, RESUME_FAILURES.processingError);
+      await this.quota.refund(userId, 'resume.improved', resumeUsageKey(id));
       throw new AppError(
         'DEPENDENCY_UNAVAILABLE',
         'Não foi possível iniciar a geração. Tente de novo.',

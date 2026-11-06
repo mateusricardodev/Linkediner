@@ -81,6 +81,7 @@ export interface PurgeUserDeps {
   storage: Pick<ObjectStorage, 'deletePrefix'>;
   tasks: PendingTasks;
   keys: { destroy(userId: string): Promise<void> };
+  subscriptions: { cancelForUser(userId: string): Promise<number> };
   clock?: Clock;
 }
 
@@ -101,8 +102,14 @@ export class PurgeUser {
     const request = await this.deps.repo.find(job.requestId);
     if (!request || request.status === 'completed') return 'skipped';
     try {
-      const report: Record<string, number> = { cancelledTasks: 0, deletedFiles: 0 };
+      const report: Record<string, number> = {
+        cancelledTasks: 0,
+        deletedFiles: 0,
+        cancelledSubscriptions: 0,
+      };
       if (request.userId) {
+        // Primeiro a assinatura: a pessoa não pode continuar sendo cobrada por uma conta apagada.
+        report.cancelledSubscriptions = await this.deps.subscriptions.cancelForUser(request.userId);
         report.cancelledTasks = await this.deps.tasks.cancelForUser(request.userId);
         report.deletedFiles = await this.deps.storage.deletePrefix(userPrefix(request.userId));
         // Antes de concluir o pedido: depois disso não se sabe mais de quem era a chave.

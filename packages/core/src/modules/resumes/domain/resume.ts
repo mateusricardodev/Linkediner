@@ -146,6 +146,8 @@ export function findUnsupportedTerms(
   return [...unsupported];
 }
 
+export const resumeUsageKey = (resumeId: string) => `resume:${resumeId}`;
+
 /** Troca as menções exatas por uma palavra comum, para não contarem como nome próprio. */
 function withoutMentions(text: string, mentions: readonly (string | null)[]): string {
   return mentions.reduce<string>((result, mention) => {

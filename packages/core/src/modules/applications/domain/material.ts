@@ -7,7 +7,7 @@ import {
   type ResumeContent,
   type ResumeItem,
 } from '../../resumes';
-import { AppError } from '../../shared';
+import { AppError, type FeatureKey } from '../../shared';
 
 export const MATERIALS_GENERATE_QUEUE = {
   name: 'applications.generate_material',
@@ -20,7 +20,11 @@ export interface GenerateMaterialJob {
   userId: string;
   applicationId: string;
   materialId: string;
+  /** Identifica o consumo do plano, para estornar se a geração falhar. */
+  usageId: string;
 }
+
+export const materialUsageKey = (usageId: string) => `material:${usageId}`;
 
 export const MATERIAL_FAILURES = {
   noFacts: 'no_facts',
@@ -31,6 +35,13 @@ export const MATERIAL_FAILURES = {
 
 export const MATERIAL_KINDS = ['resume', 'cover_letter', 'form_answers'] as const;
 export type MaterialKind = (typeof MATERIAL_KINDS)[number];
+
+/** Qual limite do plano cada tipo de material gasta. */
+export const MATERIAL_FEATURES = {
+  resume: 'resume.tailored',
+  cover_letter: 'cover_letter',
+  form_answers: 'form_answers',
+} as const satisfies Record<MaterialKind, FeatureKey>;
 export type MaterialStatus = 'generating' | 'ready' | 'failed';
 
 export const FORM_LIMITS = { maxQuestions: 20, maxQuestionChars: 500 } as const;

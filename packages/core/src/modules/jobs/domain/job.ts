@@ -10,9 +10,13 @@ export const JOBS_STRUCTURE_QUEUE = {
   expireInSeconds: 5 * 60,
 } as const;
 
+export const jobUsageKey = (usageId: string) => `job:${usageId}`;
+
 export interface StructureJobPayload {
   userId: string;
   jobId: string;
+  /** Identifica o consumo do plano, para estornar se a análise falhar. */
+  usageId: string;
 }
 
 export const JOB_FAILURES = {

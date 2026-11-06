@@ -4,10 +4,14 @@ import type { AuditLog } from '../../audit';
 import type { JobRepository } from '../../jobs';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
+import type { QuotaGate } from '../../shared';
 import {
   buildMaterial,
   MATERIAL_FAILURES,
+  MATERIAL_FEATURES,
   MATERIAL_OUTPUTS,
+  materialUsageKey,
+  type ApplicationMaterial,
   type GenerateMaterialJob,
   type MaterialKind,
 } from '../domain/material';
@@ -23,6 +27,7 @@ export interface GenerateMaterialDeps {
   ai: AiProvider;
   prompts: Record<MaterialKind, VersionedPrompt>;
   generations: Pick<AiGenerationLog, 'record'>;
+  quota: Pick<QuotaGate, 'refund'>;
   audit: AuditLog;
 }
 
@@ -49,18 +54,18 @@ export class GenerateMaterial {
     }
 
     const { granted } = await this.deps.consents.status(userId);
-    if (!granted.ai_processing) return this.fail(job, MATERIAL_FAILURES.consentRevoked);
+    if (!granted.ai_processing) return this.fail(job, material, MATERIAL_FAILURES.consentRevoked);
 
     const application = await this.deps.applications.find(userId, applicationId);
     const vacancy = application?.jobId
       ? await this.deps.jobs.find(userId, application.jobId)
       : null;
-    if (!vacancy) return this.fail(job, MATERIAL_FAILURES.jobDeleted);
+    if (!vacancy) return this.fail(job, material, MATERIAL_FAILURES.jobDeleted);
 
     const facts = (await this.deps.facts.list(userId)).filter(
       (f) => f.verification === 'extracted' || f.verification === 'user_confirmed',
     );
-    if (facts.length === 0) return this.fail(job, MATERIAL_FAILURES.noFacts);
+    if (facts.length === 0) return this.fail(job, material, MATERIAL_FAILURES.noFacts);
 
     // Só o necessário: sem os trechos do documento original e sem o texto bruto da vaga.
     const promptInput = {
@@ -107,13 +112,22 @@ export class GenerateMaterial {
       await this.finish(job, 'material_ready');
       return 'ready';
     } catch (error) {
-      if (opts.isLastAttempt) await this.fail(job, MATERIAL_FAILURES.processingError);
+      if (opts.isLastAttempt) await this.fail(job, material, MATERIAL_FAILURES.processingError);
       throw error;
     }
   }
 
-  private async fail(job: GenerateMaterialJob, code: string): Promise<MaterialOutcome> {
+  private async fail(
+    job: GenerateMaterialJob,
+    material: ApplicationMaterial,
+    code: string,
+  ): Promise<MaterialOutcome> {
     await this.deps.materials.markFailed(job.userId, job.materialId, code);
+    await this.deps.quota.refund(
+      job.userId,
+      MATERIAL_FEATURES[material.kind],
+      materialUsageKey(job.usageId),
+    );
     await this.deps.audit.record({
       actorType: 'system',
       actorId: job.userId,

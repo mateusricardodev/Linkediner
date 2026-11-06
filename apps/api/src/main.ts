@@ -10,6 +10,13 @@ import {
   type GenerateMaterialJob,
 } from '@linkediner/core/applications';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
+import {
+  createPaymentProvider,
+  DrizzleSubscriptionRepository,
+  DrizzleUsageRepository,
+  EntitlementService,
+  SubscriptionService,
+} from '@linkediner/core/billing';
 import { createFieldCipher } from '@linkediner/core/crypto';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
@@ -30,7 +37,6 @@ import {
 } from '@linkediner/core/extraction';
 import {
   DocxResumeRenderer,
-  FREE_PLAN_EXPORT_POLICY,
   PdfResumeRenderer,
   ResumeExportService,
 } from '@linkediner/core/resumes/export';
@@ -122,6 +128,7 @@ const resumeRepository = new DrizzleResumeRepository(database.db, cipher);
 const userReader = new DrizzleUserReader(database.db);
 const applicationRepository = new DrizzleApplicationRepository(database.db, cipher);
 const materialRepository = new DrizzleMaterialRepository(database.db, cipher);
+const quota = new EntitlementService(new DrizzleUsageRepository(database.db));
 
 const app = await buildServer({
   config,
@@ -148,6 +155,7 @@ const app = await buildServer({
       resumeRepository,
       materialRepository,
       audit,
+      quota,
     ),
     materials: new MaterialService(
       materialRepository,
@@ -157,6 +165,7 @@ const app = await buildServer({
       consents,
       await createQueue<GenerateMaterialJob>(boss, MATERIALS_GENERATE_QUEUE),
       audit,
+      quota,
     ),
     feedback: new FeedbackService(
       new DrizzleFeedbackRepository(database.db),
@@ -177,13 +186,14 @@ const app = await buildServer({
       consents,
       await createQueue<StructureJobPayload>(boss, JOBS_STRUCTURE_QUEUE),
       audit,
+      quota,
     ),
     resumeExport: new ResumeExportService({
       resumes: resumeRepository,
       users: userReader,
       profiles: profileRepository,
       renderers: { pdf: new PdfResumeRenderer(), docx: new DocxResumeRenderer() },
-      policy: FREE_PLAN_EXPORT_POLICY,
+      policy: { watermark: (userId) => quota.enabled(userId, 'export.watermark') },
       audit,
     }),
     resumes: new ResumeService(
@@ -192,6 +202,7 @@ const app = await buildServer({
       consents,
       await createQueue<GenerateResumeJob>(boss, RESUMES_GENERATE_QUEUE),
       audit,
+      quota,
     ),
     accountDeletion: new AccountDeletionService(
       new DrizzleAccountDeletionRepository(database.db),
@@ -209,6 +220,14 @@ const app = await buildServer({
       documentRepository,
       consents,
       await createQueue<ExtractJobPayload>(boss, DOCUMENTS_EXTRACT_QUEUE),
+      quota,
+    ),
+    entitlements: quota,
+    subscriptions: new SubscriptionService(
+      new DrizzleSubscriptionRepository(database.db),
+      createPaymentProvider(config),
+      audit,
+      { web: config.WEB_ORIGIN },
     ),
   },
 });

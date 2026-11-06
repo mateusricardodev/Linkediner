@@ -4,7 +4,13 @@ import type { AuditLog } from '../../audit';
 import type { DocumentRecord, DocumentRepository, ObjectStorage } from '../../documents';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
-import { FAILURE_CODES, TEXT_LIMITS, type ExtractJobPayload } from '../domain/extraction-rules';
+import type { QuotaGate } from '../../shared';
+import {
+  FAILURE_CODES,
+  TEXT_LIMITS,
+  usageKeyFor,
+  type ExtractJobPayload,
+} from '../domain/extraction-rules';
 import { ExtractionOutput, groundFacts } from '../domain/grounding';
 import { redactSensitiveData } from '../domain/redact';
 import type { TextExtractor } from './ports';
@@ -19,6 +25,7 @@ export interface ExtractDocumentDeps {
   prompt: VersionedPrompt;
   facts: Pick<FactRepository, 'replaceExtracted'>;
   generations: Pick<AiGenerationLog, 'record'>;
+  quota: Pick<QuotaGate, 'refund'>;
   audit: AuditLog;
 }
 
@@ -29,6 +36,7 @@ export type ExtractOutcome = 'processed' | 'failed' | 'skipped';
  * os fatos não confirmados do mesmo documento.
  * Erros transitórios (ex.: provedor fora do ar) sobem para a fila tentar de novo.
  * Problemas do próprio arquivo marcam o documento como falho, sem nova tentativa.
+ * Só conta no limite do plano a análise que deu certo.
  */
 export class ExtractDocument {
   constructor(private readonly deps: ExtractDocumentDeps) {}
@@ -36,38 +44,48 @@ export class ExtractDocument {
   async run(job: ExtractJobPayload, opts: { isLastAttempt: boolean }): Promise<ExtractOutcome> {
     const { userId, documentId } = job;
     const document = await this.deps.documents.find(userId, documentId);
-    if (!document || document.status === 'processed') return 'skipped';
+    if (!document) {
+      await this.refund(job);
+      return 'skipped';
+    }
+    if (document.status === 'processed') return 'skipped';
 
     // O usuário pode ter revogado o consentimento enquanto o job esperava na fila.
     const { granted } = await this.deps.consents.status(userId);
     if (!granted.ai_processing) {
       await this.deps.documents.setStatus(userId, documentId, 'uploaded');
+      await this.refund(job);
       return 'skipped';
     }
 
     try {
-      return await this.process(userId, document);
+      return await this.process(job, document);
     } catch (error) {
-      if (opts.isLastAttempt) await this.fail(userId, documentId, FAILURE_CODES.processingError);
+      if (opts.isLastAttempt) await this.fail(job, FAILURE_CODES.processingError);
       throw error;
     }
   }
 
-  private async process(userId: string, document: DocumentRecord): Promise<ExtractOutcome> {
+  private refund(job: ExtractJobPayload) {
+    return this.deps.quota.refund(job.userId, 'profile.analysis', usageKeyFor(job.usageId));
+  }
+
+  private async process(job: ExtractJobPayload, document: DocumentRecord): Promise<ExtractOutcome> {
+    const { userId } = job;
     const bytes = await this.deps.storage.getBytes(document.objectKey);
 
     let rawText: string;
     try {
       rawText = await this.deps.text.extract(document.mimeType, bytes);
     } catch {
-      return this.fail(userId, document.id, FAILURE_CODES.unreadable);
+      return this.fail(job, FAILURE_CODES.unreadable);
     }
     if (rawText.trim().length < TEXT_LIMITS.minChars) {
       // PDF escaneado: sem texto não há como remover dados sensíveis nem conferir a resposta da IA.
-      return this.fail(userId, document.id, FAILURE_CODES.noText);
+      return this.fail(job, FAILURE_CODES.noText);
     }
     if (rawText.length > TEXT_LIMITS.maxChars) {
-      return this.fail(userId, document.id, FAILURE_CODES.tooLong);
+      return this.fail(job, FAILURE_CODES.tooLong);
     }
 
     const owner = await this.deps.users.getById(userId);
@@ -103,8 +121,10 @@ export class ExtractDocument {
     return 'processed';
   }
 
-  private async fail(userId: string, documentId: string, code: string): Promise<ExtractOutcome> {
+  private async fail(job: ExtractJobPayload, code: string): Promise<ExtractOutcome> {
+    const { userId, documentId } = job;
     await this.deps.documents.setStatus(userId, documentId, 'failed', code);
+    await this.refund(job);
     await this.deps.audit.record({
       actorType: 'system',
       actorId: userId,

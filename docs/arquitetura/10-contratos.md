@@ -49,7 +49,9 @@
 | `GET /v1/dashboard` | Resumo: pendências, enviadas, falhas, bloqueios |
 | `POST /v1/privacy/export`, `GET /v1/privacy/exports` | Pedir a exportação (202) e listar as válidas, com URL de download. Exige login recente |
 | `POST /v1/privacy/delete-account` | Pedir a exclusão (202), confirmando o e-mail. Exige login recente |
-| `POST /v1/billing/checkout`, `POST /v1/billing/webhook` | Assinatura |
+| `GET /v1/billing` | Plano em vigor e consumo do mês |
+| `POST /v1/billing/checkout`, `POST /v1/billing/portal` | Abrir o pagamento ou o portal no provedor |
+| `POST /v1/billing/webhook` | Eventos do provedor, com assinatura conferida. É o único caminho que muda o plano |
 | `GET /v1/events/stream` | SSE com atualizações de status (extração, geração, envio) |
 
 ### Exemplo de contrato

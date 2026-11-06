@@ -54,6 +54,7 @@ function setup(
         ],
       },
   );
+  const refund = vi.fn(async () => {});
   const use = new ExtractDocument({
     documents: {
       find: async () => (o.doc === undefined ? document() : o.doc),
@@ -71,6 +72,7 @@ function setup(
     ai,
     prompt: extractProfileV1,
     facts: { replaceExtracted },
+    quota: { refund },
     generations: {
       record: async (e) => {
         generations.push(e);
@@ -82,13 +84,35 @@ function setup(
       },
     },
   });
-  return { use, ai, setStatus, replaceExtracted, generations, audit };
+  return { use, ai, setStatus, replaceExtracted, generations, audit, refund };
 }
 
-const job = { userId: USER, documentId: DOC_ID };
+const job = { userId: USER, documentId: DOC_ID, usageId: 'u1' };
 const run = (use: ExtractDocument, isLastAttempt = false) => use.run(job, { isLastAttempt });
 
 describe('ExtractDocument', () => {
+  it('só conta no limite a análise que deu certo', async () => {
+    const ok = setup();
+    await run(ok.use);
+    expect(ok.refund).not.toHaveBeenCalled();
+
+    const unreadable = setup({
+      text: async () => {
+        throw new Error('corrompido');
+      },
+    });
+    await expect(run(unreadable.use)).resolves.toBe('failed');
+    expect(unreadable.refund).toHaveBeenCalledWith(USER, 'profile.analysis', 'extract:u1');
+
+    const revoked = setup({ consent: false });
+    await run(revoked.use);
+    expect(revoked.refund).toHaveBeenCalledOnce();
+
+    const repeated = setup({ doc: document({ status: 'processed' }) });
+    await run(repeated.use);
+    expect(repeated.refund).not.toHaveBeenCalled();
+  });
+
   it('envia à IA só o texto sem dados pessoais', async () => {
     const { use, ai } = setup();
     await run(use);
@@ -172,12 +196,23 @@ describe('ExtractDocument', () => {
 
 describe('ExtractionRequests', () => {
   function requests(
-    o: { doc?: DocumentRecord | null; consent?: boolean; queueFails?: boolean } = {},
+    o: {
+      doc?: DocumentRecord | null;
+      consent?: boolean;
+      queueFails?: boolean;
+      quotaExceeded?: boolean;
+    } = {},
   ) {
     const setStatus = vi.fn(async () => {});
     const enqueue = vi.fn(async () => {
       if (o.queueFails) throw new Error('fila fora');
     });
+    const quota = {
+      consume: vi.fn(async () => {
+        if (o.quotaExceeded) throw new AppError('QUOTA_EXCEEDED', 'limite');
+      }),
+      refund: vi.fn(async () => {}),
+    };
     const service = new ExtractionRequests(
       {
         find: async () => (o.doc === undefined ? document({ status: 'uploaded' }) : o.doc),
@@ -190,15 +225,20 @@ describe('ExtractionRequests', () => {
         }),
       },
       { enqueue },
+      quota,
     );
-    return { service, setStatus, enqueue };
+    return { service, setStatus, enqueue, quota };
   }
 
   it('enfileira só IDs e marca o documento como em processamento', async () => {
     const { service, setStatus, enqueue } = requests();
     const result = await service.request(USER, DOC_ID);
     expect(result.status).toBe('processing');
-    expect(enqueue).toHaveBeenCalledWith({ userId: USER, documentId: DOC_ID });
+    expect(enqueue).toHaveBeenCalledWith({
+      userId: USER,
+      documentId: DOC_ID,
+      usageId: expect.any(String),
+    });
     expect(setStatus).toHaveBeenCalledWith(USER, DOC_ID, 'processing');
   });
 
@@ -232,12 +272,22 @@ describe('ExtractionRequests', () => {
     expect(result.failureCode).toBeNull();
   });
 
-  it('se a fila falhar, volta o documento para enviado', async () => {
-    const { service, setStatus } = requests({ queueFails: true });
+  it('sem limite no plano, o documento não entra em análise, e o upload continua válido', async () => {
+    const doc = document({ status: 'uploaded' });
+    const { service, setStatus, enqueue } = requests({ doc, quotaExceeded: true });
+    await expect(service.request(USER, DOC_ID)).rejects.toMatchObject({ code: 'QUOTA_EXCEEDED' });
+    await expect(service.requestIfAllowed(USER, doc)).resolves.toBe(doc);
+    expect(setStatus).not.toHaveBeenCalled();
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('se a fila falhar, volta o documento para enviado e devolve o limite', async () => {
+    const { service, setStatus, quota } = requests({ queueFails: true });
     await expect(service.request(USER, DOC_ID)).rejects.toMatchObject({
       code: 'DEPENDENCY_UNAVAILABLE',
     });
     expect(setStatus).toHaveBeenLastCalledWith(USER, DOC_ID, 'uploaded');
+    expect(quota.refund).toHaveBeenCalledOnce();
   });
 
   it('depois do upload, sem consentimento ou com a fila fora, mantém o documento como está', async () => {

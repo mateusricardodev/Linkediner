@@ -1,7 +1,13 @@
 import type { AuditLog } from '../../audit';
 import type { ConsentService } from '../../privacy';
-import { AppError, newId } from '../../shared';
-import { JOB_FAILURES, jobDedupeHash, validateJobImport, type Job } from '../domain/job';
+import { AppError, newId, type QuotaGate } from '../../shared';
+import {
+  JOB_FAILURES,
+  jobDedupeHash,
+  jobUsageKey,
+  validateJobImport,
+  type Job,
+} from '../domain/job';
 import type { JobQueue, JobRepository } from './ports/job-repository';
 
 const notFound = () => new AppError('NOT_FOUND', 'Vaga não encontrada.');
@@ -13,6 +19,7 @@ export class JobService {
     private readonly consents: Pick<ConsentService, 'status'>,
     private readonly queue: JobQueue,
     private readonly audit: AuditLog,
+    private readonly quota: QuotaGate,
   ) {}
 
   async import(
@@ -33,6 +40,19 @@ export class JobService {
     }
 
     const dedupeHash = jobDedupeHash(text);
+    // Mesmo texto: não cria outra vaga e não gasta o limite do plano.
+    const previous = await this.repo.findByHash(userId, dedupeHash);
+    if (previous && previous.status !== 'failed') return previous;
+
+    const usageId = newId();
+    await this.quota.consume(userId, 'job.match', jobUsageKey(usageId));
+    if (previous) {
+      // A análise anterior falhou: tenta de novo.
+      await this.repo.markStructuring(userId, previous.id);
+      await this.enqueue(userId, previous.id, usageId);
+      return { ...previous, status: 'structuring', failureCode: null };
+    }
+
     const inserted = await this.repo.insert(userId, {
       id: newId(),
       rawText: text,
@@ -40,7 +60,7 @@ export class JobService {
       dedupeHash,
     });
     if (inserted) {
-      await this.enqueue(userId, inserted.id);
+      await this.enqueue(userId, inserted.id, usageId);
       await this.audit.record({
         actorType: 'user',
         actorId: userId,
@@ -52,13 +72,11 @@ export class JobService {
       return inserted;
     }
 
-    // Mesmo texto: não cria outra vaga. Só tenta de novo se a análise anterior falhou.
+    // Outro pedido com o mesmo texto chegou antes.
+    await this.quota.refund(userId, 'job.match', jobUsageKey(usageId));
     const existing = await this.repo.findByHash(userId, dedupeHash);
     if (!existing) throw new AppError('INTERNAL', 'Não foi possível importar a vaga.');
-    if (existing.status !== 'failed') return existing;
-    await this.repo.markStructuring(userId, existing.id);
-    await this.enqueue(userId, existing.id);
-    return { ...existing, status: 'structuring', failureCode: null };
+    return existing;
   }
 
   list(userId: string): Promise<Job[]> {
@@ -82,11 +100,12 @@ export class JobService {
     });
   }
 
-  private async enqueue(userId: string, jobId: string) {
+  private async enqueue(userId: string, jobId: string, usageId: string) {
     try {
-      await this.queue.enqueue({ userId, jobId });
+      await this.queue.enqueue({ userId, jobId, usageId });
     } catch {
       await this.repo.markFailed(userId, jobId, JOB_FAILURES.processingError);
+      await this.quota.refund(userId, 'job.match', jobUsageKey(usageId));
       throw new AppError(
         'DEPENDENCY_UNAVAILABLE',
         'Não foi possível analisar a vaga. Tente de novo.',

@@ -12,6 +12,7 @@ O domínio nunca pergunta "qual é o plano?". Ele pergunta **"este usuário pode
 | `resume.improved` | contador/mês | 1 | ilimitado* | ilimitado* |
 | `resume.tailored` | contador/mês | 0 | 30 | 100 |
 | `cover_letter` | contador/mês | 0 | 30 | 100 |
+| `form_answers` | contador/mês | 0 | 30 | 100 |
 | `job.match` | contador/mês | 10 | 300 | 1000 |
 | `applications.assisted` | contador/mês | 3 | 60 | 200 |
 | `applications.auto` | contador/mês | 0 | 30 | 100 |
@@ -23,21 +24,21 @@ O domínio nunca pergunta "qual é o plano?". Ele pergunta **"este usuário pode
 | `github.deep_analysis` | booleano | não | não | sim |
 | `interview.simulation` | contador/mês | 0 | 0 | 10 |
 
-\* "Ilimitado" na prática tem um teto alto de uso justo, para proteger o custo de IA.
+\* "Ilimitado" na prática tem um teto de uso justo de 500 por mês, para proteger o custo de IA.
 
-Os números são ponto de partida para validação comercial, não decisão final.
+Os números são ponto de partida para validação comercial, não decisão final. O [ADR 0021](../adr/0021-planos-limites-e-stripe.md) define quando cada limite conta e quais funcionalidades já são verificadas.
 
 ### Como funciona
 
 ```ts
-// modules/billing/application
-const decision = await entitlements.check(actor, 'applications.auto'); // { allowed, remaining, resetsAt }
-await usage.consume(actor, 'applications.auto', 1, { idempotencyKey: `apply:${applicationId}` });
+// Os módulos conhecem só a porta QuotaGate, em shared. Sem saldo, lança QUOTA_EXCEEDED (429).
+await quota.consume(userId, 'resume.tailored', `material:${usageId}`);
+await quota.refund(userId, 'resume.tailored', `material:${usageId}`); // quando o trabalho falha
 ```
 
-- **Verificação e consumo atômicos:** feitos na mesma transação da mudança de estado, com bloqueio por usuário e feature para evitar corrida.
-- **Idempotência:** repetir a mesma operação não consome duas vezes.
-- **Reserva para tarefas assíncronas:** a geração de material reserva a quota na API e confirma no worker. Se falhar, a reserva é estornada.
+- **Verificação e consumo atômicos:** com bloqueio por usuário e feature para evitar corrida.
+- **Idempotência:** repetir a mesma chave não consome duas vezes.
+- **Tarefas assíncronas:** a API consome ao aceitar o pedido. Se o trabalho falhar no worker, o consumo é estornado.
 - **Mudança de plano:** o webhook do provedor de pagamento atualiza `subscriptions`. Os limites passam a valer na hora, e o consumo do período é mantido.
 - **Grandfathering:** `plans.version` permite manter assinantes antigos em condições anteriores.
 

@@ -197,6 +197,20 @@
       "when": 1793987232946,
       "tag": "0027_privacy_requests_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793989306603,
+      "tag": "0028_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793989307847,
+      "tag": "0029_billing_seed_rls",
+      "breakpoints": true
     }
   ]
 }

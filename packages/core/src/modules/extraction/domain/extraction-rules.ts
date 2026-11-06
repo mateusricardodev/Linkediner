@@ -6,9 +6,13 @@ export const DOCUMENTS_EXTRACT_QUEUE = {
   expireInSeconds: 5 * 60,
 } as const;
 
+export const usageKeyFor = (usageId: string) => `extract:${usageId}`;
+
 export interface ExtractJobPayload {
   userId: string;
   documentId: string;
+  /** Identifica o consumo do plano, para estornar se a análise falhar. */
+  usageId: string;
 }
 
 export const TEXT_LIMITS = {

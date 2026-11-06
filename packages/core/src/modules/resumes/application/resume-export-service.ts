@@ -17,8 +17,6 @@ export interface ExportPolicy {
   watermark(userId: string): Promise<boolean>;
 }
 
-export const FREE_PLAN_EXPORT_POLICY: ExportPolicy = { watermark: async () => true };
-
 export interface ResumeExportDeps {
   resumes: Pick<ResumeRepository, 'find'>;
   users: { getById(userId: string): Promise<{ name: string | null; email: string } | null> };

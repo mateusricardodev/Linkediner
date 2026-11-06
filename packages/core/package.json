@@ -8,6 +8,7 @@
     "./ai": "./src/modules/ai/index.ts",
     "./applications": "./src/modules/applications/index.ts",
     "./audit": "./src/modules/audit/index.ts",
+    "./billing": "./src/modules/billing/index.ts",
     "./crypto": "./src/modules/crypto/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
     "./privacy/account": "./src/modules/privacy/account.ts",
@@ -39,6 +40,7 @@
     "jszip": "3.10.1",
     "mammoth": "1.13.0",
     "pdfkit": "0.20.2",
+    "stripe": "23.0.1",
     "unpdf": "2.1.0",
     "uuid": "14.0.3",
     "zod": "4.6.7"

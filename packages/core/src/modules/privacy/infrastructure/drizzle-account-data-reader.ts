@@ -25,6 +25,8 @@ const TABLES = {
   manual_tasks: s.manualTasks,
   application_materials: s.applicationMaterials,
   ai_generations: s.aiGenerations,
+  subscriptions: s.subscriptions,
+  usage_records: s.usageRecords,
 } as const;
 
 export const EXPORTED_TABLES = Object.keys(TABLES);

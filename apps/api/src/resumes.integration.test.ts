@@ -47,6 +47,7 @@ beforeAll(async () => {
     ai,
     prompt: generateResumeV1,
     generations: new DrizzleAiGenerationLog(db, t.cipher),
+    quota: t.quota,
     audit: t.audit,
   });
 }, 180_000);

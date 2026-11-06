@@ -42,6 +42,12 @@ export const envSchema = z
     /** Só para as chaves: fora dos backups do banco, sem versionamento e sem regra de expiração. */
     STORAGE_KEYS_BUCKET: z.string().default('linkediner-keys'),
 
+    /** Pagamentos: os quatro valores juntos. Sem eles, o produto funciona só no plano gratuito. */
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    STRIPE_PRICE_PRO: z.string().optional(),
+    STRIPE_PRICE_ADVANCED: z.string().optional(),
+
     STORAGE_ENDPOINT: z.url().optional(),
     STORAGE_REGION: z.string().default('auto'),
     STORAGE_BUCKET: z.string().default('linkediner-documents'),
@@ -109,6 +115,26 @@ export const envSchema = z
         code: 'custom',
         path: ['API_PUBLIC_URL'],
         message: 'Deve usar HTTPS em staging e produção.',
+      });
+    }
+    const stripe = [
+      'STRIPE_SECRET_KEY',
+      'STRIPE_WEBHOOK_SECRET',
+      'STRIPE_PRICE_PRO',
+      'STRIPE_PRICE_ADVANCED',
+    ] as const;
+    if (stripe.some((k) => env[k]) && !stripe.every((k) => env[k])) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STRIPE_SECRET_KEY'],
+        message: `Defina juntos: ${stripe.join(', ')}.`,
+      });
+    }
+    if (env.NODE_ENV === 'production' && env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STRIPE_SECRET_KEY'],
+        message: 'Em produção, use a chave real da Stripe, não a de teste.',
       });
     }
     if (env.STORAGE_KEYS_BUCKET === env.STORAGE_BUCKET) {

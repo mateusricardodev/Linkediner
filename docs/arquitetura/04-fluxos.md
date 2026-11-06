@@ -174,7 +174,7 @@ sequenceDiagram
 3. O job gera um relatório em `deletion_requests` e envia a confirmação por e-mail.
 4. Prazo: imediato para dados ativos. Nos backups, o conteúdo de carreira fica ilegível porque a chave foi destruída, e o restante expira com o backup (ADR 0020).
 
-**O que existe hoje:** o expurgo, com a destruição da chave, a pseudonimização e o relatório (ADR 0019 e 0020). O cancelamento da assinatura e o e-mail de confirmação ainda não existem.
+**O que existe hoje:** o expurgo, com o cancelamento da assinatura, a destruição da chave, a pseudonimização e o relatório (ADR 0019, 0020 e 0021). O e-mail de confirmação ainda não existe.
 
 ### F9 — Exportação de dados
 

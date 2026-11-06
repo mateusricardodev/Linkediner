@@ -36,6 +36,5 @@ A LGPD garante à pessoa apagar a conta e levar os próprios dados. O ADR 0008 d
 
 - **Backups:** a criptografia por usuário cobre o conteúdo de carreira ([ADR 0020](0020-criptografia-por-usuario.md)). O restante segue nos backups até eles expirarem (7 a 30 dias).
 - **Confirmação por e-mail (F8):** ainda não existe serviço de e-mail. A pessoa vê a confirmação só na resposta da API.
-- **Assinatura:** o cancelamento no provedor de pagamento entra com os planos (M-14).
 - **Upload em andamento:** uma URL de upload emitida antes da exclusão pode gravar um arquivo depois do expurgo. Ela expira em minutos, e o arquivo some pela regra de ciclo de vida de 30 dias do bucket.
 - **ZIP em memória:** o volume é pequeno com os limites atuais de upload e a retenção de 30 dias.

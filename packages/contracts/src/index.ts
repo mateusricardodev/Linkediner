@@ -57,3 +57,4 @@ export {
   RequestMaterialBody,
 } from './materials';
 export { DataExportDto, DeleteAccountBody, DeletionAcceptedDto } from './privacy';
+export { BillingSummaryDto, BillingUrlDto, CheckoutBody } from './billing';

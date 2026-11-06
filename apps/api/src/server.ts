@@ -31,6 +31,7 @@ import type { JobService } from '@linkediner/core/jobs';
 import type { FeedbackService, MatchingService } from '@linkediner/core/matching';
 import { documentRoutes } from './routes/documents';
 import { applicationRoutes } from './routes/applications';
+import { billingRoutes, type BillingDeps } from './routes/billing';
 import { jobRoutes } from './routes/jobs';
 import { privacyRoutes, type PrivacyDeps } from './routes/privacy';
 import { resumeRoutes } from './routes/resumes';
@@ -55,7 +56,8 @@ export interface ServerDeps {
     resumeExport: ResumeExportService;
     extraction: ExtractionRequests;
   } & MeDeps &
-    PrivacyDeps;
+    PrivacyDeps &
+    BillingDeps;
 }
 
 export async function buildServer(deps: ServerDeps) {
@@ -110,6 +112,7 @@ export async function buildServer(deps: ServerDeps) {
     await app.register(jobRoutes(deps.account));
     await app.register(applicationRoutes(deps.account));
     await app.register(privacyRoutes(deps.account));
+    await app.register(billingRoutes(deps.account));
   }
 
   return app;
