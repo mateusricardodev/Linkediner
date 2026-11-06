@@ -70,6 +70,7 @@ beforeAll(async () => {
     prompt: extractProfileV1,
     facts: new DrizzleFactRepository(db, t.cipher),
     generations: new DrizzleAiGenerationLog(db, t.cipher),
+    quota: t.quota,
     audit: t.audit,
   });
 }, 180_000);
@@ -126,7 +127,7 @@ describe('extração de currículo', () => {
     const { id, complete } = await upload(cookie);
     expect(complete.json().status).toBe('processing');
     expect(t.queue.jobs).toHaveLength(1);
-    expect(Object.keys(t.queue.jobs[0]!).sort()).toEqual(['documentId', 'userId']);
+    expect(Object.keys(t.queue.jobs[0]!).sort()).toEqual(['documentId', 'usageId', 'userId']);
 
     await runQueuedJobs();
 

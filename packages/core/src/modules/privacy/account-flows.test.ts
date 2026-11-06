@@ -92,7 +92,19 @@ function purgeSetup(current: DeletionRequest | null = request()) {
     }),
   };
   return {
-    purge: new PurgeUser({ repo, storage, tasks, keys, clock }),
+    purge: new PurgeUser({
+      repo,
+      storage,
+      tasks,
+      keys,
+      subscriptions: {
+        cancelForUser: async () => {
+          order.push('assinatura');
+          return 1;
+        },
+      },
+      clock,
+    }),
     repo,
     storage,
     tasks,
@@ -105,9 +117,13 @@ describe('expurgo', () => {
   it('apaga na ordem: fila, arquivos, chave, banco, e relata só contagens', async () => {
     const { purge, repo, storage, order } = purgeSetup();
     expect(await purge.run({ requestId: 'r1' }, { isLastAttempt: false })).toBe('completed');
-    expect(order).toEqual(['fila', 'arquivos', 'chave', 'banco']);
+    expect(order).toEqual(['assinatura', 'fila', 'arquivos', 'chave', 'banco']);
     expect(storage.deletePrefix).toHaveBeenCalledWith(`users/${USER}/`);
-    expect(repo.complete).toHaveBeenCalledWith(request(), { cancelledTasks: 2, deletedFiles: 3 });
+    expect(repo.complete).toHaveBeenCalledWith(request(), {
+      cancelledTasks: 2,
+      deletedFiles: 3,
+      cancelledSubscriptions: 1,
+    });
   });
 
   it('pedido concluído ou inexistente não faz nada', async () => {

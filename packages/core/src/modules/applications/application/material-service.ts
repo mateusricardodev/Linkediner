@@ -2,11 +2,13 @@ import type { AuditLog } from '../../audit';
 import type { JobRepository } from '../../jobs';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
-import { AppError, newId } from '../../shared';
+import { AppError, newId, type QuotaGate } from '../../shared';
 import { assertTransition } from '../domain/application';
 import {
   MATERIAL_FAILURES,
+  MATERIAL_FEATURES,
   materialItems,
+  materialUsageKey,
   validateQuestions,
   type ApplicationMaterial,
   type GenerateMaterialJob,
@@ -53,6 +55,7 @@ export class MaterialService {
     private readonly consents: Pick<ConsentService, 'status'>,
     private readonly queue: MaterialQueue,
     private readonly audit: AuditLog,
+    private readonly quota: QuotaGate,
   ) {}
 
   async request(
@@ -85,12 +88,22 @@ export class MaterialService {
     if (generating) return generating;
 
     // Em revisão ou já gerando outro material, a candidatura fica onde está.
-    if (state !== 'in_review' && state !== 'analyzing') {
-      assertTransition(state, 'analyzing', 'user');
+    const moves = state !== 'in_review' && state !== 'analyzing';
+    // Antes de gastar o limite: a candidatura aprovada não aceita material novo.
+    if (moves) assertTransition(state, 'analyzing', 'user');
+
+    const feature = MATERIAL_FEATURES[input.kind];
+    const usageId = newId();
+    const usageKey = materialUsageKey(usageId);
+    await this.quota.consume(userId, feature, usageKey);
+    if (moves) {
       const moved = await this.applications.transition(userId, applicationId, state, [
         { to: 'analyzing', actor: 'user' },
       ]);
-      if (!moved) throw new AppError('CONFLICT', 'A candidatura mudou. Atualize e tente de novo.');
+      if (!moved) {
+        await this.quota.refund(userId, feature, usageKey);
+        throw new AppError('CONFLICT', 'A candidatura mudou. Atualize e tente de novo.');
+      }
     }
 
     const material = await this.materials.upsertGenerating(userId, {
@@ -100,12 +113,13 @@ export class MaterialService {
       questions,
     });
     try {
-      await this.queue.enqueue({ userId, applicationId, materialId: material.id });
+      await this.queue.enqueue({ userId, applicationId, materialId: material.id, usageId });
     } catch {
       await this.materials.markFailed(userId, material.id, MATERIAL_FAILURES.processingError);
       await this.applications.transition(userId, applicationId, 'analyzing', [
         { to: 'in_review', actor: 'system', reason: 'material_failed' },
       ]);
+      await this.quota.refund(userId, feature, usageKey);
       throw new AppError(
         'DEPENDENCY_UNAVAILABLE',
         'Não foi possível iniciar a geração. Tente de novo.',

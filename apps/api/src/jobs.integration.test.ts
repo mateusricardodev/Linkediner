@@ -33,6 +33,7 @@ beforeAll(async () => {
     ai,
     prompt: structureJobV1,
     generations: new DrizzleAiGenerationLog(t.db.db, t.cipher),
+    quota: t.quota,
     audit: t.audit,
   });
 }, 180_000);
@@ -80,7 +81,7 @@ describe('importação de vaga', () => {
     });
     expect(res.statusCode).toBe(202);
     expect(res.json().status).toBe('structuring');
-    expect(Object.keys(t.jobQueue.jobs[0]!).sort()).toEqual(['jobId', 'userId']);
+    expect(Object.keys(t.jobQueue.jobs[0]!).sort()).toEqual(['jobId', 'usageId', 'userId']);
 
     ai.calls.length = 0;
     await processQueue();

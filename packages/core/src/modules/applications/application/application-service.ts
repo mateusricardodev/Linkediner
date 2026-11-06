@@ -1,7 +1,7 @@
 import type { AuditLog } from '../../audit';
 import type { JobRepository } from '../../jobs';
 import type { ResumeContent, ResumeRepository } from '../../resumes';
-import { AppError, newId, systemClock, type Clock } from '../../shared';
+import { AppError, newId, systemClock, type Clock, type QuotaGate } from '../../shared';
 import {
   assertTransition,
   buildDashboard,
@@ -57,6 +57,7 @@ export class ApplicationService {
       list(userId: string, applicationId: string): Promise<ApplicationMaterial[]>;
     },
     private readonly audit: AuditLog,
+    private readonly quota: QuotaGate,
     private readonly clock: Clock = systemClock,
   ) {}
 
@@ -135,19 +136,29 @@ export class ApplicationService {
   async approve(userId: string, id: string): Promise<Application> {
     const application = await this.load(userId, id);
     const resume = await this.resumeForApproval(userId, application);
-    const approved = await this.apply(
-      userId,
-      application,
-      [
-        { to: 'approved', actor: 'user' },
-        { to: 'manual_action_required', actor: 'system', reason: 'no_integration' },
-      ],
-      {
-        materialSnapshot: resume,
-        submissionMode: 'assisted',
-        createManualTask: { reason: 'no_integration' },
-      },
-    );
+    // Antes de gastar o limite: aprovar no estado errado não pode consumir nada.
+    assertTransition(application.state, 'approved', 'user');
+    const usageKey = `approve:${id}:${newId()}`;
+    await this.quota.consume(userId, 'applications.assisted', usageKey);
+    let approved: Application;
+    try {
+      approved = await this.apply(
+        userId,
+        application,
+        [
+          { to: 'approved', actor: 'user' },
+          { to: 'manual_action_required', actor: 'system', reason: 'no_integration' },
+        ],
+        {
+          materialSnapshot: resume,
+          submissionMode: 'assisted',
+          createManualTask: { reason: 'no_integration' },
+        },
+      );
+    } catch (error) {
+      await this.quota.refund(userId, 'applications.assisted', usageKey);
+      throw error;
+    }
     await this.record(userId, 'application.approved', id);
     return approved;
   }

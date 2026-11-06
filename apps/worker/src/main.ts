@@ -20,6 +20,13 @@ import {
 import { DrizzleJobRepository, EMPTY_JOB_OUTPUT, StructureJob } from '@linkediner/core/jobs';
 import { DrizzleResumeRepository, GenerateResume } from '@linkediner/core/resumes';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
+import {
+  createPaymentProvider,
+  DrizzleSubscriptionRepository,
+  DrizzleUsageRepository,
+  EntitlementService,
+  SubscriptionService,
+} from '@linkediner/core/billing';
 import { createFieldCipher } from '@linkediner/core/crypto';
 import {
   DrizzleDocumentRepository,
@@ -109,6 +116,7 @@ const cipher = createFieldCipher({
 });
 const generations = new DrizzleAiGenerationLog(database.db, cipher);
 const factRepository = new DrizzleFactRepository(database.db, cipher);
+const quota = new EntitlementService(new DrizzleUsageRepository(database.db));
 const boss = new PgBoss({ connectionString: config.DATABASE_URL, schema: 'pgboss' });
 
 boss.on('error', (err) => logger.error({ err }, 'erro no pg-boss'));
@@ -118,6 +126,12 @@ const purge = new PurgeUser({
   repo: new DrizzleAccountDeletionRepository(database.db),
   storage,
   keys: cipher,
+  subscriptions: new SubscriptionService(
+    new DrizzleSubscriptionRepository(database.db),
+    createPaymentProvider(config),
+    audit,
+    { web: config.WEB_ORIGIN },
+  ),
   // Toda fila cujo payload tem `userId`. A do próprio expurgo fica de fora.
   tasks: new PgBossPendingTasks(boss, [
     DOCUMENTS_EXTRACT_QUEUE.name,
@@ -141,6 +155,7 @@ const tasks = [
       prompt: extractProfileV1,
       facts: factRepository,
       generations,
+      quota,
       audit,
     }),
     scores: new ProfileScoreService(
@@ -156,6 +171,7 @@ const tasks = [
       ai,
       prompt: structureJobV1,
       generations,
+      quota,
       audit,
     }),
   }),
@@ -167,6 +183,7 @@ const tasks = [
       ai,
       prompt: generateResumeV1,
       generations,
+      quota,
       audit,
     }),
   }),
@@ -184,6 +201,7 @@ const tasks = [
         form_answers: formAnswersV1,
       },
       generations,
+      quota,
       audit,
     }),
   }),

@@ -7,7 +7,6 @@ export {
   type ResumeExportModel,
 } from './domain/export-model';
 export {
-  FREE_PLAN_EXPORT_POLICY,
   ResumeExportService,
   type ExportPolicy,
   type ResumeRenderer,

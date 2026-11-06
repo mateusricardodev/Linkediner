@@ -1,6 +1,7 @@
 import type { DocumentRecord, DocumentRepository } from '../../documents';
 import type { ConsentService } from '../../privacy';
-import { AppError, isAppError } from '../../shared';
+import { AppError, isAppError, newId, type QuotaGate } from '../../shared';
+import { usageKeyFor } from '../domain/extraction-rules';
 import type { ExtractionQueue } from './ports';
 
 /** Pedido de extração feito pela API. O trabalho em si roda no worker. */
@@ -9,6 +10,7 @@ export class ExtractionRequests {
     private readonly documents: Pick<DocumentRepository, 'find' | 'setStatus'>,
     private readonly consents: Pick<ConsentService, 'status'>,
     private readonly queue: ExtractionQueue,
+    private readonly quota: QuotaGate,
   ) {}
 
   /** Sem consentimento de processamento por IA, nada é enviado ao provedor. */
@@ -31,11 +33,15 @@ export class ExtractionRequests {
       );
     }
 
+    const usageId = newId();
+    const usageKey = usageKeyFor(usageId);
+    await this.quota.consume(userId, 'profile.analysis', usageKey);
     await this.documents.setStatus(userId, documentId, 'processing');
     try {
-      await this.queue.enqueue({ userId, documentId });
+      await this.queue.enqueue({ userId, documentId, usageId });
     } catch {
       await this.documents.setStatus(userId, documentId, 'uploaded');
+      await this.quota.refund(userId, 'profile.analysis', usageKey);
       throw new AppError(
         'DEPENDENCY_UNAVAILABLE',
         'Não foi possível iniciar a análise. Tente de novo.',
@@ -46,7 +52,7 @@ export class ExtractionRequests {
 
   /**
    * Inicia a extração logo depois do upload, se o usuário já autorizou. O upload continua válido
-   * sem autorização ou se a fila falhar: dá para pedir a análise depois.
+   * sem autorização, sem limite no plano ou se a fila falhar: dá para pedir a análise depois.
    */
   async requestIfAllowed(userId: string, document: DocumentRecord): Promise<DocumentRecord> {
     try {
@@ -54,7 +60,9 @@ export class ExtractionRequests {
     } catch (error) {
       if (
         isAppError(error) &&
-        (error.code === 'CONSENT_REQUIRED' || error.code === 'DEPENDENCY_UNAVAILABLE')
+        (error.code === 'CONSENT_REQUIRED' ||
+          error.code === 'DEPENDENCY_UNAVAILABLE' ||
+          error.code === 'QUOTA_EXCEEDED')
       ) {
         return document;
       }

@@ -59,15 +59,20 @@ describe('JobService', () => {
     const enqueue = vi.fn(async () => {
       if (o.queueFails) throw new Error('fila fora');
     });
-    const service = new JobService(repo, consent(o.consent ?? true), { enqueue }, audit);
-    return { service, rows, enqueue };
+    const quota = { consume: vi.fn(async () => {}), refund: vi.fn(async () => {}) };
+    const service = new JobService(repo, consent(o.consent ?? true), { enqueue }, audit, quota);
+    return { service, rows, enqueue, quota };
   }
 
   it('importa e enfileira só IDs, sem o texto da vaga', async () => {
     const { service, enqueue } = setup();
     const job = await service.import(USER, { text: TEXT });
     expect(job.status).toBe('structuring');
-    expect(enqueue).toHaveBeenCalledWith({ userId: USER, jobId: job.id });
+    expect(enqueue).toHaveBeenCalledWith({
+      userId: USER,
+      jobId: job.id,
+      usageId: expect.any(String),
+    });
   });
 
   it('exige o consentimento de IA', async () => {
@@ -78,14 +83,15 @@ describe('JobService', () => {
     expect(enqueue).not.toHaveBeenCalled();
   });
 
-  it('o mesmo texto não cria outra vaga nem processa de novo', async () => {
-    const { service, rows: repoSaved, enqueue } = setup();
+  it('o mesmo texto não cria outra vaga, não processa de novo e não gasta o limite', async () => {
+    const { service, rows: repoSaved, enqueue, quota } = setup();
     const first = await service.import(USER, { text: TEXT });
     repoSaved.set(first.id, { ...repoSaved.get(first.id)!, status: 'ready' });
     const second = await service.import(USER, { text: `  ${TEXT.toUpperCase()} ` });
     expect(second.id).toBe(first.id);
     expect(repoSaved.size).toBe(1);
     expect(enqueue).toHaveBeenCalledOnce();
+    expect(quota.consume).toHaveBeenCalledOnce();
   });
 
   it('importar de novo enquanto a vaga é processada não enfileira outra vez', async () => {
@@ -104,12 +110,13 @@ describe('JobService', () => {
     expect(enqueue).toHaveBeenCalledTimes(2);
   });
 
-  it('se a fila falhar, marca a vaga como falha', async () => {
-    const { service, rows } = setup({ queueFails: true });
+  it('se a fila falhar, marca a vaga como falha e devolve o limite', async () => {
+    const { service, rows, quota } = setup({ queueFails: true });
     await expect(service.import(USER, { text: TEXT })).rejects.toMatchObject({
       code: 'DEPENDENCY_UNAVAILABLE',
     });
     expect([...rows.values()][0]).toMatchObject({ status: 'failed' });
+    expect(quota.refund).toHaveBeenCalledOnce();
   });
 });
 
@@ -139,11 +146,13 @@ describe('StructureJob', () => {
           mustHave: ['React', 'Kubernetes'],
         },
     );
+    const refund = vi.fn(async () => {});
     const use = new StructureJob({
       jobs: repo,
       consents: consent(o.consent ?? true),
       ai,
       prompt: structureJobV1,
+      quota: { refund },
       generations: {
         record: async (e) => {
           generations.push(e);
@@ -152,9 +161,18 @@ describe('StructureJob', () => {
       audit,
     });
     const run = (isLastAttempt = false) =>
-      use.run({ userId: USER, jobId: 'j1' }, { isLastAttempt });
-    return { run, rows, ai, generations };
+      use.run({ userId: USER, jobId: 'j1', usageId: 'u1' }, { isLastAttempt });
+    return { run, rows, ai, generations, refund };
   }
+
+  it('devolve o limite só quando a análise falha', async () => {
+    const ok = setup();
+    await ok.run();
+    expect(ok.refund).not.toHaveBeenCalled();
+    const revoked = setup({ consent: false });
+    await expect(revoked.run()).resolves.toBe('failed');
+    expect(revoked.refund).toHaveBeenCalledWith(USER, 'job.match', 'job:u1');
+  });
 
   it('grava só o que está no texto e registra modelo, prompt e validação', async () => {
     const { run, rows, generations } = setup();

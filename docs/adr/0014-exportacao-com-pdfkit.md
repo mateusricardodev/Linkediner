@@ -14,7 +14,7 @@ A arquitetura previa gerar o PDF a partir de um template HTML, com Playwright e 
 - **Uma coluna e texto selecionável**, o formato que os sistemas de recrutamento leem melhor.
 - **Só currículo aprovado é exportado**, e só com frases comprovadas ou confirmadas. A aprovação é recusada enquanto houver sugestão pendente, e qualquer edição exige aprovar de novo.
 - **Marca d'água como uma linha discreta no fim do PDF e no rodapé do DOCX.** Uma marca diagonal sobre o texto atrapalharia a leitura pelos sistemas de recrutamento, e prejudicaria justamente quem usa o plano gratuito.
-- **A política de marca d'água é uma porta (`ExportPolicy`).** Hoje todo usuário está no plano gratuito. O billing (M-14) troca a implementação sem mudar o fluxo.
+- **A política de marca d'água é uma porta (`ExportPolicy`).** O valor vem da funcionalidade `export.watermark` do plano em vigor ([ADR 0021](0021-planos-limites-e-stripe.md)).
 
 ## Limitações
 

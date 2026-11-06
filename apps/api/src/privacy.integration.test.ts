@@ -37,6 +37,7 @@ beforeAll(async () => {
     repo: new DrizzleAccountDeletionRepository(t.db.db),
     storage: t.storage,
     keys: t.cipher,
+    subscriptions: t.subscriptions,
     tasks: {
       cancelForUser: async (userId) => {
         cancelled.push(userId);
@@ -171,7 +172,11 @@ describe('exclusão da conta', () => {
     expect(rows[0]).toMatchObject({ status: 'completed', user_id: null });
     expect(rows[0].completed_at).not.toBeNull();
     expect(JSON.stringify(rows[0])).not.toContain(userId);
-    expect(Object.keys(rows[0].report).sort()).toEqual(['cancelledTasks', 'deletedFiles']);
+    expect(Object.keys(rows[0].report).sort()).toEqual([
+      'cancelledSubscriptions',
+      'cancelledTasks',
+      'deletedFiles',
+    ]);
   });
 
   it('repetir o expurgo não faz nada, e o e-mail fica livre para uma nova conta', async () => {

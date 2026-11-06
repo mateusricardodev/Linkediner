@@ -48,6 +48,11 @@ describe('loadConfig', () => {
     }
   });
 
+  it('exige os quatro valores da Stripe juntos', () => {
+    expect(() => loadConfig({ ...base, STRIPE_PRICE_PRO: 'price_1' })).toThrow(/STRIPE_SECRET_KEY/);
+    expect(loadConfig(base).STRIPE_SECRET_KEY).toBeUndefined();
+  });
+
   it('recusa guardar as chaves no bucket de documentos, que expira objetos', () => {
     expect(() =>
       loadConfig({ ...base, STORAGE_BUCKET: 'mesmo', STORAGE_KEYS_BUCKET: 'mesmo' }),

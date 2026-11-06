@@ -23,7 +23,7 @@ Até o M-12, a candidatura usava só um currículo geral já aprovado. O produto
 
 - Três prompts novos e versionados: `tailor_resume`, `cover_letter` e `form_answers`.
 - O conteúdo do material fica em `jsonb`, e o tipo define o formato. Cada geração é registrada em `ai_generations`, e a auditoria guarda só contagens.
-- O limite de material por plano entra com os planos (M-14).
+- O limite de material por plano está no [ADR 0021](0021-planos-limites-e-stripe.md).
 
 ## Limitações conhecidas
 

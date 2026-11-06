@@ -113,6 +113,9 @@ importers:
       pino:
         specifier: 10.4.0
         version: 10.4.0
+      stripe:
+        specifier: 23.0.1
+        version: 23.0.1(@types/node@26.6.6)
       uuid:
         specifier: 14.0.3
         version: 14.0.3
@@ -193,6 +196,9 @@ importers:
       pino:
         specifier: 10.4.0
         version: 10.4.0
+      stripe:
+        specifier: 23.0.1
+        version: 23.0.1(@types/node@26.6.6)
       unpdf:
         specifier: 2.1.0
         version: 2.1.0
@@ -254,6 +260,9 @@ importers:
       pdfkit:
         specifier: 0.20.2
         version: 0.20.2
+      stripe:
+        specifier: 23.0.1
+        version: 23.0.1(@types/node@26.6.6)
       unpdf:
         specifier: 2.1.0
         version: 2.1.0
@@ -3890,6 +3899,15 @@ packages:
   strip-json-comments@5.0.3:
     resolution: {integrity: sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw==}
     engines: {node: '>=14.16'}
+
+  stripe@23.0.1:
+    resolution: {integrity: sha512-VFLs9IAzSZ8GIm6/vqhjqOL0fbYrSNYCpgZ3LS3YkSi/i5RnyMpu/Hf9YxPTOCYwc3mZKU3IJvuvKffQH2NLMg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@types/node': '>=20'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   style-dictionary@5.3.0:
     resolution: {integrity: sha512-nl2HzXL2tqFIFRL+CAVKPu/erQ9N6m7yNYcYF1K3BywTYa38ZuKLYa1Wy2O++Pojo8XOaFD6t8wq5Y0au81vIg==}
@@ -7768,6 +7786,10 @@ snapshots:
   strip-bom@3.0.0: {}
 
   strip-json-comments@5.0.3: {}
+
+  stripe@23.0.1(@types/node@26.6.6):
+    optionalDependencies:
+      '@types/node': 26.6.6
 
   style-dictionary@5.3.0:
     dependencies:

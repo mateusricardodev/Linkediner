@@ -88,12 +88,14 @@ describe('GenerateResume', () => {
           ],
         },
     );
+    const refund = vi.fn(async () => {});
     const use = new GenerateResume({
       resumes: repo,
       facts: { list: async () => o.facts ?? [EXPERIENCE] },
       consents: consent(o.consent ?? true),
       ai,
       prompt: generateResumeV1,
+      quota: { refund },
       generations: {
         record: async (e) => {
           generations.push(e);
@@ -103,8 +105,17 @@ describe('GenerateResume', () => {
     });
     const run = (isLastAttempt = false) =>
       use.run({ userId: USER, resumeId: 'r1' }, { isLastAttempt });
-    return { run, rows, ai, generations };
+    return { run, rows, ai, generations, refund };
   }
+
+  it('devolve o limite só quando a geração falha', async () => {
+    const ok = setup();
+    await ok.run();
+    expect(ok.refund).not.toHaveBeenCalled();
+    const revoked = setup({ consent: false });
+    await revoked.run();
+    expect(revoked.refund).toHaveBeenCalledWith(USER, 'resume.improved', 'resume:r1');
+  });
 
   it('gera o rascunho e registra modelo, prompt e validação', async () => {
     const { run, rows, generations } = setup();
@@ -194,14 +205,16 @@ describe('ResumeService', () => {
     const enqueue = vi.fn(async () => {
       if (o.queueFails) throw new Error('fila fora');
     });
+    const quota = { consume: vi.fn(async () => {}), refund: vi.fn(async () => {}) };
     const service = new ResumeService(
       repo,
       { list: async () => o.facts ?? [EXPERIENCE], addConfirmed },
       consent(o.consent ?? true),
       { enqueue },
       audit,
+      quota,
     );
-    return { service, rows, addConfirmed, enqueue };
+    return { service, rows, addConfirmed, enqueue, quota };
   }
   const draft = (): Resume => ({
     id: 'r1',
@@ -228,12 +241,13 @@ describe('ResumeService', () => {
     });
   });
 
-  it('não dispara duas gerações ao mesmo tempo', async () => {
-    const { service, enqueue } = setup();
+  it('não dispara duas gerações ao mesmo tempo, nem gasta o limite duas vezes', async () => {
+    const { service, enqueue, quota } = setup();
     const first = await service.request(USER);
     const second = await service.request(USER);
     expect(second.id).toBe(first.id);
     expect(enqueue).toHaveBeenCalledOnce();
+    expect(quota.consume).toHaveBeenCalledOnce();
   });
 
   it('se a fila falhar, marca o currículo como falho', async () => {

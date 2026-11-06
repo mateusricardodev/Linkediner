@@ -6,14 +6,14 @@ import { defineTask } from '../task';
 export const jobsStructure = (deps: {
   structure: {
     run(
-      payload: { userId: string; jobId: string },
+      payload: { userId: string; jobId: string; usageId: string },
       opts: { isLastAttempt: boolean },
     ): Promise<StructureOutcome>;
   };
 }) =>
   defineTask({
     name: JOBS_STRUCTURE_QUEUE.name,
-    payload: z.object({ userId: z.uuid(), jobId: z.uuid() }).strict(),
+    payload: z.object({ userId: z.uuid(), jobId: z.uuid(), usageId: z.uuid() }).strict(),
     retryLimit: JOBS_STRUCTURE_QUEUE.retryLimit,
     expireInSeconds: JOBS_STRUCTURE_QUEUE.expireInSeconds,
     async handle(payload, ctx) {

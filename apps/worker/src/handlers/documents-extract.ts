@@ -7,7 +7,7 @@ import { defineTask } from '../task';
 export const documentsExtract = (deps: {
   extract: {
     run(
-      job: { userId: string; documentId: string },
+      job: { userId: string; documentId: string; usageId: string },
       opts: { isLastAttempt: boolean },
     ): Promise<ExtractOutcome>;
   };
@@ -15,7 +15,7 @@ export const documentsExtract = (deps: {
 }) =>
   defineTask({
     name: DOCUMENTS_EXTRACT_QUEUE.name,
-    payload: z.object({ userId: z.uuid(), documentId: z.uuid() }).strict(),
+    payload: z.object({ userId: z.uuid(), documentId: z.uuid(), usageId: z.uuid() }).strict(),
     retryLimit: DOCUMENTS_EXTRACT_QUEUE.retryLimit,
     expireInSeconds: DOCUMENTS_EXTRACT_QUEUE.expireInSeconds,
     async handle(payload, ctx) {

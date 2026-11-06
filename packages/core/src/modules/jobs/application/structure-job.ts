@@ -3,7 +3,14 @@ import type { AiGenerationLog, AiProvider, VersionedPrompt } from '../../ai';
 import type { AuditLog } from '../../audit';
 import { redactSensitiveData } from '../../extraction';
 import type { ConsentService } from '../../privacy';
-import { groundJob, JOB_FAILURES, JobOutput, type StructureJobPayload } from '../domain/job';
+import type { QuotaGate } from '../../shared';
+import {
+  groundJob,
+  JOB_FAILURES,
+  JobOutput,
+  jobUsageKey,
+  type StructureJobPayload,
+} from '../domain/job';
 import type { JobRepository } from './ports/job-repository';
 
 export interface StructureJobDeps {
@@ -12,6 +19,7 @@ export interface StructureJobDeps {
   ai: AiProvider;
   prompt: VersionedPrompt;
   generations: Pick<AiGenerationLog, 'record'>;
+  quota: Pick<QuotaGate, 'refund'>;
   audit: AuditLog;
 }
 
@@ -27,7 +35,11 @@ export class StructureJob {
   ): Promise<StructureOutcome> {
     const { userId, jobId } = payload;
     const job = await this.deps.jobs.find(userId, jobId);
-    if (!job || job.status !== 'structuring') return 'skipped';
+    if (!job) {
+      await this.refund(payload);
+      return 'skipped';
+    }
+    if (job.status !== 'structuring') return 'skipped';
 
     const { granted } = await this.deps.consents.status(userId);
     if (!granted.ai_processing) return this.fail(payload, JOB_FAILURES.consentRevoked);
@@ -66,8 +78,13 @@ export class StructureJob {
     }
   }
 
+  private refund(payload: StructureJobPayload) {
+    return this.deps.quota.refund(payload.userId, 'job.match', jobUsageKey(payload.usageId));
+  }
+
   private async fail(payload: StructureJobPayload, code: string): Promise<StructureOutcome> {
     await this.deps.jobs.markFailed(payload.userId, payload.jobId, code);
+    await this.refund(payload);
     await this.deps.audit.record({
       actorType: 'system',
       actorId: payload.userId,

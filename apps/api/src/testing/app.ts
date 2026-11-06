@@ -1,5 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { Writable } from 'node:stream';
+import {
+  DrizzleSubscriptionRepository,
+  DrizzleUsageRepository,
+  EntitlementService,
+  SubscriptionService,
+  type PaymentProvider,
+} from '@linkediner/core/billing';
+import type { QuotaGate } from '@linkediner/core/shared';
 import { createFieldCipher } from '@linkediner/core/crypto';
 import { S3ObjectStorage } from '@linkediner/core/documents';
 import {
@@ -32,7 +40,6 @@ import {
 import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
 import {
   DocxResumeRenderer,
-  FREE_PLAN_EXPORT_POLICY,
   PdfResumeRenderer,
   ResumeExportService,
 } from '@linkediner/core/resumes/export';
@@ -58,7 +65,7 @@ export const WEB = 'http://localhost:3000';
 export const TEST_PASSWORD = 'senha-forte-123'; // gitleaks:allow
 
 /** Sobe Postgres e S3 em containers e a API completa, como em produção, para testes de integração. */
-export async function startTestApp() {
+export async function startTestApp(opts: { realQuota?: boolean; payments?: PaymentProvider } = {}) {
   const [ctx, s3] = await Promise.all([startTestDatabase(), startTestS3()]);
   const db = ctx.handle.db;
   const pseudonymize = createPseudonymizer('p'.repeat(32));
@@ -77,6 +84,17 @@ export async function startTestApp() {
   const userReader = new DrizzleUserReader(db);
   const applicationRepository = new DrizzleApplicationRepository(db, cipher);
   const materialRepository = new DrizzleMaterialRepository(db, cipher);
+  const entitlements = new EntitlementService(new DrizzleUsageRepository(db));
+  // Por padrão sem limites: só os testes de planos dependem deles. Os outros testam o próprio fluxo.
+  const quota: QuotaGate = opts.realQuota
+    ? entitlements
+    : { consume: async () => {}, refund: async () => {} };
+  const subscriptions = new SubscriptionService(
+    new DrizzleSubscriptionRepository(db),
+    opts.payments ?? null,
+    audit,
+    { web: WEB },
+  );
   const scores = new ProfileScoreService(
     profileRepository,
     factRepository,
@@ -154,6 +172,7 @@ export async function startTestApp() {
         resumeRepository,
         materialRepository,
         audit,
+        quota,
       ),
       materials: new MaterialService(
         materialRepository,
@@ -163,6 +182,7 @@ export async function startTestApp() {
         consents,
         materialQueue,
         audit,
+        quota,
       ),
       feedback: new FeedbackService(
         new DrizzleFeedbackRepository(db),
@@ -178,17 +198,26 @@ export async function startTestApp() {
         profileRepository,
         new DrizzleMatchRepository(db),
       ),
-      jobs: new JobService(jobRepository, consents, jobQueue, audit),
+      jobs: new JobService(jobRepository, consents, jobQueue, audit, quota),
       resumeExport: new ResumeExportService({
         resumes: resumeRepository,
         users: userReader,
         profiles: profileRepository,
         renderers: { pdf: new PdfResumeRenderer(), docx: new DocxResumeRenderer() },
-        policy: FREE_PLAN_EXPORT_POLICY,
+        policy: { watermark: (userId) => entitlements.enabled(userId, 'export.watermark') },
         audit,
       }),
-      resumes: new ResumeService(resumeRepository, factRepository, consents, resumeQueue, audit),
-      extraction: new ExtractionRequests(documentRepository, consents, queue),
+      resumes: new ResumeService(
+        resumeRepository,
+        factRepository,
+        consents,
+        resumeQueue,
+        audit,
+        quota,
+      ),
+      extraction: new ExtractionRequests(documentRepository, consents, queue, quota),
+      entitlements,
+      subscriptions,
       accountDeletion: new AccountDeletionService(
         new DrizzleAccountDeletionRepository(db),
         purgeQueue,
@@ -252,6 +281,9 @@ export async function startTestApp() {
     keyStorage,
     masterKeyBase64,
     cipher,
+    quota,
+    entitlements,
+    subscriptions,
     audit,
     consents,
     queue,

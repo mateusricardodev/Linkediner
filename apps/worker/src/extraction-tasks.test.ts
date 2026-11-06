@@ -28,6 +28,7 @@ const scores = { recalculate: vi.fn(async () => ({})) };
 const payload = {
   userId: '0193b2b0-0000-7000-8000-00000000000a',
   documentId: '0193b2b0-0000-7000-8000-0000000000d1',
+  usageId: '0193b2b0-0000-7000-8000-0000000000f1',
 };
 
 describe('documents.extract', () => {
@@ -166,6 +167,7 @@ describe('applications.generate_material', () => {
     userId: payload.userId,
     applicationId: payload.documentId,
     materialId: '0193b2b0-0000-7000-8000-0000000000e1',
+    usageId: payload.usageId,
   };
 
   it('a fila criada pela API é igual à registrada pelo worker', () => {
@@ -192,7 +194,7 @@ describe('applications.generate_material', () => {
 });
 
 describe('jobs.structure', () => {
-  const job = { userId: payload.userId, jobId: payload.documentId };
+  const job = { userId: payload.userId, jobId: payload.documentId, usageId: payload.usageId };
 
   it('a fila criada pela API é igual à registrada pelo worker', () => {
     const task = jobsStructure({ structure: { run: vi.fn() } });

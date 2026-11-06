@@ -3,10 +3,12 @@ import type { AiGenerationLog, AiProvider, VersionedPrompt } from '../../ai';
 import type { AuditLog } from '../../audit';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
+import type { QuotaGate } from '../../shared';
 import {
   buildResume,
   RESUME_FAILURES,
   ResumeOutput,
+  resumeUsageKey,
   type GenerateResumeJob,
 } from '../domain/resume';
 import type { ResumeRepository } from './ports/resume-repository';
@@ -18,6 +20,7 @@ export interface GenerateResumeDeps {
   ai: AiProvider;
   prompt: VersionedPrompt;
   generations: Pick<AiGenerationLog, 'record'>;
+  quota: Pick<QuotaGate, 'refund'>;
   audit: AuditLog;
 }
 
@@ -30,7 +33,11 @@ export class GenerateResume {
   async run(job: GenerateResumeJob, opts: { isLastAttempt: boolean }): Promise<GenerateOutcome> {
     const { userId, resumeId } = job;
     const resume = await this.deps.resumes.find(userId, resumeId);
-    if (!resume || resume.status !== 'generating') return 'skipped';
+    if (!resume) {
+      await this.deps.quota.refund(userId, 'resume.improved', resumeUsageKey(resumeId));
+      return 'skipped';
+    }
+    if (resume.status !== 'generating') return 'skipped';
 
     const { granted } = await this.deps.consents.status(userId);
     if (!granted.ai_processing) return this.fail(job, RESUME_FAILURES.consentRevoked);
@@ -76,6 +83,7 @@ export class GenerateResume {
 
   private async fail(job: GenerateResumeJob, code: string): Promise<GenerateOutcome> {
     await this.deps.resumes.markFailed(job.userId, job.resumeId, code);
+    await this.deps.quota.refund(job.userId, 'resume.improved', resumeUsageKey(job.resumeId));
     await this.deps.audit.record({
       actorType: 'system',
       actorId: job.userId,

@@ -58,6 +58,7 @@ beforeAll(async () => {
     ai,
     prompts: { resume: tailorResumeV1, cover_letter: coverLetterV1, form_answers: formAnswersV1 },
     generations: new DrizzleAiGenerationLog(db, t.cipher),
+    quota: t.quota,
     audit: t.audit,
   });
 }, 180_000);
@@ -171,6 +172,7 @@ describe('material por vaga', () => {
     expect(Object.keys(t.materialQueue.jobs[0]!).sort()).toEqual([
       'applicationId',
       'materialId',
+      'usageId',
       'userId',
     ]);
     await runQueue();

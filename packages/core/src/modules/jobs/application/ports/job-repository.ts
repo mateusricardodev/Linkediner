@@ -15,5 +15,5 @@ export interface JobRepository {
 
 /** Enfileira a estruturação. O payload leva só IDs. */
 export interface JobQueue {
-  enqueue(payload: { userId: string; jobId: string }): Promise<void>;
+  enqueue(payload: { userId: string; jobId: string; usageId: string }): Promise<void>;
 }
