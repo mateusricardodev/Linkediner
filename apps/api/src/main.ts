@@ -1,6 +1,7 @@
 import { PgBoss } from 'pg-boss';
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
+import { ApplicationService, DrizzleApplicationRepository } from '@linkediner/core/applications';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
@@ -106,6 +107,12 @@ const app = await buildServer({
       deleteForDocument: (userId, documentId) =>
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
+    applications: new ApplicationService(
+      new DrizzleApplicationRepository(database.db),
+      jobRepository,
+      resumeRepository,
+      audit,
+    ),
     feedback: new FeedbackService(
       new DrizzleFeedbackRepository(database.db),
       jobRepository,

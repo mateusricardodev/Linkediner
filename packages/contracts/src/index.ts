@@ -40,3 +40,12 @@ export {
   JobFeedbackResponse,
   RecommendationsResponse,
 } from './feedback';
+export {
+  ApplicationDetail,
+  ApplicationDto,
+  ApplicationOutcomeBody,
+  ApplicationState,
+  AttachResumeBody,
+  CreateApplicationBody,
+  DashboardResponse,
+} from './applications';
