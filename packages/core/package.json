@@ -6,6 +6,7 @@
   "exports": {
     "./shared": "./src/modules/shared/index.ts",
     "./ai": "./src/modules/ai/index.ts",
+    "./applications": "./src/modules/applications/index.ts",
     "./audit": "./src/modules/audit/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
     "./identity": "./src/modules/identity/index.ts",

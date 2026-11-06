@@ -34,12 +34,14 @@
 | `GET /v1/jobs/{id}` | Detalhe da vaga |
 | `GET /v1/jobs/{id}/match?goalId=` | Compatibilidade requisito por requisito ([ADR 0016](../adr/0016-compatibilidade-v1-por-regras.md)) |
 | `GET` e `PUT /v1/jobs/{id}/feedback` | Avaliação da vaga. A lista substitui a anterior ([ADR 0017](../adr/0017-preferencias-derivadas-do-feedback.md)) |
-| `POST /v1/applications` | Criar candidatura e gerar material |
+| `POST /v1/applications` | Salvar a vaga como candidatura. Nada é enviado |
 | `GET /v1/applications?state=` | Lista para o dashboard |
 | `GET /v1/applications/{id}` | Detalhe, material e histórico |
-| `PATCH /v1/applications/{id}/materials/{materialId}` | Editar material (volta o estado para `in_review`) |
-| `POST /v1/applications/{id}/approve` | Aprovar (verifica quota e consentimento) |
-| `POST /v1/applications/{id}/reject` | Rejeitar |
+| `PUT /v1/applications/{id}/resume` | Escolher o currículo aprovado e levar à revisão |
+| `POST /v1/applications/{id}/submit-for-approval`, `POST /v1/applications/{id}/request-changes` | Concluir a revisão ou voltar a ela |
+| `GET /v1/applications/{id}/resume?format=pdf\|docx` | Baixar o currículo como foi aprovado nesta candidatura |
+| `POST /v1/applications/{id}/approve` | Aprovar e congelar o material. Sem integração autorizada, cria a pendência manual |
+| `POST /v1/applications/{id}/close` | Desistir da candidatura |
 | `POST /v1/applications/{id}/manual-complete` | Usuário informa que enviou manualmente |
 | `POST /v1/applications/{id}/outcome` | Informar entrevista, rejeição ou encerramento |
 | `GET /v1/dashboard` | Resumo: pendências, enviadas, falhas, bloqueios |

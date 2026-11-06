@@ -7,3 +7,4 @@ export * from './resumes';
 export * from './jobs';
 export * from './matches';
 export * from './feedback';
+export * from './applications';

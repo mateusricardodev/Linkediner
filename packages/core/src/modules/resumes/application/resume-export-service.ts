@@ -2,6 +2,7 @@ import type { AuditLog } from '../../audit';
 import type { Profile, ProfileLink } from '../../profile';
 import { AppError } from '../../shared';
 import { toExportModel, type ExportFormat, type ResumeExportModel } from '../domain/export-model';
+import type { ResumeContent } from '../domain/resume';
 import type { ResumeRepository } from './ports/resume-repository';
 
 export interface ResumeRenderer {
@@ -45,7 +46,19 @@ export class ResumeExportService {
     if (resume.status !== 'approved' || !resume.content) {
       throw new AppError('CONFLICT', 'Aprove o currículo antes de exportar.');
     }
+    return this.exportContent(userId, resume.content, format, {
+      entityType: 'resume',
+      entityId: resumeId,
+    });
+  }
 
+  /** Gera o arquivo de um conteúdo já aprovado, como o material congelado de uma candidatura. */
+  async exportContent(
+    userId: string,
+    content: ResumeContent,
+    format: ExportFormat,
+    entity: { entityType: string; entityId: string },
+  ) {
     const [user, profile, links, watermark] = await Promise.all([
       this.deps.users.getById(userId),
       this.deps.profiles.getOrCreateProfile(userId),
@@ -53,7 +66,7 @@ export class ResumeExportService {
       this.deps.policy.watermark(userId),
     ]);
     const model = toExportModel(
-      resume.content,
+      content,
       {
         name: user?.name ?? null,
         email: user?.email ?? null,
@@ -68,8 +81,7 @@ export class ResumeExportService {
       actorType: 'user',
       actorId: userId,
       action: 'resume.exported',
-      entityType: 'resume',
-      entityId: resumeId,
+      ...entity,
       metadata: { format, watermark },
     });
     return { bytes, contentType: CONTENT_TYPES[format], fileName: `curriculo.${format}` };

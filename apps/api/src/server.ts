@@ -26,9 +26,11 @@ import type { FactService, ProfileScoreService, ProfileService } from '@linkedin
 import type { DocumentService } from '@linkediner/core/documents';
 import type { ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
+import type { ApplicationService } from '@linkediner/core/applications';
 import type { JobService } from '@linkediner/core/jobs';
 import type { FeedbackService, MatchingService } from '@linkediner/core/matching';
 import { documentRoutes } from './routes/documents';
+import { applicationRoutes } from './routes/applications';
 import { jobRoutes } from './routes/jobs';
 import { resumeRoutes } from './routes/resumes';
 
@@ -43,6 +45,7 @@ export interface ServerDeps {
     facts: FactService;
     scores: ProfileScoreService;
     documents: DocumentService;
+    applications: ApplicationService;
     jobs: JobService;
     matching: MatchingService;
     feedback: FeedbackService;
@@ -102,6 +105,7 @@ export async function buildServer(deps: ServerDeps) {
     await app.register(documentRoutes(deps.account));
     await app.register(resumeRoutes(deps.account));
     await app.register(jobRoutes(deps.account));
+    await app.register(applicationRoutes(deps.account));
   }
 
   return app;

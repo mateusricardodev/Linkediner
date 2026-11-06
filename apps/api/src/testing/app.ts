@@ -1,4 +1,5 @@
 import { Writable } from 'node:stream';
+import { ApplicationService, DrizzleApplicationRepository } from '@linkediner/core/applications';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
@@ -105,6 +106,12 @@ export async function startTestApp() {
         deleteForDocument: (userId, documentId) =>
           factRepository.deleteUnconfirmedForDocument(userId, documentId),
       }),
+      applications: new ApplicationService(
+        new DrizzleApplicationRepository(db),
+        jobRepository,
+        resumeRepository,
+        audit,
+      ),
       feedback: new FeedbackService(
         new DrizzleFeedbackRepository(db),
         jobRepository,
