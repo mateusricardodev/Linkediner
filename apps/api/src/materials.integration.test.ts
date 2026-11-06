@@ -13,7 +13,7 @@ import {
 } from '@linkediner/core/applications';
 import { DrizzleJobRepository, jobDedupeHash } from '@linkediner/core/jobs';
 import { DrizzleFactRepository } from '@linkediner/core/profile';
-import { startTestApp } from './testing/app';
+import { startTestApp, WEB } from './testing/app';
 
 // Dados fictícios. Nenhuma chamada real de IA acontece aqui.
 let t: Awaited<ReturnType<typeof startTestApp>>;
@@ -107,8 +107,24 @@ async function setup(email: string, { consent = true, facts = true } = {}) {
   return { cookie, id, jobId, userId };
 }
 
+// A rota aceita 10 pedidos por minuto de cada IP. Cada pedido usa um IP próprio para os testes não
+// esgotarem o limite entre si. O limite tem um teste só dele.
+let requests = 0;
+const requestFrom = (
+  remoteAddress: string,
+  cookie: string,
+  id: string,
+  body: Record<string, unknown>,
+) =>
+  t.app.inject({
+    method: 'POST',
+    url: `/v1/applications/${id}/materials`,
+    headers: { cookie, origin: WEB, 'content-type': 'application/json' },
+    payload: body,
+    remoteAddress,
+  });
 const requestMaterial = (cookie: string, id: string, body: Record<string, unknown>) =>
-  t.call(cookie, 'POST', `/v1/applications/${id}/materials`, body);
+  requestFrom(`10.0.0.${++requests}`, cookie, id, body);
 const materialsOf = async (cookie: string, id: string) =>
   (await t.call(cookie, 'GET', `/v1/applications/${id}/materials`)).json();
 const stateOf = async (cookie: string, id: string) =>
@@ -121,6 +137,19 @@ async function runQueue() {
 }
 
 describe('material por vaga', () => {
+  it('limita os pedidos por minuto de cada IP', async () => {
+    const { cookie, id } = await setup('mat-limite@example.com');
+    // Sem perguntas, o pedido é recusado na validação: nada é gerado nem vai para a fila.
+    for (let i = 0; i < 10; i++) {
+      const res = await requestFrom('10.0.1.1', cookie, id, { kind: 'form_answers' });
+      expect(res.statusCode).toBe(400);
+    }
+    const blocked = await requestFrom('10.0.1.1', cookie, id, { kind: 'form_answers' });
+    expect(blocked.statusCode).toBe(429);
+    const otherIp = await requestFrom('10.0.1.2', cookie, id, { kind: 'form_answers' });
+    expect(otherIp.statusCode).toBe(400);
+  });
+
   it('exige consentimento de IA e fatos comprovados', async () => {
     const semIa = await setup('mat-sem-ia@example.com', { consent: false });
     expect((await requestMaterial(semIa.cookie, semIa.id, { kind: 'resume' })).statusCode).toBe(
