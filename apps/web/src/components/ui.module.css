@@ -1,0 +1,203 @@
+/* Componentes básicos. Cores, medidas e texto vêm só dos tokens (ADR 0011). */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: var(--type-headline-weight);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 100ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.primary {
+  background: var(--color-accent-default);
+  color: var(--color-text-on-accent);
+}
+
+.secondary {
+  background: var(--color-bg-fill);
+  color: var(--color-text-primary);
+}
+
+.plain {
+  background: transparent;
+  color: var(--color-text-accent);
+  padding-inline: var(--spacing-sm);
+}
+
+.full {
+  width: 100%;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.label {
+  font-size: var(--type-subheadline-size);
+  line-height: var(--type-subheadline-line);
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border-separator);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  /* 16px evita o zoom automático do iOS ao focar o campo. */
+  font: inherit;
+  font-size: 16px;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--type-footnote-size);
+  line-height: var(--type-footnote-line);
+  color: var(--color-text-secondary);
+}
+
+.notice {
+  margin: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.notice-danger {
+  background: var(--color-status-danger-subtle);
+  color: var(--color-status-danger-text);
+}
+
+.notice-neutral {
+  background: var(--color-status-neutral-subtle);
+  color: var(--color-text-secondary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--type-footnote-size);
+  line-height: var(--type-footnote-line);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-neutral {
+  background: var(--color-status-neutral-subtle);
+  color: var(--color-status-neutral-text);
+}
+
+.badge-info {
+  background: var(--color-status-info-subtle);
+  color: var(--color-status-info-text);
+}
+
+.badge-accent {
+  background: var(--color-accent-subtle);
+  color: var(--color-text-accent);
+}
+
+.badge-success {
+  background: var(--color-status-success-subtle);
+  color: var(--color-status-success-text);
+}
+
+.badge-warning {
+  background: var(--color-status-warning-subtle);
+  color: var(--color-status-warning-text);
+}
+
+.badge-danger {
+  background: var(--color-status-danger-subtle);
+  color: var(--color-status-danger-text);
+}
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.ring svg {
+  transform: rotate(-90deg);
+}
+
+.ring-track {
+  stroke: var(--color-bg-fill);
+}
+
+.ring-value {
+  stroke: var(--color-accent-default);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 400ms ease-out;
+}
+
+.ring-label {
+  position: absolute;
+  font-size: var(--type-title-1-size);
+  line-height: var(--type-title-1-line);
+  font-weight: var(--type-title-1-weight);
+  letter-spacing: var(--type-title-1-tracking);
+  font-variant-numeric: tabular-nums;
+}
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-fill);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .ring-value {
+    transition: none;
+  }
+
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+
+  .skeleton {
+    animation: none;
+  }
+}

@@ -27,7 +27,7 @@
 | Entrada | Validação com Zod em toda fronteira (HTTP, fila, resposta de IA, resposta de fonte externa) |
 | Uploads | Tipo real verificado, tamanho limitado, processamento isolado no worker, URLs assinadas de curta duração |
 | Injeção de prompt | O conteúdo de currículos e vagas é tratado como dado: vai em seções delimitadas, e a saída é sempre validada por esquema. A IA não tem ferramentas com efeito colateral, ou seja, não envia nada e não acessa a rede. |
-| Web | CSP restritiva, proteção CSRF, cabeçalhos de segurança, limite de requisições por usuário e por IP |
+| Web | CSP (scripts em linha ainda permitidos, porque o Next.js precisa deles sem nonce), proteção CSRF, cabeçalhos de segurança, limite de requisições por IP. O site e a API precisam estar no mesmo domínio principal, para o cookie de sessão acompanhar as chamadas |
 | Dependências | Renovate/Dependabot, `pnpm audit` no CI, lockfile versionado |
 | Logs | Sem PII: redação automática no logger ([08](08-operacao.md)) |
 | Auditoria | `audit_logs` para login, mudança de consentimento, aprovação, envio, exportação, exclusão e acesso administrativo |
