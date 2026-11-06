@@ -10,6 +10,7 @@ import {
   MATERIAL_FAILURES,
   MATERIAL_FEATURES,
   MATERIAL_OUTPUTS,
+  materialPromptInput,
   materialUsageKey,
   type ApplicationMaterial,
   type GenerateMaterialJob,
@@ -67,17 +68,7 @@ export class GenerateMaterial {
     );
     if (facts.length === 0) return this.fail(job, material, MATERIAL_FAILURES.noFacts);
 
-    // Só o necessário: sem os trechos do documento original e sem o texto bruto da vaga.
-    const promptInput = {
-      facts: facts.map(({ id, type, data }) => ({ id, type, data })),
-      job: {
-        title: vacancy.title,
-        company: vacancy.company,
-        mustHave: vacancy.mustHave,
-        niceToHave: vacancy.niceToHave,
-      },
-      questions: material.questions,
-    };
+    const promptInput = materialPromptInput(facts, vacancy, material.questions);
     try {
       const { data, usage } = await this.deps.ai.generateStructured<unknown>({
         task: TASKS[material.kind],

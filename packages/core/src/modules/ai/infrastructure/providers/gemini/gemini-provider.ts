@@ -3,8 +3,12 @@ import { AppError } from '../../../../shared';
 import type {
   AiProvider,
   AiResult,
+  AiTask,
   GenerateStructuredRequest,
 } from '../../../application/ports/ai-provider';
+
+/** Menor que o prazo da fila (5 min): a falha volta como erro, e a fila tenta de novo. */
+const REQUEST_TIMEOUT_MS = 120_000;
 
 /** Parte do SDK @google/genai usada aqui. Permite testar o adaptador sem chamar a rede. */
 export interface GeminiClient {
@@ -46,10 +50,11 @@ export class GeminiProvider implements AiProvider {
     private readonly client: GeminiClient,
     private readonly defaultModel?: string,
     private readonly now: () => number = Date.now,
+    private readonly modelsByTask: Partial<Record<AiTask, string>> = {},
   ) {}
 
   async generateStructured<T>(req: GenerateStructuredRequest<T>): Promise<AiResult<T>> {
-    const model = req.model ?? this.defaultModel;
+    const model = req.model ?? this.modelsByTask[req.task] ?? this.defaultModel;
     if (!model) throw new AppError('INTERNAL', `Modelo não configurado para "${req.task}".`);
 
     const parts: unknown[] = [{ text: req.prompt.render(req.promptInput) }];
@@ -70,6 +75,7 @@ export class GeminiProvider implements AiProvider {
           temperature: req.temperature ?? 0,
           responseMimeType: 'application/json',
           responseJsonSchema: toGeminiJsonSchema(req.schema),
+          httpOptions: { timeout: REQUEST_TIMEOUT_MS },
           ...(req.maxOutputTokens ? { maxOutputTokens: req.maxOutputTokens } : {}),
         },
       });

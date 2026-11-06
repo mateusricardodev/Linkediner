@@ -44,6 +44,24 @@ export const MATERIAL_FEATURES = {
 } as const satisfies Record<MaterialKind, FeatureKey>;
 export type MaterialStatus = 'generating' | 'ready' | 'failed';
 
+/** O que a IA recebe: só o necessário, sem os trechos do documento e sem o texto bruto da vaga. */
+export function materialPromptInput(
+  facts: readonly Pick<ProfileFact, 'id' | 'type' | 'data'>[],
+  job: { title: string | null; company: string | null; mustHave: string[]; niceToHave: string[] },
+  questions: readonly string[],
+) {
+  return {
+    facts: facts.map(({ id, type, data }) => ({ id, type, data })),
+    job: {
+      title: job.title,
+      company: job.company,
+      mustHave: job.mustHave,
+      niceToHave: job.niceToHave,
+    },
+    questions,
+  };
+}
+
 export const FORM_LIMITS = { maxQuestions: 20, maxQuestionChars: 500 } as const;
 
 export interface CoverLetterContent {
