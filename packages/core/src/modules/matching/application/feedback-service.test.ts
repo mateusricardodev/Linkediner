@@ -25,7 +25,11 @@ const job = (id: string, o: Partial<Job> = {}): Job => ({
   ...o,
 });
 
-function setup(jobs: Job[], facts: { name: string }[] = [{ name: 'React' }]) {
+function setup(
+  jobs: Job[],
+  facts: { name: string }[] = [{ name: 'React' }],
+  applications: { jobId: string | null; submittedAt: Date | null }[] = [],
+) {
   const stored: FeedbackRecord[] = [];
   const repo: FeedbackRepository = {
     list: async () => stored,
@@ -53,6 +57,7 @@ function setup(jobs: Job[], facts: { name: string }[] = [{ name: 'React' }]) {
         })),
     },
     { listGoals: async () => [] },
+    { list: async () => applications },
     { record },
   );
   return { service, record };
@@ -91,6 +96,21 @@ describe('FeedbackService', () => {
     const { items, hidden } = await service.recommendations(USER);
     expect(items.map((i) => i.job.id)).toEqual(['alta', 'baixa']);
     expect(hidden).toBe(0);
+  });
+
+  it('candidatura enviada tira a vaga da lista. Só salvar não tira', async () => {
+    const { service } = setup(
+      [job('enviada'), job('salva'), job('livre')],
+      [{ name: 'React' }],
+      [
+        { jobId: 'enviada', submittedAt: new Date(0) },
+        { jobId: 'salva', submittedAt: null },
+        { jobId: null, submittedAt: new Date(0) },
+      ],
+    );
+    const { items, hidden } = await service.recommendations(USER);
+    expect(items.map((i) => i.job.id).sort()).toEqual(['livre', 'salva']);
+    expect(hidden).toBe(1);
   });
 
   it('vaga sem requisitos vai para o fim', async () => {

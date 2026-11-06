@@ -1,7 +1,14 @@
 import { PgBoss } from 'pg-boss';
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
-import { ApplicationService, DrizzleApplicationRepository } from '@linkediner/core/applications';
+import {
+  ApplicationService,
+  DrizzleApplicationRepository,
+  DrizzleMaterialRepository,
+  MATERIALS_GENERATE_QUEUE,
+  MaterialService,
+  type GenerateMaterialJob,
+} from '@linkediner/core/applications';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
@@ -87,6 +94,8 @@ const profileRepository = new DrizzleProfileRepository(database.db);
 const jobRepository = new DrizzleJobRepository(database.db);
 const resumeRepository = new DrizzleResumeRepository(database.db);
 const userReader = new DrizzleUserReader(database.db);
+const applicationRepository = new DrizzleApplicationRepository(database.db);
+const materialRepository = new DrizzleMaterialRepository(database.db);
 
 const app = await buildServer({
   config,
@@ -108,9 +117,19 @@ const app = await buildServer({
         factRepository.deleteUnconfirmedForDocument(userId, documentId),
     }),
     applications: new ApplicationService(
-      new DrizzleApplicationRepository(database.db),
+      applicationRepository,
       jobRepository,
       resumeRepository,
+      materialRepository,
+      audit,
+    ),
+    materials: new MaterialService(
+      materialRepository,
+      applicationRepository,
+      jobRepository,
+      factRepository,
+      consents,
+      await createQueue<GenerateMaterialJob>(boss, MATERIALS_GENERATE_QUEUE),
       audit,
     ),
     feedback: new FeedbackService(
@@ -118,6 +137,7 @@ const app = await buildServer({
       jobRepository,
       factRepository,
       profileRepository,
+      applicationRepository,
       audit,
     ),
     matching: new MatchingService(

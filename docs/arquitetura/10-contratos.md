@@ -38,6 +38,8 @@
 | `GET /v1/applications?state=` | Lista para o dashboard |
 | `GET /v1/applications/{id}` | Detalhe, material e histórico |
 | `PUT /v1/applications/{id}/resume` | Escolher o currículo aprovado e levar à revisão |
+| `POST /v1/applications/{id}/materials`, `GET /v1/applications/{id}/materials` | Gerar (202) e listar o currículo adaptado, a carta e as respostas de formulário |
+| `PATCH /v1/applications/{id}/materials/{materialId}/items/{itemId}`, `DELETE /v1/applications/{id}/materials/{materialId}` | Confirmar, corrigir ou remover uma frase, ou apagar o material. Só em revisão |
 | `POST /v1/applications/{id}/submit-for-approval`, `POST /v1/applications/{id}/request-changes` | Concluir a revisão ou voltar a ela |
 | `GET /v1/applications/{id}/resume?format=pdf\|docx` | Baixar o currículo como foi aprovado nesta candidatura |
 | `POST /v1/applications/{id}/approve` | Aprovar e congelar o material. Sem integração autorizada, cria a pendência manual |

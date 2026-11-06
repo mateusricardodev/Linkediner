@@ -4,6 +4,7 @@ export {
   ResumeOutput,
   buildResume,
   findUnsupportedTerms,
+  toResumeItem,
   type GenerateResumeJob,
   type Resume,
   type ResumeContent,

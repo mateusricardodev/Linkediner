@@ -2,13 +2,21 @@ import { PgBoss } from 'pg-boss';
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
 import {
+  coverLetterV1,
   createAiProvider,
   DrizzleAiGenerationLog,
   extractProfileV1,
   FakeAiProvider,
+  formAnswersV1,
   generateResumeV1,
   structureJobV1,
+  tailorResumeV1,
 } from '@linkediner/core/ai';
+import {
+  DrizzleApplicationRepository,
+  DrizzleMaterialRepository,
+  GenerateMaterial,
+} from '@linkediner/core/applications';
 import { DrizzleJobRepository, EMPTY_JOB_OUTPUT, StructureJob } from '@linkediner/core/jobs';
 import { DrizzleResumeRepository, GenerateResume } from '@linkediner/core/resumes';
 import { DrizzleAuditLog } from '@linkediner/core/audit';
@@ -32,6 +40,7 @@ import {
   ProfileScoreService,
 } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
+import { applicationsGenerateMaterial } from './handlers/applications-generate-material';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
@@ -62,6 +71,8 @@ if (ai instanceof FakeAiProvider) {
   ai.respond('extract_profile', () => EMPTY_EXTRACTION);
   ai.respond('generate_resume', () => ({ summary: [], bullets: [] }));
   ai.respond('structure_job', () => EMPTY_JOB_OUTPUT);
+  ai.respond('generate_cover_letter', () => ({ paragraphs: [] }));
+  ai.respond('answer_form', () => ({ answers: [] }));
 }
 const generations = new DrizzleAiGenerationLog(database.db);
 const factRepository = new DrizzleFactRepository(database.db);
@@ -108,6 +119,23 @@ const tasks = [
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       ai,
       prompt: generateResumeV1,
+      generations,
+      audit,
+    }),
+  }),
+  applicationsGenerateMaterial({
+    generate: new GenerateMaterial({
+      materials: new DrizzleMaterialRepository(database.db),
+      applications: new DrizzleApplicationRepository(database.db),
+      jobs: new DrizzleJobRepository(database.db),
+      facts: factRepository,
+      consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+      ai,
+      prompts: {
+        resume: tailorResumeV1,
+        cover_letter: coverLetterV1,
+        form_answers: formAnswersV1,
+      },
       generations,
       audit,
     }),
