@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
-import { Button, Notice, Skeleton } from '../../../components/ui';
+import { Button, Notice, Skeleton, SyntheticDataNotice } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
 import { safePath } from '../../../lib/safe-path';
 import type { Me } from '../../../lib/types';
@@ -86,6 +86,7 @@ export function ConsentForm() {
       ) : (
         <form className={styles.form} onSubmit={(event) => void submit(event)}>
           {error ? <Notice tone="danger">{error}</Notice> : null}
+          {me.syntheticDataOnly ? <SyntheticDataNotice /> : null}
           <fieldset className={styles.group}>
             <legend className="visually-hidden">Autorizações</legend>
             {OPTIONS.map(({ purpose, title, text, required }) => (
@@ -108,7 +109,9 @@ export function ConsentForm() {
           <Button type="submit" full disabled={busy || !canSubmit}>
             {busy ? 'Salvando…' : 'Continuar'}
           </Button>
-          <p className={styles.footer}>Seus dados não são usados para treinar modelos de IA.</p>
+          {me.syntheticDataOnly ? null : (
+            <p className={styles.footer}>Seus dados não são usados para treinar modelos de IA.</p>
+          )}
         </form>
       )}
     </div>

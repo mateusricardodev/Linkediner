@@ -21,6 +21,8 @@ export const MeResponse = z
       locale: z.string(),
     }),
     consents: ConsentStatusDto,
+    /** Verdadeiro quando a IA está num plano em que o conteúdo enviado pode ser usado pelo provedor. */
+    syntheticDataOnly: z.boolean(),
   })
   .meta({ id: 'MeResponse' });
 

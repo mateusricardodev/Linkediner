@@ -71,6 +71,7 @@ describe('conta e consentimentos', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({
       user: { email: 'alice@example.com', name: 'Alice', locale: 'pt-BR' },
+      syntheticDataOnly: false,
       consents: { missingRequired: ['terms', 'privacy'], granted: { model_training: false } },
     });
   });

@@ -175,3 +175,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   }
   return result.data;
 }
+
+/** No plano gratuito, o Google pode usar o conteúdo enviado: só dados fictícios (ADR 0004). */
+export const requiresSyntheticData = (config: Pick<AppConfig, 'AI_PROVIDER' | 'AI_TIER'>) =>
+  config.AI_PROVIDER === 'gemini' && config.AI_TIER !== 'paid';

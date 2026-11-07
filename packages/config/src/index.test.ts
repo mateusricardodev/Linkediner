@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, loadConfig } from './index';
+import { ConfigError, loadConfig, requiresSyntheticData } from './index';
 
 const base = {
   DATABASE_URL: 'postgres://u:p@localhost:5432/db',
@@ -81,5 +81,13 @@ describe('loadConfig', () => {
 
   it('exige segredo de pseudonimização em staging', () => {
     expect(() => loadConfig({ ...base, NODE_ENV: 'staging' })).toThrow(/LOG_PSEUDONYM_SECRET/);
+  });
+});
+
+describe('requiresSyntheticData', () => {
+  it('exige dados fictícios só com o Gemini fora do plano pago', () => {
+    expect(requiresSyntheticData({ AI_PROVIDER: 'gemini', AI_TIER: 'free' })).toBe(true);
+    expect(requiresSyntheticData({ AI_PROVIDER: 'gemini', AI_TIER: 'paid' })).toBe(false);
+    expect(requiresSyntheticData({ AI_PROVIDER: 'fake', AI_TIER: 'free' })).toBe(false);
   });
 });

@@ -101,6 +101,11 @@
   color: var(--color-status-danger-text);
 }
 
+.notice-warning {
+  background: var(--color-status-warning-subtle);
+  color: var(--color-status-warning-text);
+}
+
 .notice-neutral {
   background: var(--color-status-neutral-subtle);
   color: var(--color-text-secondary);
