@@ -65,4 +65,4 @@ Cada premissa abaixo é uma decisão razoável tomada para não travar o trabalh
 2. O time é pequeno (1 a 3 pessoas) e generalista.
 3. O público inicial é brasileiro, mas o produto precisa estar pronto para usuários de outros países. Interface em pt-BR primeiro, com i18n preparado.
 4. Hospedagem em nuvem gerenciada, com região em São Paulo quando houver.
-5. O plano gratuito do Gemini serve só para protótipo com dados sintéticos ou do próprio time (ver [ADR 0004](../adr/0004-provedor-de-ia.md)).
+5. O plano gratuito do Gemini serve só para protótipo com dados sintéticos (ver [ADR 0004](../adr/0004-provedor-de-ia.md)).

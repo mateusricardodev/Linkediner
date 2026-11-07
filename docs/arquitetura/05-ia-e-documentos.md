@@ -72,7 +72,7 @@ Essa é a regra mais importante do produto. Ela é aplicada em código, e não a
 ### Dados e treinamento
 
 - Treinamento com dados de usuários: **desativado**. Ativá-lo exige o consentimento `model_training`, separado e explícito, além de um novo ADR.
-- **Plano gratuito do Gemini:** apenas protótipo, com dados sintéticos ou do próprio time. Pelos termos atuais, o Google pode usar o conteúdo enviado no plano gratuito para melhorar produtos. Antes de qualquer usuário real, é preciso migrar para o plano pago (em que os dados não são usados para treino, conforme os termos) ou para outro provedor com garantia equivalente.
+- **Plano gratuito do Gemini:** apenas protótipo, com dados sintéticos. Pelos termos atuais, o Google pode usar o conteúdo enviado no plano gratuito para melhorar produtos, revisores humanos podem lê-lo, e não se deve enviar informação pessoal, inclusive do próprio time. Antes de qualquer usuário real, é preciso migrar para o plano pago (em que os dados não são usados para treino, conforme os termos) ou para outro provedor com garantia equivalente.
 - **Controle de custo:**
   - cache por `input_hash` (o mesmo currículo não é reprocessado);
   - modelo mais barato para extração e classificação, e um mais capaz só para geração;
