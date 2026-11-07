@@ -29,6 +29,8 @@ export interface DocumentRecord {
   sizeBytes: number;
   sha256: string | null;
   failureCode: string | null;
+  discardedFacts: number;
+  droppedFields: number;
   uploadedAt: Date | null;
   expiresAt: Date;
   createdAt: Date;

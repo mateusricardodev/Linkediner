@@ -35,3 +35,13 @@ O ADR 0008 prevê cifrar as saídas de IA com a chave de cada usuário. `ai_gene
 
 - Positivas: a regra anti-invenção e a remoção de dados sensíveis valem para 100% dos documentos processados; menos dados pessoais guardados.
 - Negativas: currículos escaneados não são aceitos por enquanto; reprocessar depois da expiração exige novo upload.
+
+## Atualização (2026-11-07)
+
+A primeira regra descartava o fato inteiro por um único valor sem comprovação. Com o modelo real, 3 de 7 análises do mesmo PDF fictício perderam um fato, e na que foi vista na tela sumiu a experiência principal, sem nenhum aviso. Numa repetição com a saída registrada, a causa apareceu: o modelo juntou dois tópicos reais do currículo na descrição, sem o marcador que havia entre eles, e a junção não existia literalmente no texto. Nada tinha sido inventado.
+
+- **Texto longo é conferido por partes.** Se o valor inteiro não aparece no documento, cada frase precisa aparecer, com pelo menos 12 caracteres, para que pedaços curtos não formem uma frase nova.
+- **Valor opcional sem comprovação é apagado, e o fato fica sem ele.** Sem o trecho citado ou sem um valor obrigatório, como empresa e cargo, o fato continua sendo descartado. Nenhum valor sem comprovação é gravado.
+- **A pessoa é avisada.** O documento guarda só as contagens, sem conteúdo, e a tela mostra o que ficou de fora.
+
+**Limite conhecido:** a conferência por partes verifica que cada frase existe no documento, não que a combinação delas seja fiel. A conferência anterior, por trecho contínuo, também não verificava a qual experiência o texto pertence, e a revisão dos fatos continua com a pessoa.

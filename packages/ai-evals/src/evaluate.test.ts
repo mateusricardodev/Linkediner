@@ -57,7 +57,7 @@ function model(behavior: Behavior = {}) {
       return {
         experiences: dropExperiences
           ? []
-          : experiences.map((e) => ({ ...e, sourceSpan: e.description })),
+          : experiences.map((e) => ({ ...e, sourceSpan: e.description.split('\n')[0]! })),
         skills: [
           ...(behavior.dropMostFacts ? [] : skills.map((name) => ({ name, sourceSpan: name }))),
           ...extraSkills,
@@ -130,7 +130,10 @@ describe('conjunto de avaliação', () => {
       const text = normalizeText(redactSensitiveData(c.text, c.ownerName));
       for (const fact of factsFromExpected(c.expected)) {
         for (const value of Object.values(fact.data)) {
-          if (value !== null) expect(text, `${c.id}: ${value}`).toContain(normalizeText(value));
+          // Cada tópico está no documento, mesmo com os marcadores entre eles.
+          for (const part of value?.split('\n') ?? []) {
+            expect(text, `${c.id}: ${part}`).toContain(normalizeText(part));
+          }
         }
       }
     }
@@ -159,6 +162,13 @@ describe('a avaliação percebe cada falha', () => {
     expect(report.extraction.precision).toBe(1);
     expect(report.extraction.recall).toBe(1);
     expect(report.generation.suggested).toBe(0);
+  });
+
+  it('um modelo honesto que junta tópicos não perde nada', async () => {
+    const report = await evaluate(model(), EVAL_CASES);
+    expect(report.extraction.droppedFields).toBe(0);
+    expect(report.extraction.rejectedByGrounding).toBe(0);
+    expect(EVAL_CASES.every((c) => c.text.includes('• '))).toBe(true);
   });
 
   it('trecho inexistente é barrado pela conferência no código, e a avaliação registra', async () => {

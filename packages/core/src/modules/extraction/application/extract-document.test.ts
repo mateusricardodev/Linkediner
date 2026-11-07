@@ -19,6 +19,8 @@ const document = (o: Partial<DocumentRecord> = {}): DocumentRecord => ({
   kind: 'resume',
   status: 'processing',
   objectKey: 'users/u/documents/d',
+  discardedFacts: 0,
+  droppedFields: 0,
   mimeType: 'application/pdf',
   sizeBytes: 100,
   sha256: 'x',
@@ -38,6 +40,7 @@ function setup(
   } = {},
 ) {
   const setStatus = vi.fn(async () => {});
+  const markProcessed = vi.fn(async () => {});
   const replaceExtracted = vi.fn(async (_u: string, _d: string, facts: unknown[]) => ({
     inserted: facts.length,
   }));
@@ -59,6 +62,7 @@ function setup(
     documents: {
       find: async () => (o.doc === undefined ? document() : o.doc),
       setStatus,
+      markProcessed,
     },
     storage: { getBytes: async () => new Uint8Array([1]) },
     text: { extract: o.text ?? (async () => CV) },
@@ -84,7 +88,7 @@ function setup(
       },
     },
   });
-  return { use, ai, setStatus, replaceExtracted, generations, audit, refund };
+  return { use, ai, setStatus, markProcessed, replaceExtracted, generations, audit, refund };
 }
 
 const job = { userId: USER, documentId: DOC_ID, usageId: 'u1' };
@@ -123,13 +127,17 @@ describe('ExtractDocument', () => {
   });
 
   it('grava só fatos comprovados e registra modelo, prompt e validação', async () => {
-    const { use, setStatus, replaceExtracted, generations, audit } = setup();
+    const { use, markProcessed, replaceExtracted, generations, audit } = setup();
     await expect(run(use)).resolves.toBe('processed');
 
     expect(replaceExtracted).toHaveBeenCalledOnce();
     const saved = replaceExtracted.mock.calls[0]?.[2] as { data: { name: string } }[];
     expect(saved.map((f) => f.data.name)).toEqual(['TypeScript']);
-    expect(setStatus).toHaveBeenCalledWith(USER, DOC_ID, 'processed');
+    // A certificação sem fonte foi descartada, e a contagem fica para avisar a pessoa.
+    expect(markProcessed).toHaveBeenCalledWith(USER, DOC_ID, {
+      discardedFacts: 1,
+      droppedFields: 0,
+    });
 
     expect(generations[0]).toMatchObject({
       task: 'extract_profile',

@@ -63,6 +63,8 @@ export interface EvalReport {
     precision: number | null;
     recall: number | null;
     rejectedByGrounding: number;
+    /** Campos opcionais sem comprovação: o fato fica, sem eles. */
+    droppedFields: number;
   };
   generation: { items: number; grounded: number; suggested: number };
   scoreDrift: number;
@@ -148,6 +150,7 @@ async function evaluateCase(ai: AiProvider, item: EvalCase, options: EvalOptions
     matched: 0,
     expected: 0,
     rejected: 0,
+    droppedFields: 0,
     items: 0,
     grounded: 0,
     suggested: 0,
@@ -186,6 +189,7 @@ async function evaluateCase(ai: AiProvider, item: EvalCase, options: EvalOptions
   await guarded('extract', async () => {
     const { facts, report } = await extract();
     stats.rejected = report.rejectedNoSource + report.rejectedUnsupportedValue;
+    stats.droppedFields = report.droppedFields;
     const expected = new Set(expectedKeys(item.expected));
     const matched = new Set<string>();
     for (const fact of facts) {
@@ -313,6 +317,7 @@ export async function evaluate(
       precision,
       recall,
       rejectedByGrounding: sum((s) => s.rejected),
+      droppedFields: sum((s) => s.droppedFields),
     },
     generation: {
       items: sum((s) => s.items),

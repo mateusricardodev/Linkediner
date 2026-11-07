@@ -4,7 +4,16 @@ import type { DocumentKind, DocumentRecord, DocumentStatus } from '../../domain/
 export interface DocumentRepository {
   insert(
     userId: string,
-    doc: Omit<DocumentRecord, 'sha256' | 'failureCode' | 'uploadedAt' | 'createdAt' | 'status'> & {
+    doc: Omit<
+      DocumentRecord,
+      | 'sha256'
+      | 'failureCode'
+      | 'discardedFacts'
+      | 'droppedFields'
+      | 'uploadedAt'
+      | 'createdAt'
+      | 'status'
+    > & {
       kind: DocumentKind;
     },
   ): Promise<DocumentRecord>;
@@ -21,6 +30,12 @@ export interface DocumentRepository {
     id: string,
     status: DocumentStatus,
     failureCode?: string,
+  ): Promise<void>;
+  /** Conclui a análise, com o que a conferência deixou de fora. */
+  markProcessed(
+    userId: string,
+    id: string,
+    result: { discardedFacts: number; droppedFields: number },
   ): Promise<void>;
   delete(userId: string, id: string): Promise<boolean>;
 }
