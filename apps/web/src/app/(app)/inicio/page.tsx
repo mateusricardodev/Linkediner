@@ -1,7 +1,7 @@
 'use client';
 
 import { APPLICATION_STATE_LABELS } from '../../../components/application-state';
-import { Badge, Notice, ScoreRing, Skeleton } from '../../../components/ui';
+import { Badge, ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
 import { api } from '../../../lib/api';
 import type { Dashboard, ProfileScore, Recommendations } from '../../../lib/types';
 import { useResource } from '../../../lib/use-resource';
@@ -153,6 +153,9 @@ export default function HomePage() {
                     </ul>
                   </div>
                 ) : null}
+                <ButtonLink variant="secondary" full href="/perfil">
+                  Documentos e fatos
+                </ButtonLink>
                 <p className={styles.disclaimer}>{score.data.disclaimer}</p>
               </>
             )}

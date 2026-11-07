@@ -6,6 +6,7 @@ import {
   HeadBucketCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
+  PutBucketCorsCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -42,12 +43,32 @@ export class S3ObjectStorage implements ObjectStorage {
     });
   }
 
-  /** Cria o bucket se não existir. Usado só em desenvolvimento e testes. */
-  async ensureBucket(): Promise<void> {
+  /**
+   * Cria o bucket se não existir. Usado só em desenvolvimento e testes.
+   * `uploadOrigin` libera o envio direto pelo navegador só a partir do site.
+   */
+  async ensureBucket(opts: { uploadOrigin?: string } = {}): Promise<void> {
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.config.bucket }));
     } catch {
       await this.client.send(new CreateBucketCommand({ Bucket: this.config.bucket }));
+    }
+    if (opts.uploadOrigin) {
+      await this.client.send(
+        new PutBucketCorsCommand({
+          Bucket: this.config.bucket,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedOrigins: [opts.uploadOrigin],
+                AllowedMethods: ['PUT'],
+                AllowedHeaders: ['content-type'],
+                MaxAgeSeconds: 300,
+              },
+            ],
+          },
+        }),
+      );
     }
   }
 

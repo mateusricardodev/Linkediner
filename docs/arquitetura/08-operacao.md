@@ -75,4 +75,10 @@ O CI roda lint, typecheck, testes de unidade, integração e arquitetura em todo
 - API e worker num PaaS de containers (Fly.io, Railway ou Render);
 - web na Vercel ou no mesmo PaaS.
 
+**Upload pelo navegador:** o arquivo vai direto ao storage, por URL assinada. Em produção, a infraestrutura precisa:
+- liberar CORS no bucket de documentos só para a origem do site (`WEB_ORIGIN`), com o método `PUT` e o cabeçalho `content-type`. No ambiente local, a API aplica essa regra ao subir;
+- definir `NEXT_PUBLIC_STORAGE_URL` com a origem do storage antes do build do site. Sem isso, a CSP bloqueia o envio.
+
+O SeaweedFS local ignora o pedido de download na URL assinada e abre o PDF na mesma aba. A conferir no provedor escolhido: no S3 e no R2, a resposta deve vir como anexo.
+
 A arquitetura não depende de nenhum desses provedores.

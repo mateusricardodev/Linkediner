@@ -77,6 +77,10 @@
   border-color: transparent;
 }
 
+.textarea {
+  resize: vertical;
+}
+
 .hint {
   margin: 0;
   font-size: var(--type-footnote-size);

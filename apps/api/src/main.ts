@@ -103,9 +103,10 @@ const keyStorage = new S3ObjectStorage({
   accessKeyId: config.STORAGE_ACCESS_KEY_ID,
   secretAccessKey: config.STORAGE_SECRET_ACCESS_KEY,
 });
-// Em produção os buckets são criados pela infraestrutura. O de documentos expira objetos em 30 dias.
+// Em produção os buckets são criados pela infraestrutura. O de documentos expira objetos em 30 dias
+// e precisa da mesma regra de CORS (docs/arquitetura/08-operacao.md).
 if (config.NODE_ENV === 'development') {
-  await storage.ensureBucket();
+  await storage.ensureBucket({ uploadOrigin: config.WEB_ORIGIN });
   await keyStorage.ensureBucket();
 }
 const cipher = createFieldCipher({

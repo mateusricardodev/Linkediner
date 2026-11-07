@@ -1,11 +1,14 @@
 import type { NextConfig } from 'next';
 
 const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').origin;
+// O navegador envia os documentos direto ao storage, por URL assinada.
+const storageOrigin = new URL(process.env.NEXT_PUBLIC_STORAGE_URL ?? 'http://localhost:9000')
+  .origin;
 const development = process.env.NODE_ENV !== 'production';
 
 /**
  * O Next.js precisa de scripts em linha sem nonce nas páginas estáticas. O restante é fechado: a
- * página só fala com a própria origem e com a API, e não pode ser aberta dentro de outro site.
+ * página só fala com a própria origem, com a API e com o storage, e não pode ser aberta dentro de outro site.
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -13,7 +16,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  `connect-src 'self' ${apiOrigin}${development ? ' ws:' : ''}`,
+  `connect-src 'self' ${apiOrigin} ${storageOrigin}${development ? ' ws:' : ''}`,
   "object-src 'none'",
   "base-uri 'self'",
   `form-action 'self'`,
