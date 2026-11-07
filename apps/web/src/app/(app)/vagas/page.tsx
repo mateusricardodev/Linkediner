@@ -10,6 +10,7 @@ import {
   Field,
   Notice,
   Skeleton,
+  SyntheticDataNotice,
   TextAreaField,
 } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
@@ -101,6 +102,7 @@ export default function JobsPage() {
           </div>
         ) : me.data ? (
           <form className={styles.form} onSubmit={(event) => void submit(event)}>
+            {me.data.syntheticDataOnly ? <SyntheticDataNotice /> : null}
             {error ? <Notice tone="danger">{error}</Notice> : null}
             <TextAreaField
               label="Texto da vaga"

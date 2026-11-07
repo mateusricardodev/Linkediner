@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Badge, Button, ButtonLink, Notice, Skeleton } from '../../../components/ui';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Notice,
+  Skeleton,
+  SyntheticDataNotice,
+} from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
 import { formatDate } from '../../../lib/documents';
 import { RESUME_STATUS, resumeFailureMessage } from '../../../lib/resumes';
@@ -59,6 +66,7 @@ export default function ResumesPage() {
         </div>
       ) : me.data ? (
         <div className={styles.generate}>
+          {me.data.syntheticDataOnly ? <SyntheticDataNotice /> : null}
           <Button disabled={busy || generating} onClick={() => void generate()}>
             {busy ? 'Pedindo…' : generating ? 'Gerando…' : 'Gerar novo currículo'}
           </Button>

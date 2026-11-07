@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Notice, Skeleton } from '../../../components/ui';
+import { Button, Notice, Skeleton, SyntheticDataNotice } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
 import { canAnalyze } from '../../../lib/documents';
 import { FACT_TYPE_ORDER, FACT_TYPES } from '../../../lib/facts';
@@ -89,6 +89,7 @@ export default function ProfilePage() {
         <h2 id="documentos" className={styles.sectionTitle}>
           Documentos
         </h2>
+        {me.data?.syntheticDataOnly ? <SyntheticDataNotice /> : null}
         <div className={styles.uploads}>
           <UploadCard kind="resume" onUploaded={refresh} />
           <UploadCard kind="linkedin_pdf" onUploaded={refresh} />

@@ -69,7 +69,7 @@ export function Notice({
   tone = 'neutral',
   children,
 }: {
-  tone?: 'danger' | 'neutral';
+  tone?: 'danger' | 'warning' | 'neutral';
   children: ReactNode;
 }) {
   return (
@@ -79,6 +79,17 @@ export function Notice({
     >
       {children}
     </p>
+  );
+}
+
+/** Aparece onde o dado sai para a IA, enquanto o plano permitir que o provedor use o conteúdo. */
+export function SyntheticDataNotice() {
+  return (
+    <Notice tone="warning">
+      <strong>Ambiente de testes: use só dados fictícios.</strong> A IA está no plano gratuito, em
+      que o Google pode usar o conteúdo enviado e revisores humanos podem lê-lo. Não envie seu
+      currículo real.
+    </Notice>
   );
 }
 

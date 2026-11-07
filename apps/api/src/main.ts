@@ -1,5 +1,5 @@
 import { PgBoss } from 'pg-boss';
-import { loadConfig } from '@linkediner/config';
+import { loadConfig, requiresSyntheticData } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
 import {
   ApplicationService,
@@ -144,6 +144,7 @@ const app = await buildServer({
     auth: createAuth({ db: database.db, config, audit, pseudonymize }),
     users: userReader,
     consents,
+    syntheticDataOnly: requiresSyntheticData(config),
     profile: new ProfileService(profileRepository),
     scores: new ProfileScoreService(
       profileRepository,

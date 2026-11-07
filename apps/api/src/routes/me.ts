@@ -18,6 +18,7 @@ import { actorOf, requireActor } from '../plugins/auth';
 export interface MeDeps {
   users: Pick<DrizzleUserReader, 'getById'>;
   consents: Pick<ConsentService, 'status' | 'decide'>;
+  syntheticDataOnly: boolean;
 }
 
 const toDto = (s: ConsentStatus) => ({ ...s, versions: CURRENT_CONSENT_VERSIONS });
@@ -42,7 +43,7 @@ export const meRoutes =
           deps.consents.status(userId),
         ]);
         if (!user) throw new AppError('UNAUTHENTICATED', 'Sessão inválida.');
-        return { user, consents: toDto(consents) };
+        return { user, consents: toDto(consents), syntheticDataOnly: deps.syntheticDataOnly };
       },
     );
 

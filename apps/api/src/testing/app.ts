@@ -149,6 +149,7 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     }),
     health: { checks: {} },
     account: {
+      syntheticDataOnly: false,
       auth: createAuth({
         db,
         audit,
