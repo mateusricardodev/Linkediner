@@ -32,6 +32,25 @@ describe('API base', () => {
     expect(res.headers['x-request-id']).toBeTruthy();
   });
 
+  it.each(['PUT', 'PATCH', 'DELETE'])(
+    'o site pode chamar %s, e outra origem não',
+    async (method) => {
+      await build();
+      const preflight = (origin: string) =>
+        app.inject({
+          method: 'OPTIONS',
+          url: '/v1/me/consents/terms',
+          headers: { origin, 'access-control-request-method': method },
+        });
+      const allowed = await preflight('http://localhost:3000');
+      expect(allowed.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+      expect(allowed.headers['access-control-allow-credentials']).toBe('true');
+      expect(allowed.headers['access-control-allow-methods']).toContain(method);
+      const denied = await preflight('https://outro.example');
+      expect(denied.headers['access-control-allow-origin']).not.toBe('https://outro.example');
+    },
+  );
+
   it('GET /health/ready devolve 503 quando o banco falha', async () => {
     await build({ database: async () => Promise.reject(new Error('down')) });
     const res = await app.inject({ method: 'GET', url: '/health/ready' });

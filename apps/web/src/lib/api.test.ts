@@ -24,9 +24,12 @@ describe('cliente da API', () => {
   });
 
   it('usa a mensagem segura da nossa API e mantém os detalhes', async () => {
+    // Mesmo formato do error-handler da API: a mensagem vem em `title`.
     respond(429, {
+      type: 'https://linkediner.dev/problems/quota-exceeded',
+      title: 'O limite do seu plano acabou.',
+      status: 429,
       code: 'QUOTA_EXCEEDED',
-      detail: 'O limite do seu plano acabou.',
       details: { feature: 'job.match' },
     });
     const error = await api('/v1/x').catch((e: unknown) => e);
@@ -37,6 +40,17 @@ describe('cliente da API', () => {
       code: 'QUOTA_EXCEEDED',
       details: { feature: 'job.match' },
     });
+  });
+
+  it('prefere `detail` quando existe e esconde o erro interno', async () => {
+    respond(400, {
+      title: 'Dados inválidos',
+      detail: 'Confira a data.',
+      code: 'VALIDATION_FAILED',
+    });
+    await expect(api('/v1/x')).rejects.toThrow('Confira a data.');
+    respond(500, { title: 'Erro interno', status: 500, code: 'INTERNAL' });
+    await expect(api('/v1/x')).rejects.toThrow('Algo deu errado');
   });
 
   it('traduz o erro de login, e não mostra texto desconhecido de terceiros', async () => {

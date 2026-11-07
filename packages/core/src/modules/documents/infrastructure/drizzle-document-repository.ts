@@ -82,6 +82,11 @@ export class DrizzleDocumentRepository implements DocumentRepository {
 
   delete(userId: string, id: string) {
     return withUserContext(this.db, userId, async (tx) => {
+      // Como na retenção: o fato confirmado fica, mas o trecho copiado do documento vai junto com ele.
+      await tx
+        .update(profileFacts)
+        .set({ sourceSpan: null })
+        .where(eq(profileFacts.sourceDocumentId, id));
       const rows = await tx
         .delete(documents)
         .where(and(eq(documents.id, id), eq(documents.userId, userId)))

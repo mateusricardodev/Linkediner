@@ -84,7 +84,12 @@ export async function buildServer(deps: ServerDeps) {
   });
 
   await app.register(helmet);
-  await app.register(cors, { origin: deps.config.WEB_ORIGIN, credentials: true });
+  // O padrão do plugin libera só GET, HEAD e POST: sem isto, o navegador bloqueia as demais chamadas.
+  await app.register(cors, {
+    origin: deps.config.WEB_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
   await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
 
   await app.register(swagger, {

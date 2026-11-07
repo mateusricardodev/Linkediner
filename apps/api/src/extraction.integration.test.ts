@@ -298,7 +298,7 @@ describe('exclusão e retenção', () => {
 
     const after = await factsOf(cookie);
     expect(after).toHaveLength(1);
-    expect(after[0]).toMatchObject({ id: kept.id, sourceDocumentId: null });
+    expect(after[0]).toMatchObject({ id: kept.id, sourceDocumentId: null, sourceSpan: null });
   });
 
   it('na expiração de 30 dias, o fato fica mas o trecho do documento é apagado', async () => {
