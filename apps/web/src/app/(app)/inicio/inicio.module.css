@@ -87,6 +87,23 @@
   overflow-wrap: anywhere;
 }
 
+.rowLink {
+  color: inherit;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: var(--type-headline-weight);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.rowLink:hover {
+  color: var(--color-text-accent);
+}
+
+.empty a {
+  color: var(--color-text-accent);
+}
+
 /* A linha quebra em vez de cortar: empresa e local precisam ficar legíveis. */
 .rowMeta {
   color: var(--color-text-secondary);

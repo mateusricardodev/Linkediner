@@ -140,9 +140,10 @@
   }
 }
 
-/* No celular, só os textos: com os ícones, o último item do menu ficava cortado. */
+/* No celular, só os textos do menu: com ícones e logo, o último item ficava cortado. */
 @media (max-width: 480px) {
-  .link svg {
+  .link svg,
+  .brand {
     display: none;
   }
 }

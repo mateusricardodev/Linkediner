@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { APPLICATION_STATE_LABELS } from '../../../components/application-state';
 import { Badge, ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
 import { api } from '../../../lib/api';
@@ -87,14 +88,18 @@ export default function HomePage() {
             ) : !recommendations.data ? (
               <Rows />
             ) : recommendations.data.items.length === 0 ? (
-              <p className={styles.empty}>Importe uma vaga para ver a compatibilidade com ela.</p>
+              <p className={styles.empty}>
+                <Link href="/vagas">Importe uma vaga</Link> para ver a compatibilidade com ela.
+              </p>
             ) : (
               <>
                 <ul className={styles.list}>
                   {recommendations.data.items.slice(0, 5).map(({ job, score: match }) => (
                     <li key={job.id} className={styles.row}>
                       <div className={styles.rowText}>
-                        <span className={styles.rowTitle}>{job.title ?? 'Vaga sem título'}</span>
+                        <Link href={`/vagas/${job.id}`} className={styles.rowLink}>
+                          {job.title ?? 'Vaga sem título'}
+                        </Link>
                         <span className={styles.rowMeta}>
                           {[job.company, job.location].filter(Boolean).join(' · ') ||
                             'Empresa não informada'}
