@@ -47,10 +47,7 @@ function toError(status: number, body: ErrorBody | null): ApiError {
 }
 
 /** Chamada autenticada pelo cookie de sessão, que é HttpOnly: o código nunca lê o token. */
-export async function api<T>(
-  path: string,
-  options: { method?: string; body?: unknown } = {},
-): Promise<T> {
+async function send(path: string, options: { method?: string; body?: unknown }): Promise<Response> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
@@ -66,8 +63,24 @@ export async function api<T>(
   } catch {
     throw new ApiError(OFFLINE_MESSAGE, 0, 'OFFLINE');
   }
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as ErrorBody | null;
+    throw toError(response.status, body);
+  }
+  return response;
+}
+
+export async function api<T>(
+  path: string,
+  options: { method?: string; body?: unknown } = {},
+): Promise<T> {
+  const response = await send(path, options);
   if (response.status === 204) return undefined as T;
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) throw toError(response.status, body as ErrorBody | null);
-  return body as T;
+  return (await response.json().catch(() => null)) as T;
+}
+
+/** Para arquivos gerados pela API, como o currículo exportado. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const response = await send(path, {});
+  return response.blob();
 }

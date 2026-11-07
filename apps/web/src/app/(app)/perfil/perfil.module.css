@@ -39,6 +39,56 @@
   letter-spacing: var(--type-title-3-tracking);
 }
 
+.score {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xl) var(--spacing-3xl);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.scoreRing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: none;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.scoreFactors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.factors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.factors li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.points {
+  flex: none;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
 .uploads {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

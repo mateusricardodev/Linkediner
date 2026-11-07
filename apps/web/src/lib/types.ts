@@ -10,6 +10,9 @@ import type {
   ProfileScoreResponse as ScoreSchema,
   RecommendationsResponse as RecommendationsSchema,
   RequestUploadResponse as RequestUploadSchema,
+  ResumeContentDto,
+  ResumeDto,
+  ResumeItemDto,
 } from '@linkediner/contracts';
 
 /** Só tipos: os esquemas dos contratos não entram no pacote do navegador. */
@@ -23,3 +26,6 @@ export type DocumentRecord = z.infer<typeof DocumentDto>;
 export type DocumentKind = z.infer<typeof DocumentKindSchema>;
 export type RequestUpload = z.infer<typeof RequestUploadSchema>;
 export type ProfileFact = z.infer<typeof ProfileFactDto>;
+export type Resume = z.infer<typeof ResumeDto>;
+export type ResumeContent = z.infer<typeof ResumeContentDto>;
+export type ResumeItem = z.infer<typeof ResumeItemDto>;
