@@ -48,7 +48,10 @@ Uma frase sem comprovação que vira sugestão não reprova: a pessoa decide. O 
 
 ## Limitações conhecidas
 
-- **O modelo real ainda não foi avaliado.** Os limites de precisão e cobertura são um ponto de partida, e podem mudar depois da primeira rodada. A taxa de invenção zero, exigida para o beta (doc 11), segue sem comprovação.
+- **A primeira rodada real (2026-11-07) passou, mas só com dados sintéticos.** Com `gemini-3.5-flash-lite` no plano gratuito e os 30 currículos: 220 de 220 fatos, nenhuma invenção aceita, nenhuma instrução escondida obedecida, 230 frases comprovadas de 230 e diferença de score zero. Os currículos seguem um modelo fixo e têm pouca variação, então 100% não prevê o resultado em currículos reais, com layouts variados. A invenção zero exigida para o beta (doc 11) está comprovada só neste conjunto.
+- **Nenhuma sugestão apareceu nessa rodada:** o modelo não afirmou nada sem fonte, então o caminho das frases marcadas para confirmação segue testado só com modelos simulados.
+- **O Gemini recusa `maxItems`** com um erro 400 genérico. Ele sai do esquema enviado, e o limite continua valendo pela validação com Zod.
+- **Erros do provedor na rodada:** 30 repetições por limite do plano gratuito (15 chamadas por minuto) e alta demanda (503). Um 403 apareceu 3 vezes nas duas rodadas de amostra, sempre em `cv-03`, e não voltou em 180 chamadas. A causa não foi identificada, e o provedor não registra a mensagem de erro.
 - `AI_TIER` é uma declaração: a aplicação não consegue confirmar com o Google se a chave é do plano pago. Quem configura o ambiente responde por isso.
 - **O plano pago continua sendo exigido só em produção.** O plano gratuito serve para esta avaliação, porque os dados são sintéticos.
 - Os currículos são parecidos entre si, gerados de listas fixas. Layouts complexos e PDFs reais ficam fora: a avaliação recebe o texto já extraído.
