@@ -29,8 +29,8 @@ Situação conhecida na data deste documento. Os termos de cada fonte devem ser 
 | Fonte | Listar vagas | Candidatura automática | Estratégia inicial |
 |---|---|---|---|
 | **Importação manual** | Usuário cola o texto ou o link | Não | **Disponível desde o MVP.** Funciona para qualquer fonte, inclusive LinkedIn e Indeed. |
-| **Greenhouse** | Job Board API pública, por empresa (`boards-api.greenhouse.io`) | A API de candidatura exige a chave da empresa contratante | Listar: MVP+. Candidatura automática: só com empresa parceira que forneça a chave. |
-| **Lever** | Postings API pública, por empresa | O envio por API exige a chave da empresa | Igual ao Greenhouse |
+| **Greenhouse** | Job Board API pública, por empresa (`boards-api.greenhouse.io`) | A API de candidatura exige a chave da empresa contratante | Listar: pronto, desligado por padrão ([ADR 0024](../adr/0024-vagas-automaticas.md)). Candidatura automática: só com empresa parceira que forneça a chave. |
+| **Lever** | Postings API pública, por empresa (`api.lever.co`) | O envio por API exige a chave da empresa | Igual ao Greenhouse |
 | **LinkedIn** | Sem API para este uso. Scraping e automação são proibidos pelos termos. | Proibida | Apenas importação manual feita pelo usuário. O LinkedIn também entra como provedor de login (OIDC). |
 | **Indeed** | Acesso a APIs só por programas de parceria | Não | Importação manual. Avaliar programa de parceria no futuro. |
 | **Wellfound** | Sem API pública conhecida | Não | Importação manual |

@@ -63,7 +63,7 @@ describe('compatibilidade', () => {
       ['Vue', 'missing'],
       ['GraphQL', 'missing'],
     ]);
-    expect(body.rubricVersion).toBe('v1');
+    expect(body.rubricVersion).toBe('v2');
     expect(body.disclaimer).toMatch(/Não indica chance de contratação/);
     // Obrigatórios 30/60 e desejáveis 0/15: 40 de 100, proporcional aos critérios com dados.
     expect(body.score).toBe(40);

@@ -1,7 +1,7 @@
 import type { JobFields } from '../../jobs';
 import { normalizeText, type CareerGoal, type ProfileFact, type Seniority } from '../../profile';
 
-export const MATCH_RUBRIC_VERSION = 'v1';
+export const MATCH_RUBRIC_VERSION = 'v2';
 
 export const MATCH_DISCLAIMER =
   'Compara seu perfil com os requisitos da vaga. Não indica chance de contratação.';
@@ -17,9 +17,10 @@ export const MATCH_V1_WEIGHTS: Record<MatchCriterion, number> = {
 };
 
 /**
- * met: todos os termos estão no perfil. partial: parte dos termos, ou o tempo de experiência
+ * met: o que o requisito pede está no perfil. partial: só uma parte, ou o tempo de experiência
  * pedido não pode ser confirmado. missing: não encontrado no perfil, o que não significa que a
- * pessoa não tenha. unverified: o requisito não traz termos que dê para comparar.
+ * pessoa não tenha. unverified: o requisito não traz nada que dê para comparar, como "boa
+ * comunicação", e por isso não conta contra nem a favor.
  */
 export type RequirementStatus = 'met' | 'partial' | 'missing' | 'unverified';
 
@@ -77,9 +78,19 @@ const SYNONYMS: Record<string, string> = {
   spanish: 'espanhol',
 };
 
+/** Tecnologias de mais de uma palavra viram uma só, para valer em qualquer grafia. */
+const PHRASES: [RegExp, string][] = [
+  [/\bgoogle cloud( platform)?\b/gi, 'GCP'],
+  [/\bmachine learning\b/gi, 'ML'],
+  [/\bpower ?bi\b/gi, 'PowerBI'],
+  [/\bci ?\/ ?cd\b/gi, 'CICD'],
+];
+const joinPhrases = (text: string) =>
+  PHRASES.reduce((result, [pattern, name]) => result.replace(pattern, name), text);
+
 /** Palavras comparáveis: "Java" nunca casa com "JavaScript", porque a comparação é por palavra inteira. */
 export function tokenize(text: string): string[] {
-  return normalizeText(text)
+  return joinPhrases(normalizeText(text))
     .split(/[^a-z0-9+#.]+/)
     .map((token) => token.replace(/^\.+|\.+$/g, ''))
     .filter((token) => token && !/^[\d.+]+$/.test(token))
@@ -92,6 +103,48 @@ export function requirementTerms(text: string): string[] {
 }
 
 const DURATION = /\b\d+\s*\+?\s*(anos?|years?)\b/;
+
+/** Até aqui, um requisito é um tópico curto, como "React" ou "gestão de equipes". */
+const SHORT_REQUIREMENT_TERMS = 3;
+
+/** Tecnologias e idiomas que valem mesmo em minúsculas. Nomes ambíguos, como Go, dependem da maiúscula. */
+const KNOWN_NAMES = new Set(
+  `javascript typescript python java kotlin php c++ c# ruby scala elixir dart flutter android ios
+  react angular vue next.js node.js django flask fastapi laravel html css sass tailwind redux graphql grpc
+  sql postgresql mysql sqlite oracle mongodb redis cassandra dynamodb elasticsearch kafka rabbitmq spark
+  airflow dbt hadoop snowflake bigquery aws azure gcp docker kubernetes terraform ansible jenkins cicd
+  git github gitlab linux bash playwright cypress selenium jest pytest junit appium figma tableau powerbi
+  pandas numpy pytorch tensorflow ml llm microservices microsservicos
+  ingles portugues espanhol`
+    .split(/\s+/)
+    .filter(Boolean),
+);
+
+/** Um termo basta quando o requisito oferece opções, ou dá exemplos. */
+const ALTERNATIVES =
+  /\b(ou|or|such as|como|por exemplo|e\.g\.?|including|incluindo|like|preferencialmente|preferably)\b/;
+
+/** Palavras que aparecem com maiúscula sem serem o nome de nada. */
+const CAPITALIZED_NOISE = new Set(['inc', 'ltd', 'etc']);
+
+/**
+ * O que dá para comparar numa frase: tecnologias conhecidas e nomes próprios no meio dela.
+ * "Experience with Robot Framework and Docker" pede Robot, Framework e Docker, não "experience".
+ * Um título curto antes de dois-pontos ("Problem Solving: ...") fica de fora.
+ */
+export function namedTerms(text: string): string[] {
+  const colon = text.indexOf(':');
+  const body =
+    colon > 0 && text.slice(0, colon).split(/\s+/).length <= 6 ? text.slice(colon + 1) : text;
+  const words = joinPhrases(body).match(/[\p{L}\p{N}+#.]+/gu) ?? [];
+  const names = words.flatMap((word, index) => {
+    const [token] = tokenize(word);
+    if (!token || STOPWORDS.has(token) || CAPITALIZED_NOISE.has(token)) return [];
+    const capitalized = index > 0 && /^\p{Lu}/u.test(word);
+    return KNOWN_NAMES.has(token) || capitalized ? [token] : [];
+  });
+  return [...new Set(names)];
+}
 
 /** A empresa e as datas ficam de fora: ter trabalhado no Google não comprova saber "Google Cloud". */
 const COMPARABLE_FIELDS = new Set([
@@ -129,6 +182,23 @@ export function matchRequirement(
 ): RequirementMatch {
   const terms = requirementTerms(text);
   if (terms.length === 0) return { text, kind, status: 'unverified', factIds: [] };
+
+  if (terms.length > SHORT_REQUIREMENT_TERMS) {
+    const names = namedTerms(text);
+    // Frase sem nada comparável, como "excelente comunicação": só a pessoa sabe dizer.
+    if (names.length === 0) return { text, kind, status: 'unverified', factIds: [] };
+    const present = names.filter((name) => facts.some((f) => f.tokens.has(name)));
+    if (present.length === 0) return { text, kind, status: 'missing', factIds: [] };
+    const factIds = facts.filter((f) => names.some((name) => f.tokens.has(name))).map((f) => f.id);
+    const normalized = normalizeText(text);
+    const covered = present.length === names.length || ALTERNATIVES.test(normalized);
+    return {
+      text,
+      kind,
+      status: covered && !DURATION.test(normalized) ? 'met' : 'partial',
+      factIds,
+    };
+  }
 
   const supporting = facts.filter((f) => terms.some((t) => f.tokens.has(t)));
   const found = terms.filter((t) => facts.some((f) => f.tokens.has(t)));

@@ -19,6 +19,7 @@ import type { Job, Me, Recommendations } from '../../../lib/types';
 import { usePollWhile } from '../../../lib/use-poll';
 import { goalQuery, useGoal } from '../../../lib/use-goal';
 import { useResource } from '../../../lib/use-resource';
+import { DiscoverySection } from './discovery-section';
 import { GoalPicker } from './goal-picker';
 import styles from './vagas.module.css';
 
@@ -94,9 +95,11 @@ export default function JobsPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Vagas</h1>
         <p className={styles.subtitle}>
-          Cole uma vaga para ver, requisito por requisito, o que combina com o seu perfil.
+          Vagas encontradas para o seu objetivo, ou as que você colar. Compare requisito por
+          requisito com o seu perfil.
         </p>
       </header>
+      <DiscoverySection goalState={goalState} />
 
       <section aria-labelledby="importar" className={styles.section}>
         <h2 id="importar" className={styles.sectionTitle}>

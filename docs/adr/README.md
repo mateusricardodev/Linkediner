@@ -27,3 +27,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0021 | [Limites por plano e pagamento com Stripe](0021-planos-limites-e-stripe.md) | Proposto |
 | 0022 | [Eventos de produto e métricas em SQL](0022-eventos-e-metricas.md) | Proposto |
 | 0023 | [Avaliação de IA com armadilhas](0023-avaliacao-de-ia.md) | Proposto |
+| 0024 | [Vagas automáticas por um catálogo de fontes públicas](0024-vagas-automaticas.md) | Proposto |

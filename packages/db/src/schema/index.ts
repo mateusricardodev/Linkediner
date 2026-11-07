@@ -4,6 +4,7 @@ export * from './documents';
 export * from './facts';
 export * from './scores';
 export * from './resumes';
+export * from './discovery';
 export * from './jobs';
 export * from './matches';
 export * from './feedback';

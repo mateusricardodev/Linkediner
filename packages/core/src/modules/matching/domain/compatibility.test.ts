@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProfileFact } from '../../profile';
-import { computeCompatibility, tokenize, type MatchInput } from './compatibility';
+import { computeCompatibility, namedTerms, tokenize, type MatchInput } from './compatibility';
 
 let nextId = 0;
 const fact = (
@@ -57,6 +57,134 @@ describe('requisitos', () => {
     expect(statuses({ job: job({ mustHave: ['React, Vue, Angular'] }), facts })).toEqual([
       'missing',
     ]);
+  });
+
+  describe('requisitos em frases, como nas vagas reais', () => {
+    const facts = [
+      skill('TypeScript'),
+      skill('React'),
+      skill('Node.js'),
+      skill('Python'),
+      fact({ name: 'Inglês', level: 'avançado' }),
+    ];
+    const status = (text: string) => statuses({ job: job({ mustHave: [text] }), facts })[0];
+
+    it('frase com exemplos: um termo basta', () => {
+      expect(
+        status(
+          'Proficiency in a wide range of programming languages and frameworks, including but not limited to .Net, C/C++, Flutter, Python, Node.js, and React.',
+        ),
+      ).toBe('met');
+    });
+
+    it('não confunde o resto da frase com o que é pedido', () => {
+      expect(
+        status('Conhecimento sólido em Python e no desenvolvimento de soluções automatizadas;'),
+      ).toBe('met');
+      expect(
+        status(
+          'Advanced English proficiency, capable of engaging in technical discussions and documentation.',
+        ),
+      ).toBe('met');
+    });
+
+    it('opções que a pessoa não tem continuam não encontradas', () => {
+      expect(
+        status('Experience with cloud platforms such as AWS, Azure, or Google Cloud is essential.'),
+      ).toBe('missing');
+      expect(
+        status('Experience with containerization technologies such as Docker and Kubernetes.'),
+      ).toBe('missing');
+    });
+
+    it('sem opções, faltar uma tecnologia deixa parcial', () => {
+      expect(status('Experiência sólida com React e Kubernetes em ambientes de produção')).toBe(
+        'partial',
+      );
+    });
+
+    it('nome próprio desconhecido também conta', () => {
+      expect(status('Experiência com Robot Framework em automação de testes funcionais')).toBe(
+        'missing',
+      );
+    });
+
+    it('frase sem nada comparável não pesa contra a pessoa', () => {
+      for (const text of [
+        'Excellent communication skills, with the ability to convey complex technical concepts to non-technical stakeholders.',
+        'Perfil analítico, organizado, colaborativo e orientado à resolução de problemas;',
+        'Problem Solving: strong analytical abilities to troubleshoot complex multi-layered issues',
+      ]) {
+        expect(status(text)).toBe('unverified');
+      }
+    });
+
+    it('tempo de experiência em frase continua parcial', () => {
+      expect(status('5+ years of experience building products with React and TypeScript')).toBe(
+        'partial',
+      );
+    });
+
+    it('Java continua sem casar com JavaScript em frases', () => {
+      expect(
+        statuses({
+          job: job({ mustHave: ['Experiência sólida no desenvolvimento de sistemas com Java'] }),
+          facts: [skill('JavaScript')],
+        }),
+      ).toEqual(['missing']);
+    });
+
+    it('a empresa em que a pessoa trabalhou não comprova requisito em frase', () => {
+      expect(
+        statuses({
+          job: job({
+            mustHave: ['Experience with cloud platforms such as AWS or Azure in production'],
+          }),
+          facts: [fact({ company: 'AWS', title: 'Vendedora' })],
+        }),
+      ).toEqual(['missing']);
+    });
+
+    it('um perfil que tem a stack pedida recebe uma nota que faz sentido', () => {
+      const { score } = computeCompatibility({
+        job: job({
+          mustHave: [
+            'Proficiency in programming languages, including Python, Node.js, and React.',
+            'Excellent communication skills with non-technical stakeholders across the company.',
+            'Advanced English proficiency, capable of engaging in technical discussions.',
+            'Experience with containerization technologies such as Docker and Kubernetes.',
+          ],
+        }),
+        facts,
+      });
+      // Duas de três comparáveis. A comunicação não conta para nenhum lado.
+      expect(score).toBe(67);
+    });
+  });
+
+  describe('namedTerms', () => {
+    it('acha tecnologias conhecidas em minúsculas e nomes no meio da frase', () => {
+      expect(namedTerms('experiência com docker e Locust em produção')).toEqual([
+        'docker',
+        'locust',
+      ]);
+    });
+
+    it('junta nomes de mais de uma palavra', () => {
+      expect(namedTerms('Experience with Google Cloud Platform and ci/cd pipelines')).toEqual([
+        'gcp',
+        'cicd',
+      ]);
+    });
+
+    it('a primeira palavra e títulos curtos não são nomes', () => {
+      expect(namedTerms('Liderança técnica de times')).toEqual([]);
+      expect(namedTerms('Problem Solving: strong analytical skills')).toEqual([]);
+    });
+
+    it('sigla no meio da frase conta', () => {
+      expect(namedTerms('Experiência com APIs REST e Go')).toEqual(['apis', 'rest', 'go']);
+    });
   });
 
   it('tempo de experiência não pode ser confirmado: fica parcial', () => {

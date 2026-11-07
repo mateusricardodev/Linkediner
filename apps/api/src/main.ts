@@ -19,6 +19,7 @@ import {
   SubscriptionService,
 } from '@linkediner/core/billing';
 import { createFieldCipher } from '@linkediner/core/crypto';
+import { DiscoveryService, DrizzleCatalogReader } from '@linkediner/core/discovery';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import {
@@ -173,6 +174,14 @@ const app = await buildServer({
       await createQueue<GenerateMaterialJob>(boss, MATERIALS_GENERATE_QUEUE),
       audit,
       quota,
+    ),
+    discovery: new DiscoveryService(
+      new DrizzleCatalogReader(database.db),
+      jobRepository,
+      factRepository,
+      profileRepository,
+      new DrizzleFeedbackRepository(database.db),
+      audit,
     ),
     feedback: new FeedbackService(
       new DrizzleFeedbackRepository(database.db),

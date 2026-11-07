@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { hiddenJobs, hidesJob, jobMeta, safeExternalUrl, toggleReason } from './jobs';
+import {
+  hiddenJobs,
+  hidesJob,
+  isNewPosting,
+  jobMeta,
+  postedLabel,
+  safeExternalUrl,
+  sourceLabel,
+  toggleReason,
+} from './jobs';
 import type { Job, Recommendations } from './types';
 
 const job = (id: string, status: Job['status'] = 'ready') => ({ id, status }) as Job;
@@ -51,6 +60,28 @@ describe('safeExternalUrl', () => {
     expect(safeExternalUrl('http://vagas.example/1')).toBeNull();
     expect(safeExternalUrl('não é link')).toBeNull();
     expect(safeExternalUrl(null)).toBeNull();
+  });
+});
+
+describe('data de publicação', () => {
+  const now = new Date('2026-11-07T12:00:00.000Z').getTime();
+
+  it('fala em português, sem inventar data', () => {
+    expect(postedLabel('2026-11-07T08:00:00.000Z', now)).toBe('Publicada hoje');
+    expect(postedLabel('2026-11-06T08:00:00.000Z', now)).toBe('Publicada ontem');
+    expect(postedLabel('2026-11-01T08:00:00.000Z', now)).toBe('Publicada há 6 dias');
+    expect(postedLabel(null, now)).toBeNull();
+  });
+
+  it('marca como nova só na primeira semana', () => {
+    expect(isNewPosting('2026-11-01T08:00:00.000Z', now)).toBe(true);
+    expect(isNewPosting('2026-10-30T08:00:00.000Z', now)).toBe(false);
+    expect(isNewPosting(null, now)).toBe(false);
+  });
+
+  it('dá nome às fontes conhecidas', () => {
+    expect(sourceLabel('lever')).toBe('Lever');
+    expect(sourceLabel('outra')).toBe('outra');
   });
 });
 
