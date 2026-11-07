@@ -140,6 +140,13 @@
   }
 }
 
+/* No celular, só os textos: com os ícones, o último item do menu ficava cortado. */
+@media (max-width: 480px) {
+  .link svg {
+    display: none;
+  }
+}
+
 @media (max-width: 820px) and (prefers-reduced-transparency: reduce) {
   .sidebar {
     background: var(--color-bg-canvas);

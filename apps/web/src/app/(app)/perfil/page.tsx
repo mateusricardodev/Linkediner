@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Notice, Skeleton } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
 import { canAnalyze } from '../../../lib/documents';
 import { FACT_TYPE_ORDER, FACT_TYPES } from '../../../lib/facts';
-import type { DocumentRecord, Me, ProfileFact } from '../../../lib/types';
+import type { DocumentRecord, Me, ProfileFact, ProfileScore } from '../../../lib/types';
 import { useResource } from '../../../lib/use-resource';
 import { DocumentRow } from './document-row';
 import { FactItem } from './fact-item';
 import styles from './perfil.module.css';
+import { ScoreSection } from './score-section';
 import { UploadCard } from './upload-card';
 
 const POLL_INTERVAL_MS = 3000;
@@ -19,11 +20,18 @@ export default function ProfilePage() {
   const me = useResource(() => api<Me>('/v1/me'));
   const documents = useResource(() => api<DocumentRecord[]>('/v1/documents'));
   const facts = useResource(() => api<ProfileFact[]>('/v1/profile/facts'));
+  const score = useResource(() => api<ProfileScore>('/v1/profile/score'));
   const [granting, setGranting] = useState(false);
   const [grantError, setGrantError] = useState<string | null>(null);
 
   const reloadDocuments = documents.reload;
-  const reloadFacts = facts.reload;
+  const reloadFactsOnly = facts.reload;
+  const reloadScore = score.reload;
+  // O score é calculado a partir dos fatos: os dois mudam juntos.
+  const reloadFacts = useCallback(async () => {
+    await reloadFactsOnly();
+    await reloadScore();
+  }, [reloadFactsOnly, reloadScore]);
   // Envio incompleto de outra aba não é um documento da pessoa: ele expira sozinho em 24 horas.
   const visible = documents.data?.filter((d) => d.status !== 'pending_upload') ?? [];
   const processing = visible.filter((d) => d.status === 'processing').length;
@@ -74,6 +82,8 @@ export default function ProfilePage() {
           comprovado nos documentos ou que você confirmou.
         </p>
       </header>
+
+      <ScoreSection score={score.data} error={score.error} />
 
       <section aria-labelledby="documentos" className={styles.section}>
         <h2 id="documentos" className={styles.sectionTitle}>

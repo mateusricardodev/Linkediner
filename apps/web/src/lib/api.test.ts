@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError } from './api';
+import { api, apiBlob, ApiError } from './api';
 
 const respond = (status: number, body?: unknown) =>
   vi.stubGlobal(
@@ -68,6 +68,20 @@ describe('cliente da API', () => {
       }),
     );
     await expect(api('/v1/x')).rejects.toMatchObject({ code: 'OFFLINE', status: 0 });
+  });
+
+  it('baixa arquivo com o cookie de sessão, e o erro continua legível', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('%PDF-', { status: 200 })),
+    );
+    await expect((await apiBlob('/v1/x')).text()).resolves.toBe('%PDF-');
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ credentials: 'include' }),
+    );
+    respond(409, { title: 'Aprove o currículo antes de exportar.', code: 'CONFLICT' });
+    await expect(apiBlob('/v1/x')).rejects.toThrow('Aprove o currículo antes de exportar.');
   });
 
   it('resposta sem corpo não é erro', async () => {
