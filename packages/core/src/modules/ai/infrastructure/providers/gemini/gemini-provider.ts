@@ -33,10 +33,35 @@ export interface GeminiClient {
   };
 }
 
-/** Converte o esquema Zod no formato aceito por responseJsonSchema. */
+/** Tira a regra de cada nó do esquema, sem confundir com um campo de mesmo nome em `properties`. */
+function withoutMaxItems(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(withoutMaxItems);
+  if (node === null || typeof node !== 'object') return node;
+  return Object.fromEntries(
+    Object.entries(node)
+      .filter(([key]) => key !== 'maxItems')
+      .map(([key, value]) => [
+        key,
+        key === 'properties'
+          ? Object.fromEntries(
+              Object.entries(value as object).map(([name, field]) => [
+                name,
+                withoutMaxItems(field),
+              ]),
+            )
+          : withoutMaxItems(value),
+      ]),
+  );
+}
+
+/**
+ * Converte o esquema Zod no formato aceito por responseJsonSchema.
+ * O Gemini recusa `maxItems` com um 400 genérico. O limite continua valendo: toda resposta passa
+ * pelo esquema Zod completo antes de ser usada.
+ */
 export function toGeminiJsonSchema(schema: ZodType): Record<string, unknown> {
   const { $schema: _ignored, ...json } = z.toJSONSchema(schema, { io: 'input' });
-  return json;
+  return withoutMaxItems(json) as Record<string, unknown>;
 }
 
 /**

@@ -70,6 +70,26 @@ describe('GeminiProvider', () => {
     });
   });
 
+  it('não envia maxItems ao Gemini, mas a resposta ainda respeita o limite', async () => {
+    const limited = z.object({
+      maxItems: z.string(),
+      items: z.array(z.object({ tags: z.array(z.string()).max(2) })).max(1),
+    });
+    const json = JSON.stringify(toGeminiJsonSchema(limited));
+    expect(json).not.toContain('"maxItems":1');
+    expect(json).not.toContain('"maxItems":2');
+    // Um campo chamado maxItems é dado, não regra.
+    expect(json).toContain('"maxItems":{"type":"string"}');
+
+    const provider = new GeminiProvider(
+      clientReturning({ text: '{"maxItems":"a","items":[{"tags":[]},{"tags":[]}]}' }).client,
+      'm',
+    );
+    await expect(provider.generateStructured({ ...req, schema: limited })).rejects.toThrow(
+      /fora do esquema/,
+    );
+  });
+
   it('rejeita JSON inválido e resposta fora do esquema sem expor o conteúdo', async () => {
     const invalid = new GeminiProvider(clientReturning({ text: 'dado-pessoal {' }).client, 'm');
     await expect(invalid.generateStructured(req)).rejects.toThrow(/JSON inválido/);
