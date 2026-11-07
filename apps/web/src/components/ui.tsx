@@ -53,6 +53,18 @@ export function Field({
   );
 }
 
+export function TextAreaField({ label, ...props }: ComponentProps<'textarea'> & { label: string }) {
+  const id = useId();
+  return (
+    <div className={styles.field}>
+      <label className={styles.label} htmlFor={id}>
+        {label}
+      </label>
+      <textarea id={id} className={`${styles.input} ${styles.textarea}`} rows={4} {...props} />
+    </div>
+  );
+}
+
 export function Notice({
   tone = 'neutral',
   children,

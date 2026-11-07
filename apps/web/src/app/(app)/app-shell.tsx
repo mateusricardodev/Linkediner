@@ -24,6 +24,11 @@ const NAV = [
     label: 'Início',
     icon: 'M4 11.5 12 4l8 7.5M6 10v9a1 1 0 0 0 1 1h3.5v-5.5h3V20H17a1 1 0 0 0 1-1v-9',
   },
+  {
+    href: '/perfil',
+    label: 'Perfil',
+    icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0',
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

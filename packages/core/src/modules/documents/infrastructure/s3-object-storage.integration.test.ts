@@ -32,6 +32,28 @@ describe('S3ObjectStorage', () => {
     expect(await s3.storage.head('users/u1/documents/d1')).toBeNull();
   });
 
+  it('libera o envio pelo navegador só a partir do site', async () => {
+    await s3.storage.ensureBucket({ uploadOrigin: 'https://site.example' });
+    const url = await s3.storage.presignUpload('users/u1/documents/cors', {
+      contentType: 'application/pdf',
+      contentLength: 4,
+      expiresInSeconds: 60,
+    });
+    const preflight = (origin: string) =>
+      fetch(url, {
+        method: 'OPTIONS',
+        headers: {
+          origin,
+          'access-control-request-method': 'PUT',
+          'access-control-request-headers': 'content-type',
+        },
+      });
+    const allowed = await preflight('https://site.example');
+    expect(allowed.headers.get('access-control-allow-origin')).toBe('https://site.example');
+    const denied = await preflight('https://outro.example');
+    expect(denied.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
   it('apaga tudo sob o prefixo de um usuário, sem tocar em outros', async () => {
     for (const key of ['users/a/documents/1', 'users/a/documents/2', 'users/b/documents/1']) {
       const url = await s3.storage.presignUpload(key, {

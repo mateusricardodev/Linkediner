@@ -31,6 +31,7 @@ export class ApiError extends Error {
 
 interface ErrorBody {
   code?: string;
+  title?: string;
   detail?: string;
   message?: string;
   details?: Record<string, unknown>;
@@ -38,8 +39,10 @@ interface ErrorBody {
 
 function toError(status: number, body: ErrorBody | null): ApiError {
   const code = body?.code ?? 'UNKNOWN';
-  // `detail` é o texto seguro da nossa API. O de terceiros só passa pela tabela acima.
-  const message = AUTH_MESSAGES[code] ?? body?.detail ?? GENERIC_MESSAGE;
+  // `title` e `detail` são o texto seguro da nossa API (Problem Details). O `message` de terceiros
+  // só passa pela tabela acima, e "Erro interno" não ajuda quem está usando.
+  const ownMessage = code === 'INTERNAL' ? undefined : (body?.detail ?? body?.title);
+  const message = AUTH_MESSAGES[code] ?? ownMessage ?? GENERIC_MESSAGE;
   return new ApiError(message, status, code, body?.details);
 }
 
