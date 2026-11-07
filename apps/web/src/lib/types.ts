@@ -5,6 +5,7 @@ import type {
   ApplicationMaterialDto,
   ApplicationState as ApplicationStateSchema,
   BillingSummaryDto,
+  CareerGoalDto,
   DashboardResponse as DashboardSchema,
   DocumentDto,
   DocumentKind as DocumentKindSchema,
@@ -47,3 +48,4 @@ export interface FormAnswersContent {
   answers: { question: string; answer: ResumeItem | null }[];
 }
 export type BillingSummary = z.infer<typeof BillingSummaryDto>;
+export type CareerGoal = z.infer<typeof CareerGoalDto>;

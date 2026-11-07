@@ -276,6 +276,45 @@
   overflow-wrap: anywhere;
 }
 
+.goalLine {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.goalLine a {
+  color: var(--color-text-accent);
+}
+
+.goalLine strong {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.goalPicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs) var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+}
+
+.select {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border-separator);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+  /* 16px evita o zoom automático do iOS ao focar o campo. */
+  font-size: 16px;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
