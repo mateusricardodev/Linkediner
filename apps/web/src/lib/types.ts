@@ -5,6 +5,9 @@ import type {
   DashboardResponse as DashboardSchema,
   DocumentDto,
   DocumentKind as DocumentKindSchema,
+  FeedbackReason as FeedbackReasonSchema,
+  JobDto,
+  JobMatchResponse,
   MeResponse as MeSchema,
   ProfileFactDto,
   ProfileScoreResponse as ScoreSchema,
@@ -29,3 +32,6 @@ export type ProfileFact = z.infer<typeof ProfileFactDto>;
 export type Resume = z.infer<typeof ResumeDto>;
 export type ResumeContent = z.infer<typeof ResumeContentDto>;
 export type ResumeItem = z.infer<typeof ResumeItemDto>;
+export type Job = z.infer<typeof JobDto>;
+export type JobMatch = z.infer<typeof JobMatchResponse>;
+export type FeedbackReason = z.infer<typeof FeedbackReasonSchema>;
