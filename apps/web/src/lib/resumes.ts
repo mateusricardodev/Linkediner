@@ -68,8 +68,9 @@ export function previousScore(history: ProfileScore['history']) {
   return sorted[1] ?? null;
 }
 
-export async function downloadResume(id: string, format: 'pdf' | 'docx') {
-  const blob = await apiBlob(`/v1/resumes/${id}/export?format=${format}`);
+/** Baixa um arquivo gerado pela API, que exige o cookie de sessão. */
+export async function downloadFile(path: string, format: 'pdf' | 'docx') {
+  const blob = await apiBlob(path);
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -77,3 +78,6 @@ export async function downloadResume(id: string, format: 'pdf' | 'docx') {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export const downloadResume = (id: string, format: 'pdf' | 'docx') =>
+  downloadFile(`/v1/resumes/${id}/export?format=${format}`, format);
