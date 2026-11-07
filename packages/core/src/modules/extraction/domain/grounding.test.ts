@@ -27,7 +27,12 @@ describe('groundFacts', () => {
       },
       DOC,
     );
-    expect(report).toEqual({ accepted: 2, rejectedNoSource: 0, rejectedUnsupportedValue: 0 });
+    expect(report).toEqual({
+      accepted: 2,
+      rejectedNoSource: 0,
+      rejectedUnsupportedValue: 0,
+      droppedFields: 0,
+    });
     expect(facts[0]).toEqual({
       type: 'experience',
       sourceSpan: experience.sourceSpan,
@@ -62,15 +67,112 @@ describe('groundFacts', () => {
     expect(report.rejectedNoSource).toBe(1);
   });
 
-  it('descarta invenção escondida atrás de um trecho verdadeiro', () => {
+  it('descarta o fato quando um valor obrigatório foi inventado', () => {
     const invented = [
       { ...experience, company: 'Google' },
-      { ...experience, startDate: '2019' },
-      { ...experience, description: 'Reduzi o tempo de build em 80%' },
+      { ...experience, title: 'Diretora de Engenharia' },
     ];
     const { facts, report } = groundFacts({ ...EMPTY_EXTRACTION, experiences: invented }, DOC);
     expect(facts).toEqual([]);
-    expect(report.rejectedUnsupportedValue).toBe(3);
+    expect(report.rejectedUnsupportedValue).toBe(2);
+    expect(report.droppedFields).toBe(0);
+  });
+
+  it('mantém o fato, mas nunca grava um valor opcional inventado', () => {
+    const { facts, report } = groundFacts(
+      {
+        ...EMPTY_EXTRACTION,
+        experiences: [
+          { ...experience, startDate: '2019', description: 'Reduzi o tempo de build em 80%' },
+        ],
+      },
+      DOC,
+    );
+    expect(facts[0]?.data).toMatchObject({
+      company: 'Nubank',
+      startDate: null,
+      endDate: 'atual',
+      description: null,
+    });
+    expect(JSON.stringify(facts)).not.toMatch(/2019|80%/);
+    expect(report).toMatchObject({ accepted: 1, droppedFields: 2, rejectedUnsupportedValue: 0 });
+  });
+
+  it('descarta item cujo único valor foi inventado', () => {
+    const { facts, report } = groundFacts(
+      {
+        ...EMPTY_EXTRACTION,
+        skills: [{ name: 'Kubernetes', sourceSpan: 'Competências: TypeScript, React' }],
+        achievements: [{ description: 'Ganhei um prêmio', sourceSpan: 'Competências: TypeScript' }],
+      },
+      DOC,
+    );
+    expect(facts).toEqual([]);
+    expect(report.rejectedUnsupportedValue).toBe(2);
+  });
+
+  describe('texto que junta tópicos', () => {
+    const BULLETS = `Engenheira Frontend | Empresa Fictícia
+• Reduzi o tempo de build em 40% com cache e divisão de pacotes.
+• Liderei a migração do aplicativo web para React 18 e TypeScript, mantendo as entregas do time durante
+toda a transição.
+• Atendi 3 equipes.`;
+    const withDescription = (description: string) => ({
+      ...EMPTY_EXTRACTION,
+      experiences: [
+        {
+          company: 'Empresa Fictícia',
+          title: 'Engenheira Frontend',
+          startDate: null,
+          endDate: null,
+          location: null,
+          description,
+          sourceSpan: 'Engenheira Frontend | Empresa Fictícia',
+        },
+      ],
+    });
+
+    it('aceita a resposta real do Gemini, com os tópicos unidos por quebra de linha', () => {
+      const description =
+        'Reduzi o tempo de build em 40% com cache e divisão de pacotes.\nLiderei a migração do aplicativo web para React 18 e TypeScript, mantendo as entregas do time durante toda a transição.';
+      const { facts, report } = groundFacts(withDescription(description), BULLETS);
+      expect(facts[0]?.data.description).toBe(description);
+      expect(report).toMatchObject({ accepted: 1, droppedFields: 0 });
+    });
+
+    it('aceita tópicos unidos por espaço e com os marcadores', () => {
+      const { report } = groundFacts(
+        withDescription(
+          'Reduzi o tempo de build em 40% com cache e divisão de pacotes. Liderei a migração do aplicativo web para React 18 e TypeScript, mantendo as entregas do time durante toda a transição.',
+        ),
+        BULLETS,
+      );
+      expect(report.droppedFields).toBe(0);
+      expect(
+        groundFacts(
+          withDescription(
+            '• Reduzi o tempo de build em 40% com cache e divisão de pacotes.\n• Liderei a migração do aplicativo web para React 18 e TypeScript, mantendo as entregas do time durante toda a transição.',
+          ),
+          BULLETS,
+        ).report.droppedFields,
+      ).toBe(0);
+    });
+
+    it('um tópico inventado no meio derruba a descrição inteira', () => {
+      const { facts, report } = groundFacts(
+        withDescription(
+          'Reduzi o tempo de build em 40% com cache e divisão de pacotes.\nGanhei um prêmio internacional de engenharia.',
+        ),
+        BULLETS,
+      );
+      expect(facts[0]?.data.description).toBeNull();
+      expect(report.droppedFields).toBe(1);
+    });
+
+    it('não monta uma frase nova com pedaços curtos que existem no documento', () => {
+      const { facts } = groundFacts(withDescription('Reduzi\n3 equipes\nem 40%'), BULLETS);
+      expect(facts[0]?.data.description).toBeNull();
+    });
   });
 
   it('não acusa invenção por diferenças de acento, maiúscula ou quebra de linha', () => {

@@ -1,4 +1,13 @@
-import { bigint, index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  bigint,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { users } from './identity';
 
 export const documentKind = pgEnum('document_kind', ['resume', 'linkedin_pdf']);
@@ -30,6 +39,9 @@ export const documents = pgTable(
     sha256: text(),
     /** Motivo da falha na extração (código estável, sem conteúdo do documento). */
     failureCode: text(),
+    /** Resultado da conferência da análise: só contagens, sem conteúdo do documento. */
+    discardedFacts: integer().notNull().default(0),
+    droppedFields: integer().notNull().default(0),
     uploadedAt: timestamp({ withTimezone: true }),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

@@ -40,6 +40,24 @@ export const canAnalyze = (document: Pick<DocumentRecord, 'status' | 'failureCod
   (document.status === 'failed' &&
     (document.failureCode === null || document.failureCode === 'processing_error'));
 
+/** Avisa o que a conferência deixou de fora: sem isso, a pessoa acharia que o perfil está completo. */
+export function extractionNote(
+  document: Pick<DocumentRecord, 'status' | 'discardedFacts' | 'droppedFields'>,
+): string | null {
+  if (document.status !== 'processed') return null;
+  const { discardedFacts: items, droppedFields: details } = document;
+  if (items === 0 && details === 0) return null;
+  const parts = [
+    items > 0
+      ? `${items === 1 ? '1 item ficou' : `${items} itens ficaram`} de fora por não estar${items === 1 ? '' : 'em'} comprovado${items === 1 ? '' : 's'} no documento.`
+      : null,
+    details > 0
+      ? `${details === 1 ? '1 detalhe, como data ou descrição, ficou' : `${details} detalhes, como datas ou descrições, ficaram`} em branco pelo mesmo motivo.`
+      : null,
+  ];
+  return `${parts.filter(Boolean).join(' ')} Confira o que encontramos e corrija o que faltar.`;
+}
+
 /** Alguns sistemas não informam o tipo do arquivo: nesse caso, vale a extensão. */
 export function mimeTypeOf(file: Pick<File, 'name' | 'type'>): string {
   if (file.type) return file.type;

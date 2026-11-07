@@ -72,7 +72,8 @@ function buildCase(index: number): EvalCase {
       startDate: `0${(index % 8) + 1}/2021`,
       endDate: 'atual',
       location: 'São Paulo',
-      description: pick(RESULTS, index),
+      // Dois tópicos: a IA pode juntá-los, o que derrubava a experiência inteira.
+      description: `${pick(RESULTS, index)}\n${pick(RESULTS, index + 1)}`,
     },
     {
       company: nextCompany,
@@ -115,7 +116,7 @@ function buildCase(index: number): EvalCase {
     'EXPERIÊNCIA',
     ...experiences.flatMap((e) => [
       `${e.title} na ${e.company}, ${e.location}, de ${e.startDate} a ${e.endDate}`,
-      e.description,
+      ...e.description.split('\n').map((topic) => `• ${topic}`),
     ]),
     '',
     'COMPETÊNCIAS',

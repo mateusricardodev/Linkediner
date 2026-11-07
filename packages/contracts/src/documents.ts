@@ -13,6 +13,9 @@ export const DocumentDto = z
     status: DocumentStatus,
     /** Motivo da falha na extração: no_text, too_long, unreadable ou processing_error. */
     failureCode: z.string().nullable(),
+    /** O que a conferência da análise deixou de fora, por não estar comprovado no documento. */
+    discardedFacts: z.number().int(),
+    droppedFields: z.number().int(),
     mimeType: z.string(),
     sizeBytes: z.number().int(),
     uploadedAt: z.iso.datetime().nullable(),

@@ -16,6 +16,8 @@ const toRecord = (r: typeof documents.$inferSelect): DocumentRecord => ({
   sizeBytes: r.sizeBytes,
   sha256: r.sha256,
   failureCode: r.failureCode,
+  discardedFacts: r.discardedFacts,
+  droppedFields: r.droppedFields,
   uploadedAt: r.uploadedAt,
   expiresAt: r.expiresAt,
   createdAt: r.createdAt,
@@ -76,6 +78,19 @@ export class DrizzleDocumentRepository implements DocumentRepository {
       tx
         .update(documents)
         .set({ status, failureCode: failureCode ?? null })
+        .where(and(eq(documents.id, id), eq(documents.userId, userId))),
+    );
+  }
+
+  async markProcessed(
+    userId: string,
+    id: string,
+    result: { discardedFacts: number; droppedFields: number },
+  ) {
+    await withUserContext(this.db, userId, (tx) =>
+      tx
+        .update(documents)
+        .set({ status: 'processed', failureCode: null, ...result })
         .where(and(eq(documents.id, id), eq(documents.userId, userId))),
     );
   }

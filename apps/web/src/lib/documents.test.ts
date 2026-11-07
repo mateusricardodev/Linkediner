@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { canAnalyze, failureMessage, formatBytes, mimeTypeOf, validateFile } from './documents';
+import {
+  canAnalyze,
+  extractionNote,
+  failureMessage,
+  formatBytes,
+  mimeTypeOf,
+  validateFile,
+} from './documents';
 
 const PDF = 'application/pdf';
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -40,6 +47,27 @@ describe('canAnalyze', () => {
     expect(canAnalyze({ status: 'failed', failureCode: 'no_text' })).toBe(false);
     expect(canAnalyze({ status: 'processing', failureCode: null })).toBe(false);
     expect(canAnalyze({ status: 'processed', failureCode: null })).toBe(false);
+  });
+});
+
+describe('extractionNote', () => {
+  const note = (discardedFacts: number, droppedFields: number, status = 'processed' as const) =>
+    extractionNote({ status, discardedFacts, droppedFields });
+
+  it('não diz nada quando nada ficou de fora', () => {
+    expect(note(0, 0)).toBeNull();
+    expect(extractionNote({ status: 'failed', discardedFacts: 2, droppedFields: 1 })).toBeNull();
+  });
+
+  it('concorda no singular e no plural', () => {
+    expect(note(1, 0)).toMatch(/^1 item ficou de fora por não estar comprovado no documento\./);
+    expect(note(2, 0)).toMatch(/^2 itens ficaram de fora por não estarem comprovados/);
+    expect(note(0, 1)).toMatch(/^1 detalhe, como data ou descrição, ficou em branco/);
+    expect(note(0, 3)).toMatch(/^3 detalhes, como datas ou descrições, ficaram em branco/);
+  });
+
+  it('junta os dois e orienta a conferir', () => {
+    expect(note(1, 2)).toMatch(/item.*detalhes.*Confira o que encontramos/);
   });
 });
 

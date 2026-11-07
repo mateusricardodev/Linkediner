@@ -6,6 +6,7 @@ import { api, ApiError } from '../../../lib/api';
 import {
   canAnalyze,
   DOCUMENT_KINDS,
+  extractionNote,
   failureMessage,
   formatBytes,
   formatDate,
@@ -34,6 +35,7 @@ export function DocumentRow({
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const status = STATUS[document.status];
+  const note = extractionNote(document);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -62,6 +64,7 @@ export function DocumentRow({
       {document.status === 'failed' ? (
         <p className={styles.failure}>{failureMessage(document.failureCode)}</p>
       ) : null}
+      {note ? <Notice tone="warning">{note}</Notice> : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
 
       {confirming ? (

@@ -16,7 +16,7 @@ import { redactSensitiveData } from '../domain/redact';
 import type { TextExtractor } from './ports';
 
 export interface ExtractDocumentDeps {
-  documents: Pick<DocumentRepository, 'find' | 'setStatus'>;
+  documents: Pick<DocumentRepository, 'find' | 'setStatus' | 'markProcessed'>;
   storage: Pick<ObjectStorage, 'getBytes'>;
   text: TextExtractor;
   consents: Pick<ConsentService, 'status'>;
@@ -109,7 +109,10 @@ export class ExtractDocument {
       output: data,
       validation: { ...report },
     });
-    await this.deps.documents.setStatus(userId, document.id, 'processed');
+    await this.deps.documents.markProcessed(userId, document.id, {
+      discardedFacts: report.rejectedNoSource + report.rejectedUnsupportedValue,
+      droppedFields: report.droppedFields,
+    });
     await this.deps.audit.record({
       actorType: 'system',
       actorId: userId,
