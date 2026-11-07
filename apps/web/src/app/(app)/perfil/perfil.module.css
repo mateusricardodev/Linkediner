@@ -89,6 +89,35 @@
   font-variant-numeric: tabular-nums;
 }
 
+.goalForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-block: var(--spacing-xs);
+}
+
+.goalCard {
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.goalCheck {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.goalSalary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+  /* O hint de um campo não pode desalinhar os vizinhos. */
+  align-items: start;
+}
+
 .uploads {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

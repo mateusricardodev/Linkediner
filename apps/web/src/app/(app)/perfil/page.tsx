@@ -9,6 +9,7 @@ import type { DocumentRecord, Me, ProfileFact, ProfileScore } from '../../../lib
 import { useResource } from '../../../lib/use-resource';
 import { DocumentRow } from './document-row';
 import { FactItem } from './fact-item';
+import { GoalsSection } from './goals-section';
 import styles from './perfil.module.css';
 import { ScoreSection } from './score-section';
 import { UploadCard } from './upload-card';
@@ -84,6 +85,8 @@ export default function ProfilePage() {
       </header>
 
       <ScoreSection score={score.data} error={score.error} />
+
+      <GoalsSection onChanged={() => void reloadScore()} />
 
       <section aria-labelledby="documentos" className={styles.section}>
         <h2 id="documentos" className={styles.sectionTitle}>

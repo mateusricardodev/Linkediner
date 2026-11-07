@@ -65,6 +65,24 @@ export function TextAreaField({ label, ...props }: ComponentProps<'textarea'> & 
   );
 }
 
+export function SelectField({
+  label,
+  children,
+  ...props
+}: ComponentProps<'select'> & { label: string }) {
+  const id = useId();
+  return (
+    <div className={styles.field}>
+      <label className={styles.label} htmlFor={id}>
+        {label}
+      </label>
+      <select id={id} className={styles.input} {...props}>
+        {children}
+      </select>
+    </div>
+  );
+}
+
 export function Notice({
   tone = 'neutral',
   children,

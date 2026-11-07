@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Badge, Notice, ScoreRing, Skeleton } from '../../../../components/ui';
 import { api } from '../../../../lib/api';
 import { REQUIREMENT_STATUS } from '../../../../lib/jobs';
 import type { JobMatch } from '../../../../lib/types';
+import { goalQuery, useGoal } from '../../../../lib/use-goal';
 import { useResource } from '../../../../lib/use-resource';
+import { GoalPicker } from '../goal-picker';
 import styles from '../vagas.module.css';
 
 type Requirement = JobMatch['requirements'][number];
@@ -31,13 +34,26 @@ function Requirements({ title, items }: { title: string; items: Requirement[] })
 
 /** O número nunca aparece sem os motivos e sem o aviso de que não indica chance de contratação. */
 export function JobMatchSection({ jobId }: { jobId: string }) {
-  const { data: match, error } = useResource(() => api<JobMatch>(`/v1/jobs/${jobId}/match`));
+  const goalState = useGoal();
+  const goal = goalState.goal;
+  const {
+    data: match,
+    error,
+    reload,
+  } = useResource(() => api<JobMatch>(`/v1/jobs/${jobId}/match${goalQuery(goal)}`));
+
+  // Trocar de objetivo muda a compatibilidade. O primeiro carregamento já usa o padrão da API.
+  const goalId = goal?.id ?? null;
+  useEffect(() => {
+    if (goalId) void reload();
+  }, [goalId, reload]);
 
   return (
     <section aria-labelledby="compatibilidade" className={styles.section}>
       <h2 id="compatibilidade" className={styles.sectionTitle}>
         Compatibilidade
       </h2>
+      <GoalPicker goalState={goalState} />
       {error && !match ? (
         <Notice tone="danger">{error.message}</Notice>
       ) : !match ? (

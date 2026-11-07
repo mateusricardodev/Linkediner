@@ -17,7 +17,9 @@ import { api, ApiError } from '../../../lib/api';
 import { hiddenJobs, JOB_STATUS, jobFailureMessage, jobMeta } from '../../../lib/jobs';
 import type { Job, Me, Recommendations } from '../../../lib/types';
 import { usePollWhile } from '../../../lib/use-poll';
+import { goalQuery, useGoal } from '../../../lib/use-goal';
 import { useResource } from '../../../lib/use-resource';
+import { GoalPicker } from './goal-picker';
 import styles from './vagas.module.css';
 
 function JobLink({ job, children }: { job: Job; children: React.ReactNode }) {
@@ -38,7 +40,11 @@ export default function JobsPage() {
   const router = useRouter();
   const me = useResource(() => api<Me>('/v1/me'));
   const jobs = useResource(() => api<Job[]>('/v1/jobs'));
-  const recommendations = useResource(() => api<Recommendations>('/v1/jobs/recommendations'));
+  const goalState = useGoal();
+  const goal = goalState.goal;
+  const recommendations = useResource(() =>
+    api<Recommendations>(`/v1/jobs/recommendations${goalQuery(goal)}`),
+  );
   const [text, setText] = useState('');
   const [applyUrl, setApplyUrl] = useState('');
   const [busy, setBusy] = useState(false);
@@ -52,6 +58,11 @@ export default function JobsPage() {
 
   // Quando uma análise termina, a vaga entra nas recomendações.
   const reloadRecommendations = recommendations.reload;
+  // Trocar de objetivo muda a compatibilidade. O primeiro carregamento já usa o padrão da API.
+  const goalId = goal?.id ?? null;
+  useEffect(() => {
+    if (goalId) void reloadRecommendations();
+  }, [goalId, reloadRecommendations]);
   const previous = useRef(analyzing);
   useEffect(() => {
     if (analyzing < previous.current) void reloadRecommendations();
@@ -157,6 +168,7 @@ export default function JobsPage() {
         <h2 id="recomendadas" className={styles.sectionTitle}>
           Suas vagas
         </h2>
+        <GoalPicker goalState={goalState} />
         {recommendations.error && !recommendations.data ? (
           <Notice tone="danger">{recommendations.error.message}</Notice>
         ) : !recommendations.data ? (
