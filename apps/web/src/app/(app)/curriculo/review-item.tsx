@@ -1,22 +1,31 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Badge, Button, Notice, TextAreaField } from '../../../../components/ui';
-import { api, ApiError } from '../../../../lib/api';
-import { restoreDecision, SUGGESTION_REASONS } from '../../../../lib/resumes';
-import type { ResumeItem } from '../../../../lib/types';
-import styles from '../curriculo.module.css';
+import { Badge, Button, Notice, TextAreaField } from '../../../components/ui';
+import { api, ApiError } from '../../../lib/api';
+import { restoreDecision, SUGGESTION_REASONS } from '../../../lib/resumes';
+import type { ResumeItem } from '../../../lib/types';
+import styles from './curriculo.module.css';
 
 type Decision = { action: 'confirm'; text?: string } | { action: 'remove' };
 
-export function ResumeItemRow({
-  resumeId,
+/** Uma frase gerada, para confirmar, corrigir ou remover. A pessoa é quem sabe se ela é verdadeira. */
+export function ReviewItem({
   item,
+  path,
   onChanged,
+  readOnly = false,
+  maxLength = 600,
+  createsFacts = false,
 }: {
-  resumeId: string;
   item: ResumeItem;
+  /** Onde gravar a decisão sobre esta frase. */
+  path: (itemId: string) => string;
   onChanged: () => void;
+  readOnly?: boolean;
+  maxLength?: number;
+  /** No currículo, a frase confirmada passa a fazer parte dos fatos. Na carta, não. */
+  createsFacts?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
@@ -29,7 +38,7 @@ export function ResumeItemRow({
     setBusy(true);
     setError(null);
     try {
-      await api(`/v1/resumes/${resumeId}/items/${item.id}`, { method: 'PATCH', body: decision });
+      await api(path(item.id), { method: 'PATCH', body: decision });
       setEditing(false);
       onChanged();
     } catch (cause) {
@@ -57,13 +66,13 @@ export function ResumeItemRow({
           <TextAreaField
             label="Frase"
             value={text}
-            maxLength={600}
+            maxLength={maxLength}
             required
             onChange={(event) => setText(event.target.value)}
           />
           <p className={styles.footnote}>
-            Ao salvar, você confirma que esta frase é verdadeira. Ela passa a fazer parte dos seus
-            fatos.
+            Ao salvar, você confirma que esta frase é verdadeira.
+            {createsFacts ? ' Ela passa a fazer parte dos seus fatos.' : ''}
           </p>
           <div className={styles.actions}>
             <Button type="submit" disabled={busy}>
@@ -86,54 +95,56 @@ export function ResumeItemRow({
         </p>
         {suggested ? <Badge tone="warning">Precisa da sua confirmação</Badge> : null}
         {item.status === 'user_confirmed' ? <Badge tone="success">Confirmada</Badge> : null}
-        {removed ? <Badge tone="neutral">Fora do currículo</Badge> : null}
+        {removed ? <Badge tone="neutral">Fora do material</Badge> : null}
       </div>
       {suggested && item.reason ? (
         <p className={styles.reason}>{SUGGESTION_REASONS[item.reason]}</p>
       ) : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
-      <div className={styles.actions}>
-        {suggested ? (
-          <Button
-            variant="secondary"
-            disabled={busy}
-            onClick={() => void decide({ action: 'confirm' })}
-          >
-            Confirmar
-          </Button>
-        ) : null}
-        {removed ? (
-          <Button
-            variant="plain"
-            disabled={busy}
-            onClick={() => void decide(restoreDecision(item))}
-          >
-            {/* A sugestão sem fonte vira um fato confirmado: o botão precisa dizer isso. */}
-            {item.reason ? 'Confirmar e restaurar' : 'Restaurar'}
-          </Button>
-        ) : (
-          <>
+      {readOnly ? null : (
+        <div className={styles.actions}>
+          {suggested ? (
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => void decide({ action: 'confirm' })}
+            >
+              Confirmar
+            </Button>
+          ) : null}
+          {removed ? (
             <Button
               variant="plain"
               disabled={busy}
-              onClick={() => {
-                setText(item.text);
-                setError(null);
-                setEditing(true);
-              }}
+              onClick={() => void decide(restoreDecision(item))}
             >
-              Corrigir
+              {/* A sugestão sem fonte passa a valer como afirmação sua: o botão precisa dizer isso. */}
+              {item.reason ? 'Confirmar e restaurar' : 'Restaurar'}
             </Button>
-            <Button
-              variant="plain"
-              disabled={busy}
-              onClick={() => void decide({ action: 'remove' })}
-            >
-              Remover
-            </Button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <Button
+                variant="plain"
+                disabled={busy}
+                onClick={() => {
+                  setText(item.text);
+                  setError(null);
+                  setEditing(true);
+                }}
+              >
+                Corrigir
+              </Button>
+              <Button
+                variant="plain"
+                disabled={busy}
+                onClick={() => void decide({ action: 'remove' })}
+              >
+                Remover
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </li>
   );
 }

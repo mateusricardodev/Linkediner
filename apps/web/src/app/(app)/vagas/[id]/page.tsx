@@ -92,6 +92,26 @@ export default function JobPage() {
         </div>
       ) : (
         <>
+          <div className={styles.callout}>
+            <p className={styles.calloutText}>
+              Prepare o material para esta vaga. Você revisa e aprova tudo, e o envio é feito por
+              você.
+            </p>
+            <Button
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  const application = await api<{ id: string }>('/v1/applications', {
+                    method: 'POST',
+                    body: { jobId: job.id },
+                  });
+                  router.push(`/candidaturas/${application.id}`);
+                })
+              }
+            >
+              Preparar candidatura
+            </Button>
+          </div>
           <JobMatchSection jobId={job.id} />
           <JobFeedback job={job} />
         </>

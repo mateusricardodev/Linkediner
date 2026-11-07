@@ -1,7 +1,10 @@
 import type { z } from 'zod';
 import type {
+  ApplicationDetail as ApplicationDetailSchema,
   ApplicationDto,
+  ApplicationMaterialDto,
   ApplicationState as ApplicationStateSchema,
+  BillingSummaryDto,
   DashboardResponse as DashboardSchema,
   DocumentDto,
   DocumentKind as DocumentKindSchema,
@@ -35,3 +38,12 @@ export type ResumeItem = z.infer<typeof ResumeItemDto>;
 export type Job = z.infer<typeof JobDto>;
 export type JobMatch = z.infer<typeof JobMatchResponse>;
 export type FeedbackReason = z.infer<typeof FeedbackReasonSchema>;
+export type ApplicationDetail = z.infer<typeof ApplicationDetailSchema>;
+export type ApplicationMaterial = z.infer<typeof ApplicationMaterialDto>;
+export interface CoverLetterContent {
+  paragraphs: ResumeItem[];
+}
+export interface FormAnswersContent {
+  answers: { question: string; answer: ResumeItem | null }[];
+}
+export type BillingSummary = z.infer<typeof BillingSummaryDto>;

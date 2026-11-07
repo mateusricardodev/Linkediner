@@ -8,106 +8,15 @@ import { api, ApiError } from '../../../../lib/api';
 import { formatDate } from '../../../../lib/documents';
 import {
   downloadResume,
-  formatPeriod,
   pendingCount,
   RESUME_STATUS,
   resumeFailureMessage,
-  SECTION_LINES,
 } from '../../../../lib/resumes';
-import type { Resume, ResumeContent } from '../../../../lib/types';
+import type { Resume } from '../../../../lib/types';
 import { usePollWhile } from '../../../../lib/use-poll';
 import { useResource } from '../../../../lib/use-resource';
 import styles from '../curriculo.module.css';
-import { ResumeItemRow } from './resume-item';
-
-function Lines({ title, lines }: { title: string; lines: string[] }) {
-  if (lines.length === 0) return null;
-  return (
-    <section className={styles.block}>
-      <h2 className={styles.sectionTitle}>{title}</h2>
-      <ul className={styles.plainLines}>
-        {lines.map((line, index) => (
-          <li key={index}>{line}</li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function Content({
-  resumeId,
-  content,
-  onChanged,
-}: {
-  resumeId: string;
-  content: ResumeContent;
-  onChanged: () => void;
-}) {
-  const itemProps = { resumeId, onChanged };
-  const hasGenerated = content.summary.length > 0 || content.experiences.length > 0;
-  return (
-    <>
-      {content.summary.length > 0 ? (
-        <section className={styles.block}>
-          <h2 className={styles.sectionTitle}>Resumo</h2>
-          <ul className={styles.list}>
-            {content.summary.map((item) => (
-              <ResumeItemRow key={item.id} item={item} {...itemProps} />
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {content.experiences.length > 0 ? (
-        <section className={styles.block}>
-          <h2 className={styles.sectionTitle}>Experiências</h2>
-          {content.experiences.map((experience) => (
-            <div key={experience.factId} className={styles.experience}>
-              <div className={styles.experienceHead}>
-                <h3 className={styles.experienceTitle}>
-                  {[experience.title, experience.company].filter(Boolean).join(' em ')}
-                </h3>
-                <p className={styles.rowMeta}>
-                  {[formatPeriod(experience.startDate, experience.endDate), experience.location]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-              </div>
-              {experience.bullets.length > 0 ? (
-                <ul className={styles.list}>
-                  {experience.bullets.map((item) => (
-                    <ResumeItemRow key={item.id} item={item} {...itemProps} />
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ))}
-        </section>
-      ) : null}
-
-      {!hasGenerated ? (
-        <p className={styles.empty}>A geração não produziu frases para este currículo.</p>
-      ) : null}
-
-      <Lines
-        title="Competências"
-        lines={content.skills.length ? [content.skills.join(', ')] : []}
-      />
-      <Lines title="Formação" lines={content.education.map(SECTION_LINES.education)} />
-      <Lines
-        title="Certificações"
-        lines={content.certifications.map(SECTION_LINES.certifications)}
-      />
-      <Lines title="Projetos" lines={content.projects.map(SECTION_LINES.projects)} />
-      <Lines title="Idiomas" lines={content.languages.map(SECTION_LINES.languages)} />
-
-      <p className={styles.footnote}>
-        Competências, formação e datas vêm direto do seu perfil. Para mudar, corrija em{' '}
-        <Link href="/perfil">Perfil</Link> e gere um novo currículo.
-      </p>
-    </>
-  );
-}
+import { ResumeContentView } from '../resume-content';
 
 export default function ResumePage() {
   const router = useRouter();
@@ -162,7 +71,11 @@ export default function ResumePage() {
       ) : resume.status === 'failed' ? (
         <Notice tone="danger">{resumeFailureMessage(resume.failureCode)}</Notice>
       ) : resume.content ? (
-        <Content resumeId={resume.id} content={resume.content} onChanged={() => void reload()} />
+        <ResumeContentView
+          content={resume.content}
+          path={(itemId) => `/v1/resumes/${resume.id}/items/${itemId}`}
+          onChanged={() => void reload()}
+        />
       ) : null}
 
       {reviewable ? (

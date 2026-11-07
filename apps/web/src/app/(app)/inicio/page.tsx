@@ -64,9 +64,9 @@ export default function HomePage() {
                   return (
                     <li key={application.id} className={styles.row}>
                       <div className={styles.rowText}>
-                        <span className={styles.rowTitle}>
+                        <Link href={`/candidaturas/${application.id}`} className={styles.rowLink}>
                           {application.job.title ?? 'Vaga sem título'}
-                        </span>
+                        </Link>
                         <span className={styles.rowMeta}>
                           {application.job.company ?? 'Empresa não informada'}
                         </span>
