@@ -21,4 +21,10 @@ export {
   type DiscoveryItem,
 } from './application/discovery-service';
 export { DrizzleCatalogReader, DrizzleCatalogRepository } from './infrastructure/drizzle-catalog';
-export { GreenhouseAdapter, LeverAdapter } from './infrastructure/source-adapters';
+export {
+  AshbyAdapter,
+  GitHubIssuesAdapter,
+  GreenhouseAdapter,
+  LeverAdapter,
+  SmartRecruitersAdapter,
+} from './infrastructure/source-adapters';

@@ -139,8 +139,9 @@ export function DiscoverySection({ goalState }: { goalState: ReturnType<typeof u
             {data.total > data.items.length
               ? `Mostrando as ${data.items.length} mais recentes de ${data.total}. `
               : ''}
-            Buscamos em listagens públicas de um conjunto de empresas de tecnologia, então isso não
-            é o mercado inteiro. {data.disclaimer}
+            Buscamos nas listagens públicas de um conjunto de empresas e nos repositórios de vagas
+            de comunidades brasileiras no GitHub, então isso não é o mercado inteiro.{' '}
+            {data.disclaimer}
           </p>
         </>
       )}

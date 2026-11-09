@@ -11,6 +11,11 @@ export interface ExternalPosting {
   applyUrl: string;
   postedAt: Date | null;
   body: string;
+  /**
+   * Empresa da vaga, quando a fonte reúne vagas de várias empresas, como os repositórios de
+   * comunidades. Sem ela, vale a empresa da listagem.
+   */
+  company?: string;
 }
 
 const MAX_RAW_TEXT = 30_000;
@@ -62,6 +67,110 @@ export function htmlToText(html: string): string {
     .replace(/ *\n */g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+/**
+ * Texto puro a partir do Markdown das issues: sem imagens, sem marcação e com o texto dos links.
+ * Os endereços dos links saem: contato de recrutador não vai para a análise.
+ */
+export function markdownToText(markdown: string): string {
+  const text = markdown
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s*/gm, '')
+    .replace(/^\s*[-*+]\s+\[[ xX]\]\s*/gm, '• ')
+    .replace(/^\s*[-*+]\s+/gm, '• ')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/(\*\*|__|~~|`)/g, '')
+    .replace(/(^|\s)[*_](\S[^*_]*\S|\S)[*_](?=\s|$)/g, '$1$2');
+  return htmlToText(text);
+}
+
+/** Etiquetas com emoji, como "🏠 Remoto": só as letras importam. */
+const labelText = (label: string) =>
+  normalizeText(label.replace(/[^\p{L}\p{N}\s/-]/gu, ' ')).trim();
+
+const MAX_COMPANY = 60;
+/** Segmentos do título que descrevem o formato da vaga, e não a empresa. */
+const WORK_MODE = /^(remot|hibrid|hybrid|presencial|onsite|clt|pj|full ?time|part ?time)/;
+/** Local fora do Brasil: aí a vaga não ganha "Brasil" no fim, e o filtro do catálogo decide. */
+const FOREIGN =
+  /\b(usa|us|eua|estados unidos|united states|portugal|europa|europe|canada|uk|reino unido|alemanha|germany|espanha|spain|mexico|argentina|chile|colombia|global|worldwide|anywhere)\b/;
+/** Palavras de cargo: um trecho com elas é o cargo, nunca a empresa. */
+const ROLE =
+  /\b(desenvolvedor|desenvolvedora|developer|dev|engineer|engenheir[oa]|programador[a]?|analista|analyst|arquitet[oa]|architect|lead|lider|gerente|manager|coordenador[a]?|especialista|specialist|estagi\w*|intern|designer|cientista|scientist|devops|sre|qa|tester|consultor[a]?)\b/;
+const isRole = (text: string) => ROLE.test(normalizeText(text));
+/** "Empresa — 4 dias / 32h" ou "Empresa (PJ, LATAM)": o nome é o que vem antes. */
+const companyName = (text: string) => text.split(/\s+[-–—•]\s+|\s+\(/)[0]!.trim();
+const isCompanyName = (text: string) => {
+  const normalized = normalizeText(text);
+  return (
+    text.length > 1 &&
+    text.length <= MAX_COMPANY &&
+    !/\d/.test(text) &&
+    !WORK_MODE.test(normalized) &&
+    !isRole(text) &&
+    !/^(confidencial|sigilos[ao]|nao informad[ao])/.test(normalized)
+  );
+};
+
+/**
+ * Lê o título de uma vaga de comunidade, como "[Remoto] Desenvolvedor(a) Backend Pleno - Empresa"
+ * ou "Dev Java Pleno | Empresa". Sem um padrão reconhecível, a empresa fica de fora em vez de
+ * virar um palpite. Os repositórios são brasileiros: sem outro país no local, a vaga é no Brasil.
+ */
+export function parseCommunityTitle(
+  raw: string,
+  labels: readonly string[] = [],
+): { title: string; company: string | null; location: string; remote: boolean } {
+  let rest = raw.replace(/\s+/g, ' ').trim();
+  // Pode haver mais de um: "[Híbrido] [São Paulo] Tech Lead".
+  const places: string[] = [];
+  for (let bracket; (bracket = /^[^\p{L}\p{N}[]*\[([^\]]{1,80})\]\s*/u.exec(rest));) {
+    places.push(bracket[1]!.trim());
+    rest = rest.slice(bracket[0].length);
+  }
+  const place = places.join(' - ');
+
+  // O que vem depois de "|" costuma ser formato, salário ou recrutadora: não vira empresa.
+  const [main = ''] = rest.split(/\s+\|\s+/);
+  let title = main;
+  let company: string | null = null;
+
+  // "... na Empresa" ou "... at Empresa": a palavra seguinte com maiúscula evita "no time de dados".
+  const preposition = /\s(?:na|no|at|@)\s+(\p{Lu}[^|]*)$/u.exec(main);
+  // "Presencial na Barra da Tijuca": depois do formato de trabalho, vem um lugar, não a empresa.
+  const afterWorkMode =
+    preposition !== null &&
+    WORK_MODE.test(normalizeText(main.slice(0, preposition.index).split(/\s+/).at(-1) ?? ''));
+  const dash = main.split(/\s+[-–—]\s+/);
+  if (preposition && !afterWorkMode && isCompanyName(companyName(preposition[1]!))) {
+    company = companyName(preposition[1]!);
+    title = main.slice(0, preposition.index).trim();
+  } else if (dash.length > 1 && !isRole(dash[0]!) && isRole(dash[1]!) && isCompanyName(dash[0]!)) {
+    // "Empresa - Desenvolvedor Fullstack Sênior"
+    company = dash[0]!.trim();
+    title = dash.slice(1).join(' - ').trim();
+  } else if (dash.length > 1 && isCompanyName(companyName(dash.at(-1)!))) {
+    // "Desenvolvedor(a) Backend Pleno - Empresa"
+    company = companyName(dash.at(-1)!);
+    title = dash.slice(0, -1).join(' - ').trim();
+  }
+
+  const placeText = normalizeText(place);
+  const labelTexts = labels.map(labelText);
+  const remote = /\bremot/.test(placeText) || labelTexts.some((label) => /^remot/.test(label));
+  const kind = labelTexts.find((label) => /^(remot|hibrid|presencial)/.test(label));
+  const where = place || (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) : '');
+  const whereText = normalizeText(where);
+  const location =
+    /\b(brasil|brazil)\b/.test(whereText) || FOREIGN.test(whereText)
+      ? where
+      : [where, 'Brasil'].filter(Boolean).join(', ');
+
+  return { title: title.replace(/[\s|–—-]+$/, '').trim(), company, location, remote };
 }
 
 const BRAZIL =

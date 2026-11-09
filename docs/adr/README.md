@@ -29,3 +29,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0023 | [Avaliação de IA com armadilhas](0023-avaliacao-de-ia.md) | Proposto |
 | 0024 | [Vagas automáticas por um catálogo de fontes públicas](0024-vagas-automaticas.md) | Proposto |
 | 0025 | [Conferência ATS e aprendizado com as correções](0025-analise-ats.md) | Proposto |
+| 0026 | [Novas fontes de vagas: Ashby, SmartRecruiters e comunidades no GitHub](0026-novas-fontes-de-vagas.md) | Proposto |

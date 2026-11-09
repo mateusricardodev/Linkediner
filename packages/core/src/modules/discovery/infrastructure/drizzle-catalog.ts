@@ -96,14 +96,15 @@ export class DrizzleCatalogRepository implements CatalogRepository {
       let updated = 0;
 
       for (const posting of postings) {
-        const rawText = buildRawText(posting, board.company);
+        const company = posting.company ?? board.company;
+        const rawText = buildRawText(posting, company);
         const hash = contentHash(rawText);
         const previous = known.get(posting.externalId);
         if (previous === undefined) inserted++;
         else if (previous !== hash) updated++;
         const source = {
           title: posting.title,
-          company: board.company,
+          company,
           location: posting.location,
           remoteHint: posting.remoteHint,
           applyUrl: posting.applyUrl,

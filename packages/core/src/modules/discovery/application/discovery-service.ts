@@ -6,7 +6,12 @@ import {
   rankJob,
   type FeedbackRepository,
 } from '../../matching';
-import type { CareerGoal, FactRepository, ProfileRepository } from '../../profile';
+import {
+  normalizeText,
+  type CareerGoal,
+  type FactRepository,
+  type ProfileRepository,
+} from '../../profile';
 import { AppError, newId } from '../../shared';
 import { matchesGoal } from '../domain/discovery';
 import type { CatalogPosting, CatalogReader } from './ports';
@@ -95,11 +100,19 @@ export class DiscoveryService {
         (b.posting.postedAt?.getTime() ?? 0) - (a.posting.postedAt?.getTime() ?? 0) ||
         a.posting.id.localeCompare(b.posting.id),
     );
+    // A mesma vaga pode ser publicada em mais de uma comunidade: fica a publicação mais recente.
+    const seen = new Set<string>();
+    const unique = items.filter(({ posting }) => {
+      const key = normalizeText(`${posting.title}|${posting.company}`);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     return {
       state: 'ready',
       goal: { id: goal.id, title: goal.title },
-      items: items.slice(0, FEED_LIMIT),
-      total: items.length,
+      items: unique.slice(0, FEED_LIMIT),
+      total: unique.length,
       lastSyncedAt,
     };
   }

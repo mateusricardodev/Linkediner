@@ -108,7 +108,13 @@ export function hiddenJobs(jobs: readonly Job[], recommendations: Recommendation
   return jobs.filter((job) => job.status === 'ready' && !shown.has(job.id));
 }
 
-const SOURCE_LABELS: Record<string, string> = { greenhouse: 'Greenhouse', lever: 'Lever' };
+const SOURCE_LABELS: Record<string, string> = {
+  greenhouse: 'Greenhouse',
+  lever: 'Lever',
+  ashby: 'Ashby',
+  smartrecruiters: 'SmartRecruiters',
+  github: 'comunidade no GitHub',
+};
 
 export const sourceLabel = (source: string) => SOURCE_LABELS[source] ?? source;
 
