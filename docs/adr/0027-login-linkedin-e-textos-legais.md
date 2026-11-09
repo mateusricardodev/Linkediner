@@ -28,7 +28,7 @@ O ADR 0009 já previa o login com LinkedIn, e a API o ativa quando há ID e segr
 ## Limitações conhecidas
 
 - **Textos sem revisão jurídica.** A revisão não é viável agora. Antes de abrir para usuários reais, um advogado deve revisar os dois textos.
-- **Dados do controlador a preencher** em `lib/legal.ts`: nome, CNPJ, e-mail de privacidade e cidade do foro.
+- **Controlador pessoa física** (preenchido em 2026-11-09). O CPF não é publicado: nome e e-mail de contato bastam. Ao abrir uma empresa, troque nome e CNPJ em `lib/legal.ts` e a versão dos textos.
 - **A frase sobre treinamento de IA** só vale com um plano do provedor que não use os dados enviados. No plano gratuito do Gemini, isso não é verdade.
 - **Exportar dados e excluir a conta** existem na API, mas não há tela: a política indica o e-mail para esses pedidos.
 - A versão está em dois lugares (`lib/legal.ts` e `CURRENT_CONSENT_VERSIONS`), porque o front não importa o core. Mudar um exige mudar o outro.
