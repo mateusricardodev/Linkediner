@@ -1,5 +1,5 @@
 // Gera src/generated/tokens.css a partir de tokens/*.json (fonte da verdade).
-// Tema claro em :root; tema escuro via [data-theme="dark"] e prefers-color-scheme.
+// Tema claro em :root, sempre o padrão. O escuro só vale com [data-theme="dark"]: não segue o sistema.
 import StyleDictionary from 'style-dictionary';
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 
@@ -29,8 +29,7 @@ const build = async (theme, selector, filter) => {
 const isSemanticColor = (t) => t.path[0] === 'color';
 const light = await build('light', ':root', undefined);
 const dark = await build('dark', ':root[data-theme="dark"]', isSemanticColor);
-const darkBody = dark.slice(dark.indexOf('{') + 1, dark.lastIndexOf('}'));
-const out = `/* Gerado por scripts/build-tokens.mjs. Não edite à mão: altere packages/ui/tokens/*.json. */\n${light.replace(/\/\*\*[\s\S]*?\*\/\n/, '')}\n${dark.replace(/\/\*\*[\s\S]*?\*\/\n/, '')}\n@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"]) {${darkBody}}\n}\n`;
+const out = `/* Gerado por scripts/build-tokens.mjs. Não edite à mão: altere packages/ui/tokens/*.json. */\n${light.replace(/\/\*\*[\s\S]*?\*\/\n/, '')}\n${dark.replace(/\/\*\*[\s\S]*?\*\/\n/, '')}`;
 await mkdir('src/generated', { recursive: true });
 await writeFile('src/generated/tokens.css', out);
 await rm(tmp, { recursive: true, force: true });
