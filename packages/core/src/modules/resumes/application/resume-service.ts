@@ -87,7 +87,11 @@ export class ResumeService {
         item.status = 'removed';
         return;
       }
-      if (decision.text !== undefined) item.text = decision.text;
+      if (decision.text !== undefined && decision.text !== item.text) {
+        // A primeira versão gerada fica guardada: é com ela que a próxima geração aprende.
+        item.originalText ??= item.text;
+        item.text = decision.text;
+      }
       if (item.status === 'suggested' || decision.text !== undefined)
         confirmedSuggestion = item.text;
       item.status = 'user_confirmed';

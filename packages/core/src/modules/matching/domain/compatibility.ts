@@ -146,6 +146,22 @@ export function namedTerms(text: string): string[] {
   return [...new Set(names)];
 }
 
+/**
+ * Tecnologias e idiomas conhecidos citados num texto, com a grafia original ("GraphQL", "AWS").
+ * Só nomes da lista conhecida: um nome próprio qualquer pode ser a empresa ou um produto interno.
+ */
+export function technologyTerms(text: string): { term: string; label: string }[] {
+  const words = joinPhrases(text).match(/[\p{L}\p{N}+#.]+/gu) ?? [];
+  const found = new Map<string, string>();
+  for (const word of words) {
+    const [token] = tokenize(word);
+    if (token && KNOWN_NAMES.has(token) && !found.has(token)) {
+      found.set(token, word.replace(/\.+$/, ''));
+    }
+  }
+  return [...found].map(([term, label]) => ({ term, label }));
+}
+
 /** A empresa e as datas ficam de fora: ter trabalhado no Google não comprova saber "Google Cloud". */
 const COMPARABLE_FIELDS = new Set([
   'name',

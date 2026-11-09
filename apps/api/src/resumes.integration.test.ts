@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { DrizzleAiGenerationLog, FakeAiProvider, generateResumeV1 } from '@linkediner/core/ai';
+import { DrizzleAiGenerationLog, FakeAiProvider, generateResumeV2 } from '@linkediner/core/ai';
 import { DrizzleFactRepository } from '@linkediner/core/profile';
 import {
   DrizzleResumeRepository,
@@ -45,7 +45,7 @@ beforeAll(async () => {
     facts,
     consents: t.consents,
     ai,
-    prompt: generateResumeV1,
+    prompt: generateResumeV2,
     generations: new DrizzleAiGenerationLog(db, t.cipher),
     quota: t.quota,
     audit: t.audit,
@@ -117,7 +117,7 @@ describe('currículo melhorado', () => {
     );
     expect(rows.at(-1)).toMatchObject({
       prompt_id: 'generate_resume',
-      prompt_version: 1,
+      prompt_version: 2,
       validation: { suggested: 1 },
     });
   });
@@ -162,5 +162,54 @@ describe('currículo melhorado', () => {
     const resume = await generated(cookie);
     expect((await t.call(cookie, 'DELETE', `/v1/resumes/${resume.id}`)).statusCode).toBe(204);
     expect((await t.call(cookie, 'GET', `/v1/resumes/${resume.id}`)).statusCode).toBe(404);
+  });
+});
+
+describe('conferência ATS e correções', () => {
+  it('confere o currículo e aponta melhorias pontuais nas frases', async () => {
+    const cookie = await userWithFacts('ats@example.com');
+    const resume = await generated(cookie);
+    const res = await t.call(cookie, 'GET', `/v1/resumes/${resume.id}/ats`);
+    expect(res.statusCode).toBe(200);
+    const report = res.json();
+    expect(report.total).toBeGreaterThan(0);
+    const failing = report.checks.filter((c: { ok: boolean }) => !c.ok);
+    expect(failing.map((c: { id: string }) => c.id)).toEqual(
+      expect.arrayContaining(['headline', 'linkedin', 'skills']),
+    );
+    expect(failing.every((c: { recommendation: string | null }) => c.recommendation)).toBe(true);
+
+    const other = await t.signUp('ats-outra@example.com');
+    expect((await t.call(other, 'GET', `/v1/resumes/${resume.id}/ats`)).statusCode).toBe(404);
+  });
+
+  it('a correção guarda o texto gerado, cifrado, e ensina a próxima geração', async () => {
+    const cookie = await userWithFacts('aprende@example.com');
+    const first = await generated(cookie);
+    const [grounded, suggestion] = first.content.experiences[0].bullets;
+    const base = `/v1/resumes/${first.id}/items`;
+    await t.call(cookie, 'PATCH', `${base}/${grounded.id}`, {
+      action: 'confirm',
+      text: 'Reduzi o tempo de build do app em 40% com cache',
+    });
+    await t.call(cookie, 'PATCH', `${base}/${suggestion.id}`, { action: 'remove' });
+
+    // O texto original não aparece em claro no banco.
+    const { rows } = await t.db.pool.query('SELECT content::text AS c FROM resumes WHERE id = $1', [
+      first.id,
+    ]);
+    expect(rows[0].c).not.toContain('Reduzi o tempo de build em 40%');
+
+    const calls = ai.calls.length;
+    await generated(cookie);
+    expect(ai.calls[calls]?.promptInput.corrections).toEqual({
+      edited: [
+        {
+          before: 'Reduzi o tempo de build em 40%',
+          after: 'Reduzi o tempo de build do app em 40% com cache',
+        },
+      ],
+      removed: ['Reduzi custos em 90%'],
+    });
   });
 });

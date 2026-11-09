@@ -17,8 +17,11 @@ export function ReviewItem({
   readOnly = false,
   maxLength = 600,
   createsFacts = false,
+  tips,
 }: {
   item: ResumeItem;
+  /** Melhorias pontuais da conferência ATS para esta frase. */
+  tips?: string[];
   /** Onde gravar a decisão sobre esta frase. */
   path: (itemId: string) => string;
   onChanged: () => void;
@@ -88,7 +91,10 @@ export function ReviewItem({
   }
 
   return (
-    <li className={suggested ? `${styles.item} ${styles.suggested}` : styles.item}>
+    <li
+      id={`frase-${item.id}`}
+      className={suggested ? `${styles.item} ${styles.suggested}` : styles.item}
+    >
       <div className={styles.itemHead}>
         <p className={removed ? `${styles.itemText} ${styles.removedText}` : styles.itemText}>
           {item.text}
@@ -99,6 +105,13 @@ export function ReviewItem({
       </div>
       {suggested && item.reason ? (
         <p className={styles.reason}>{SUGGESTION_REASONS[item.reason]}</p>
+      ) : null}
+      {tips?.length && !removed ? (
+        <ul className={styles.tips} aria-label="Melhorias para os sistemas de recrutamento">
+          {tips.map((tip) => (
+            <li key={tip}>{tip}</li>
+          ))}
+        </ul>
       ) : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
       {readOnly ? null : (

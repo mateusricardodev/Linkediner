@@ -1,19 +1,21 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import {
+  AtsReportDto,
   DecideResumeItemBody,
   ExportResumeQuery,
   ProblemDetails,
   ResumeDto,
 } from '@linkediner/contracts';
 import type { ConsentService } from '@linkediner/core/privacy';
-import type { Resume, ResumeService } from '@linkediner/core/resumes';
+import type { Resume, ResumeAtsService, ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
 
 export interface ResumeDeps {
   resumes: ResumeService;
+  resumeAts: ResumeAtsService;
   resumeExport: ResumeExportService;
   consents: Pick<ConsentService, 'status'>;
 }
@@ -78,6 +80,21 @@ export const resumeRoutes =
         },
       },
       async (req) => toDto(await deps.resumes.get(actorOf(req).userId, req.params.id)),
+    );
+
+    app.get(
+      '/v1/resumes/:id/ats',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary:
+            'Conferência pelo padrão dos sistemas de recrutamento (ATS), com melhorias pontuais',
+          params: Params,
+          response: { 200: AtsReportDto, 409: ProblemDetails, ...errors },
+        },
+      },
+      async (req) => deps.resumeAts.analyze(actorOf(req).userId, req.params.id),
     );
 
     app.patch(

@@ -45,6 +45,7 @@ import {
 import {
   DrizzleResumeRepository,
   RESUMES_GENERATE_QUEUE,
+  ResumeAtsService,
   ResumeService,
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
@@ -205,6 +206,11 @@ const app = await buildServer({
       audit,
       quota,
     ),
+    resumeAts: new ResumeAtsService({
+      resumes: resumeRepository,
+      profiles: profileRepository,
+      jobs: jobRepository,
+    }),
     resumeExport: new ResumeExportService({
       resumes: resumeRepository,
       users: userReader,

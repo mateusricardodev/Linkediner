@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import type {
+  AtsReportDto,
   ApplicationDetail as ApplicationDetailSchema,
   ApplicationDto,
   ApplicationMaterialDto,
@@ -37,6 +38,7 @@ export type ProfileFact = z.infer<typeof ProfileFactDto>;
 export type Resume = z.infer<typeof ResumeDto>;
 export type ResumeContent = z.infer<typeof ResumeContentDto>;
 export type ResumeItem = z.infer<typeof ResumeItemDto>;
+export type AtsReport = z.infer<typeof AtsReportDto>;
 export type Job = z.infer<typeof JobDto>;
 export type JobMatch = z.infer<typeof JobMatchResponse>;
 export type FeedbackReason = z.infer<typeof FeedbackReasonSchema>;

@@ -6,6 +6,7 @@ import type { FactRepository } from '../../profile';
 import type { QuotaGate } from '../../shared';
 import {
   buildResume,
+  collectCorrections,
   RESUME_FAILURES,
   ResumeOutput,
   resumeUsageKey,
@@ -14,7 +15,7 @@ import {
 import type { ResumeRepository } from './ports/resume-repository';
 
 export interface GenerateResumeDeps {
-  resumes: Pick<ResumeRepository, 'find' | 'saveDraft' | 'markFailed'>;
+  resumes: Pick<ResumeRepository, 'find' | 'list' | 'saveDraft' | 'markFailed'>;
   facts: Pick<FactRepository, 'list'>;
   consents: Pick<ConsentService, 'status'>;
   ai: AiProvider;
@@ -49,11 +50,14 @@ export class GenerateResume {
 
     // Só o necessário: sem os trechos do documento original.
     const factsForAi = facts.map(({ id, type, data }) => ({ id, type, data }));
+    // O que a pessoa corrigiu antes ensina o estilo, mas nunca comprova nada (ADR 0025).
+    const corrections = collectCorrections(await this.deps.resumes.list(userId), resumeId);
+    const promptInput = { facts: factsForAi, corrections };
     try {
       const { data, usage } = await this.deps.ai.generateStructured({
         task: 'generate_resume',
         prompt: this.deps.prompt,
-        promptInput: { facts: factsForAi },
+        promptInput,
         schema: ResumeOutput,
       });
       const { content, report } = buildResume(data, facts);
@@ -62,7 +66,7 @@ export class GenerateResume {
         userId,
         task: 'generate_resume',
         usage,
-        inputHash: createHash('sha256').update(JSON.stringify(factsForAi)).digest('hex'),
+        inputHash: createHash('sha256').update(JSON.stringify(promptInput)).digest('hex'),
         output: data,
         validation: { ...report },
       });
@@ -72,7 +76,12 @@ export class GenerateResume {
         action: 'resume.generated',
         entityType: 'resume',
         entityId: resumeId,
-        metadata: { ...report, promptVersion: usage.promptVersion },
+        metadata: {
+          ...report,
+          promptVersion: usage.promptVersion,
+          correctionsEdited: corrections.edited.length,
+          correctionsRemoved: corrections.removed.length,
+        },
       });
       return 'draft';
     } catch (error) {

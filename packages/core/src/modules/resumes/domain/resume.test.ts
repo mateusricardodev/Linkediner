@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { ProfileFact } from '../../profile';
-import { buildResume, findItem, findUnsupportedTerms, type ResumeOutput } from './resume';
+import {
+  buildResume,
+  collectCorrections,
+  findItem,
+  findUnsupportedTerms,
+  type Resume,
+  type ResumeItem,
+  type ResumeOutput,
+} from './resume';
 
 const fact = (
   id: string,
@@ -138,5 +146,74 @@ describe('buildResume', () => {
     expect(findItem(content, content.summary[0]!.id)?.text).toBe('Sou engenheira');
     expect(findItem(content, content.experiences[0]!.bullets[0]!.id)?.text).toBe('Reduzi em 40%');
     expect(findItem(content, 'nao-existe')).toBeUndefined();
+  });
+});
+
+describe('collectCorrections', () => {
+  const item = (text: string, o: Partial<ResumeItem> = {}): ResumeItem => ({
+    id: text,
+    text,
+    factIds: [],
+    status: 'grounded',
+    reason: null,
+    ...o,
+  });
+  const resume = (id: string, day: number, bullets: ResumeItem[]): Resume => ({
+    id,
+    status: 'draft',
+    failureCode: null,
+    approvedAt: null,
+    createdAt: new Date(day * 86_400_000),
+    content: {
+      summary: [],
+      experiences: [
+        {
+          factId: 'e1',
+          company: null,
+          title: null,
+          startDate: null,
+          endDate: null,
+          location: null,
+          bullets,
+        },
+      ],
+      skills: [],
+      education: [],
+      certifications: [],
+      projects: [],
+      languages: [],
+    },
+  });
+
+  it('pega as correções mais recentes primeiro, sem repetir e sem o currículo atual', () => {
+    const old = resume('a', 1, [
+      item('Fiz um sistema', { status: 'removed' }),
+      item('Criei a API de pagamentos', { originalText: 'Responsável pela API' }),
+    ]);
+    const recent = resume('b', 2, [
+      item('fiz um sistema', { status: 'removed' }),
+      item('Liderei 3 pessoas', { originalText: 'Gerenciei uma equipe', status: 'user_confirmed' }),
+      item('Igual', { originalText: 'Igual' }),
+    ]);
+    const current = resume('c', 3, [item('Atual', { status: 'removed' })]);
+    expect(collectCorrections([old, recent, current], 'c')).toEqual({
+      edited: [
+        { before: 'Gerenciei uma equipe', after: 'Liderei 3 pessoas' },
+        { before: 'Responsável pela API', after: 'Criei a API de pagamentos' },
+      ],
+      removed: ['fiz um sistema'],
+    });
+  });
+
+  it('frase corrigida e depois removida conta como removida, com o texto gerado', () => {
+    const r = resume('a', 1, [
+      item('Versão minha', { originalText: 'Versão da IA', status: 'removed' }),
+    ]);
+    expect(collectCorrections([r], 'x')).toEqual({ edited: [], removed: ['Versão da IA'] });
+  });
+
+  it('respeita o limite de cada tipo', () => {
+    const bullets = Array.from({ length: 15 }, (_, i) => item(`Frase ${i}`, { status: 'removed' }));
+    expect(collectCorrections([resume('a', 1, bullets)], 'x', 10).removed).toHaveLength(10);
   });
 });
