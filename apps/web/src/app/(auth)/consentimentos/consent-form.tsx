@@ -14,18 +14,21 @@ const OPTIONS = [
     purpose: 'terms',
     required: true,
     title: 'Termos de uso',
+    href: '/termos',
     text: 'Obrigatório para usar o LinkedIner. O LinkedIner ajuda na candidatura, mas não garante entrevista nem contratação.',
   },
   {
     purpose: 'privacy',
     required: true,
     title: 'Política de privacidade',
+    href: '/privacidade',
     text: 'Obrigatório. Seus documentos ficam guardados por até 30 dias, e você pode exportar ou apagar seus dados quando quiser.',
   },
   {
     purpose: 'ai_processing',
     required: false,
     title: 'Análise por IA',
+    href: '/privacidade#ia',
     text: 'Opcional. Permite enviar o texto do seu currículo e das vagas ao provedor de IA, sem contato e sem dados sensíveis. Sem isso, a análise e a geração de material ficam desligadas.',
   },
 ] as const;
@@ -89,7 +92,7 @@ export function ConsentForm() {
           {me.syntheticDataOnly ? <SyntheticDataNotice /> : null}
           <fieldset className={styles.group}>
             <legend className="visually-hidden">Autorizações</legend>
-            {OPTIONS.map(({ purpose, title, text, required }) => (
+            {OPTIONS.map(({ purpose, title, text, required, href }) => (
               <label key={purpose} className={styles.option}>
                 <input
                   type="checkbox"
@@ -101,7 +104,12 @@ export function ConsentForm() {
                 />
                 <span>
                   <span className={styles.optionTitle}>{title}</span>
-                  <span className={styles.optionText}>{text}</span>
+                  <span className={styles.optionText}>
+                    {text} {/* Em outra aba, para não perder o que já foi marcado. */}
+                    <a href={href} target="_blank" rel="noopener noreferrer">
+                      Ler o texto completo
+                    </a>
+                  </span>
                 </span>
               </label>
             ))}

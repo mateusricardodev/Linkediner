@@ -23,11 +23,28 @@ const PROVIDERS = (process.env.NEXT_PUBLIC_AUTH_PROVIDERS ?? '')
 const errorMessage = (cause: unknown) =>
   cause instanceof ApiError ? cause.message : 'Algo deu errado. Tente de novo em instantes.';
 
+/** Erros com que o login social volta para esta tela, no parâmetro `error`. */
+const SOCIAL_ERRORS: Record<string, string> = {
+  // O e-mail já tem conta com senha. Ligar as duas sem confirmar o e-mail abriria a conta de alguém.
+  account_not_linked:
+    'Já existe uma conta com este e-mail. Entre com e-mail e senha para continuar.',
+  access_denied: 'O login foi cancelado. Você pode tentar de novo ou entrar com e-mail e senha.',
+  user_cancelled_login:
+    'O login foi cancelado. Você pode tentar de novo ou entrar com e-mail e senha.',
+  user_cancelled_authorize:
+    'O login foi cancelado. Você pode tentar de novo ou entrar com e-mail e senha.',
+  email_not_found: 'O provedor não informou o seu e-mail. Entre com e-mail e senha.',
+};
+const socialError = (code: string | null) =>
+  code
+    ? (SOCIAL_ERRORS[code] ?? 'Não foi possível entrar com essa conta. Tente de novo em instantes.')
+    : null;
+
 export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const router = useRouter();
   const params = useSearchParams();
   const next = safePath(params.get('next'));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => socialError(params.get('error')));
   const [busy, setBusy] = useState(false);
   const signUp = mode === 'sign-up';
 
@@ -59,7 +76,12 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     try {
       const { url } = await api<{ url: string }>('/v1/auth/sign-in/social', {
         method: 'POST',
-        body: { provider, callbackURL: `${window.location.origin}${next}` },
+        body: {
+          provider,
+          callbackURL: `${window.location.origin}${next}`,
+          // Em caso de erro, a pessoa volta para esta tela, e não para uma página da API.
+          errorCallbackURL: `${window.location.origin}${window.location.pathname}?next=${encodeURIComponent(next)}`,
+        },
       });
       window.location.assign(url);
     } catch (cause) {
@@ -125,7 +147,11 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         {signUp ? 'Já tem conta? ' : 'Ainda não tem conta? '}
         <Link href={otherHref}>{signUp ? 'Entrar' : 'Criar conta grátis'}</Link>
       </p>
-      <p className={styles.footer}>Seus documentos não são usados para treinar IA.</p>
+      <p className={styles.footer}>
+        Ao continuar, você concorda com os <Link href="/termos">Termos de Uso</Link> e a{' '}
+        <Link href="/privacidade">Política de Privacidade</Link>. Seus documentos não são usados
+        para treinar IA.
+      </p>
     </div>
   );
 }

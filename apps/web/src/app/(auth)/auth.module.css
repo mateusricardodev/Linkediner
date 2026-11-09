@@ -135,3 +135,8 @@
   font-size: var(--type-callout-size);
   line-height: var(--type-callout-line);
 }
+
+.optionText a {
+  color: var(--color-text-accent);
+  white-space: nowrap;
+}

@@ -17,8 +17,9 @@ export const REQUIRED_PURPOSES: readonly ConsentPurpose[] = ['terms', 'privacy']
  * troque a versão: quem aceitou a anterior precisa aceitar de novo.
  */
 export const CURRENT_CONSENT_VERSIONS: Record<ConsentPurpose, string> = {
-  terms: '2026-11-v1',
-  privacy: '2026-11-v1',
+  // v2: primeiro texto publicado em /termos e /privacidade (apps/web/src/lib/legal.ts).
+  terms: '2026-11-v2',
+  privacy: '2026-11-v2',
   ai_processing: '2026-11-v1',
   auto_apply: '2026-11-v1',
   marketing: '2026-11-v1',

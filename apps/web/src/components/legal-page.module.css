@@ -1,0 +1,228 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  border-bottom: 1px solid var(--color-border-separator);
+}
+
+.headerInner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.mark {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  font-size: var(--type-footnote-size);
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  gap: var(--spacing-lg);
+  font-size: var(--type-subheadline-size);
+}
+
+.nav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--color-text-primary);
+}
+
+.main {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--spacing-5xl) var(--spacing-lg) 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  line-height: 1.6;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.meta {
+  margin: calc(var(--spacing-md) * -1) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--type-footnote-size);
+}
+
+.intro {
+  color: var(--color-text-secondary);
+  font-size: 17px;
+}
+
+.intro p {
+  margin: 0 0 var(--spacing-md);
+}
+
+.toc {
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.tocTitle {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--type-caption-size);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: var(--spacing-xl);
+  columns: 2;
+  column-gap: var(--spacing-3xl);
+  font-size: var(--type-callout-size);
+}
+
+.toc a {
+  color: var(--color-text-accent);
+  text-decoration: none;
+}
+
+.section {
+  scroll-margin-top: var(--spacing-xl);
+}
+
+.section h2 {
+  margin: var(--spacing-xl) 0 var(--spacing-sm);
+  font-size: var(--type-title-3-size);
+  line-height: var(--type-title-3-line);
+  font-weight: 600;
+}
+
+.section h3 {
+  margin: var(--spacing-lg) 0 var(--spacing-xs);
+  font-size: var(--type-headline-size);
+  font-weight: 600;
+}
+
+.section p,
+.section ul {
+  margin: 0 0 var(--spacing-md);
+}
+
+.section ul {
+  padding-left: var(--spacing-xl);
+}
+
+.section li + li {
+  margin-top: var(--spacing-xs);
+}
+
+.section a {
+  color: var(--color-text-accent);
+}
+
+.section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--spacing-md);
+  font-size: var(--type-callout-size);
+}
+
+.section th,
+.section td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-separator);
+  text-align: left;
+  vertical-align: top;
+}
+
+.section th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.footer {
+  margin-top: auto;
+  border-top: 1px solid var(--color-border-separator);
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  font-size: var(--type-footnote-size);
+  color: var(--color-text-tertiary);
+}
+
+.footerNav {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.footerNav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .toc ol {
+    columns: 1;
+  }
+
+  .nav {
+    gap: var(--spacing-md);
+  }
+
+  .section table,
+  .section thead,
+  .section tbody,
+  .section tr,
+  .section th,
+  .section td {
+    display: block;
+  }
+
+  .section thead {
+    display: none;
+  }
+
+  .section td {
+    border-bottom: 0;
+    padding: var(--spacing-2xs) 0;
+  }
+
+  .section tr {
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-border-separator);
+  }
+
+  .footer {
+    flex-direction: column;
+  }
+}

@@ -442,6 +442,8 @@ export default function Landing() {
       <footer className={styles.footer}>
         <span>© {new Date().getFullYear()} LinkedIner</span>
         <nav className={styles.footerNav} aria-label="Rodapé">
+          <Link href="/termos">Termos de Uso</Link>
+          <Link href="/privacidade">Privacidade</Link>
           <Link href="/entrar">Entrar</Link>
           <Link href={SIGN_UP}>Criar conta</Link>
         </nav>
