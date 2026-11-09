@@ -52,6 +52,8 @@ export interface AtsInput {
   linkKinds: readonly LinkKind[];
   /** Requisitos das vagas que a pessoa salvou, para achar termos que faltam no currículo. */
   jobRequirements: readonly string[][];
+  /** O currículo foi feito para uma vaga: os requisitos são só dela. */
+  targeted?: boolean;
 }
 
 /** Acima disso, um tópico passa de duas linhas no arquivo exportado. */
@@ -247,8 +249,8 @@ export function analyzeAts(input: AtsInput): AtsReport {
       check(
         'job_keywords',
         keywords.length === 0,
-        'Termos das vagas que você salvou',
-        `As vagas que você salvou pedem ${keywords.join(', ')}, e isso não aparece no currículo. Se você tem essa experiência, inclua; se não tem, não inclua.`,
+        input.targeted ? 'Termos da vaga escolhida' : 'Termos das vagas que você salvou',
+        `${input.targeted ? 'A vaga escolhida pede' : 'As vagas que você salvou pedem'} ${keywords.join(', ')}, e isso não aparece no currículo. Se você tem essa experiência, inclua; se não tem, não inclua.`,
       ),
     );
   }

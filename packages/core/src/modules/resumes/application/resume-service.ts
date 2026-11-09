@@ -1,9 +1,16 @@
 import type { AuditLog } from '../../audit';
 import type { ConsentService } from '../../privacy';
+import type { JobRepository } from '../../jobs';
 import type { FactRepository } from '../../profile';
 import { AppError, newId, systemClock, type Clock, type QuotaGate } from '../../shared';
 import { pendingSuggestions } from '../domain/export-model';
-import { findItem, RESUME_FAILURES, resumeUsageKey, type Resume } from '../domain/resume';
+import {
+  findItem,
+  RESUME_FAILURES,
+  resumeUsageKey,
+  type Resume,
+  type ResumeOptions,
+} from '../domain/resume';
 import type { ResumeQueue, ResumeRepository } from './ports/resume-repository';
 
 export type ItemDecision = { action: 'confirm'; text?: string } | { action: 'remove' };
@@ -18,11 +25,15 @@ export class ResumeService {
     private readonly queue: ResumeQueue,
     private readonly audit: AuditLog,
     private readonly quota: QuotaGate,
+    private readonly jobs: Pick<JobRepository, 'find'>,
     private readonly clock: Clock = systemClock,
   ) {}
 
-  /** Pede um currículo novo. A geração roda no worker. */
-  async request(userId: string): Promise<Resume> {
+  /** Pede um currículo novo, geral ou orientado por uma vaga salva. A geração roda no worker. */
+  async request(
+    userId: string,
+    options: ResumeOptions = { language: 'pt', jobId: null },
+  ): Promise<Resume> {
     const { granted } = await this.consents.status(userId);
     if (!granted.ai_processing) {
       throw new AppError(
@@ -38,12 +49,23 @@ export class ResumeService {
     if (!usable)
       throw new AppError('CONFLICT', 'Envie um currículo antes de gerar uma nova versão.');
 
+    if (options.jobId) {
+      const job = await this.jobs.find(userId, options.jobId);
+      if (!job) throw new AppError('NOT_FOUND', 'Vaga não encontrada.');
+      if (job.status !== 'ready') {
+        throw new AppError(
+          'CONFLICT',
+          'Esta vaga ainda está em análise. Tente de novo em instantes.',
+        );
+      }
+    }
+
     const existing = (await this.repo.list(userId)).find((r) => r.status === 'generating');
     if (existing) return existing;
 
     const id = newId();
     await this.quota.consume(userId, 'resume.improved', resumeUsageKey(id));
-    const resume = await this.repo.insertGenerating(userId, id);
+    const resume = await this.repo.insertGenerating(userId, id, options);
     try {
       await this.queue.enqueue({ userId, resumeId: resume.id });
     } catch {

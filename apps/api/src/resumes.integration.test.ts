@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { DrizzleAiGenerationLog, FakeAiProvider, generateResumeV2 } from '@linkediner/core/ai';
+import { DrizzleAiGenerationLog, FakeAiProvider, generateResumeV3 } from '@linkediner/core/ai';
+import { DrizzleJobRepository } from '@linkediner/core/jobs';
 import { DrizzleFactRepository } from '@linkediner/core/profile';
 import {
   DrizzleResumeRepository,
@@ -43,9 +44,10 @@ beforeAll(async () => {
   generate = new GenerateResume({
     resumes: new DrizzleResumeRepository(db, t.cipher),
     facts,
+    jobs: new DrizzleJobRepository(db),
     consents: t.consents,
     ai,
-    prompt: generateResumeV2,
+    prompt: generateResumeV3,
     generations: new DrizzleAiGenerationLog(db, t.cipher),
     quota: t.quota,
     audit: t.audit,
@@ -117,7 +119,7 @@ describe('currículo melhorado', () => {
     );
     expect(rows.at(-1)).toMatchObject({
       prompt_id: 'generate_resume',
-      prompt_version: 2,
+      prompt_version: 3,
       validation: { suggested: 1 },
     });
   });
@@ -211,5 +213,31 @@ describe('conferência ATS e correções', () => {
       ],
       removed: ['Reduzi custos em 90%'],
     });
+  });
+});
+
+describe('idioma e vaga', () => {
+  it('pede um currículo em inglês, e sem corpo continua geral em português', async () => {
+    const cookie = await userWithFacts('ingles@example.com');
+    const en = await t.call(cookie, 'POST', '/v1/resumes', { language: 'en' });
+    expect(en.statusCode).toBe(202);
+    expect(en.json()).toMatchObject({ language: 'en', jobId: null });
+    for (const job of t.resumeQueue.jobs.splice(0))
+      await generate.run(job, { isLastAttempt: true });
+    expect(ai.calls.at(-1)?.promptInput.language).toBe('en');
+
+    const other = await userWithFacts('portugues@example.com');
+    const pt = await t.call(other, 'POST', '/v1/resumes');
+    expect(pt.json()).toMatchObject({ language: 'pt', jobId: null });
+  });
+
+  it('recusa idioma desconhecido e vaga que não é da pessoa', async () => {
+    const cookie = await userWithFacts('vaga-alheia@example.com');
+    expect((await t.call(cookie, 'POST', '/v1/resumes', { language: 'es' })).statusCode).toBe(400);
+    const res = await t.call(cookie, 'POST', '/v1/resumes', {
+      language: 'pt',
+      jobId: '01960000-0000-7000-8000-0000000000aa',
+    });
+    expect(res.statusCode).toBe(404);
   });
 });

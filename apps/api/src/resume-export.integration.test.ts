@@ -53,7 +53,7 @@ async function draftFor(email: string) {
   const cookie = await t.signUp(email);
   const userId = (await t.call(cookie, 'GET', '/v1/me')).json().user.id as string;
   const id = crypto.randomUUID();
-  await resumes.insertGenerating(userId, id);
+  await resumes.insertGenerating(userId, id, { language: 'pt', jobId: null });
   await resumes.saveDraft(userId, id, content());
   return { cookie, id };
 }

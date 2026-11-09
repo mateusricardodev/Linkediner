@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FakeAiProvider, generateResumeV2, type AiGenerationRecord } from '../../ai';
+import { FakeAiProvider, generateResumeV3, type AiGenerationRecord } from '../../ai';
+import type { Job } from '../../jobs';
 import type { ProfileFact } from '../../profile';
 import { newId } from '../../shared';
 import type { Resume, ResumeContent, ResumeItem, ResumeOutput } from '../domain/resume';
@@ -21,12 +22,13 @@ const EXPERIENCE: ProfileFact = {
 function memoryRepo(initial: Resume[] = []) {
   const rows = new Map(initial.map((r) => [r.id, r]));
   const repo: ResumeRepository = {
-    insertGenerating: async (_u, id) => {
+    insertGenerating: async (_u, id, options) => {
       const row: Resume = {
         id,
         status: 'generating',
         content: null,
         failureCode: null,
+        ...options,
         approvedAt: null,
         createdAt: new Date(0),
       };
@@ -64,20 +66,49 @@ const consent = (ai_processing: boolean) => ({
 });
 const audit = { record: vi.fn(async () => {}) };
 
+const JOB = {
+  id: 'job-1',
+  source: 'manual',
+  externalJobId: null,
+  status: 'ready',
+  failureCode: null,
+  rawText: 'texto bruto da vaga, com contato do recrutador',
+  applyUrl: null,
+  createdAt: new Date(0),
+  title: 'Engenheira Backend',
+  company: 'Empresa Exemplo',
+  location: null,
+  employmentType: null,
+  salaryText: null,
+  remotePolicy: null,
+  seniority: null,
+  mustHave: ['Go', 'Kubernetes'],
+  niceToHave: [],
+} satisfies Job;
+
 describe('GenerateResume', () => {
   const generating: Resume = {
     id: 'r1',
     status: 'generating',
     content: null,
     failureCode: null,
+    language: 'pt',
+    jobId: null,
     approvedAt: null,
     createdAt: new Date(0),
   };
 
   function setup(
-    o: { consent?: boolean; facts?: ProfileFact[]; output?: ResumeOutput; others?: Resume[] } = {},
+    o: {
+      consent?: boolean;
+      facts?: ProfileFact[];
+      output?: ResumeOutput;
+      others?: Resume[];
+      job?: Job | null;
+      resume?: Partial<Resume>;
+    } = {},
   ) {
-    const { repo, rows } = memoryRepo([{ ...generating }, ...(o.others ?? [])]);
+    const { repo, rows } = memoryRepo([{ ...generating, ...o.resume }, ...(o.others ?? [])]);
     const generations: AiGenerationRecord[] = [];
     const ai = new FakeAiProvider().respond(
       'generate_resume',
@@ -94,9 +125,10 @@ describe('GenerateResume', () => {
     const use = new GenerateResume({
       resumes: repo,
       facts: { list: async () => o.facts ?? [EXPERIENCE] },
+      jobs: { find: async () => o.job ?? null },
       consents: consent(o.consent ?? true),
       ai,
-      prompt: generateResumeV2,
+      prompt: generateResumeV3,
       quota: { refund },
       generations: {
         record: async (e) => {
@@ -126,7 +158,7 @@ describe('GenerateResume', () => {
     expect(bullets.map((b) => b.status)).toEqual(['grounded', 'suggested']);
     expect(generations[0]).toMatchObject({
       task: 'generate_resume',
-      usage: { promptId: 'generate_resume', promptVersion: 2 },
+      usage: { promptId: 'generate_resume', promptVersion: 3 },
       validation: { grounded: 1, suggested: 1, discardedBullets: 0 },
     });
   });
@@ -151,6 +183,8 @@ describe('GenerateResume', () => {
       status: 'approved',
       approvedAt: new Date(0),
       failureCode: null,
+      language: 'pt',
+      jobId: null,
       createdAt: new Date(0),
       content: {
         summary: [bullet({ text: 'Sou apaixonada por tecnologia.', status: 'removed' })],
@@ -190,6 +224,54 @@ describe('GenerateResume', () => {
       ],
       removed: ['Sou apaixonada por tecnologia.'],
     });
+  });
+
+  it('escreve no idioma pedido e usa a vaga só pelo que foi analisado, sem o texto bruto', async () => {
+    const { run, ai, rows } = setup({
+      job: JOB,
+      resume: { language: 'en', jobId: JOB.id },
+      output: {
+        summary: [{ text: 'Backend engineer aiming at Engenheira Backend roles', factIds: ['e1'] }],
+        bullets: [],
+      },
+    });
+    await run();
+    const input = ai.calls[0]?.promptInput;
+    expect(input).toMatchObject({
+      language: 'en',
+      job: {
+        title: 'Engenheira Backend',
+        company: 'Empresa Exemplo',
+        mustHave: ['Go', 'Kubernetes'],
+      },
+    });
+    expect(JSON.stringify(input)).not.toContain('texto bruto');
+    // O cargo da vaga pode ser citado por inteiro: a menção não vira sugestão.
+    expect(rows.get('r1')!.content!.summary[0]).toMatchObject({ status: 'grounded' });
+  });
+
+  it('currículo em inglês não aprende com correções feitas em português', async () => {
+    const previous: Resume = {
+      id: 'r0',
+      status: 'draft',
+      language: 'pt',
+      jobId: null,
+      approvedAt: null,
+      failureCode: null,
+      createdAt: new Date(0),
+      content: {
+        summary: [{ id: 's', text: 'Frase', factIds: [], status: 'removed', reason: null }],
+        experiences: [],
+        skills: [],
+        education: [],
+        certifications: [],
+        projects: [],
+        languages: [],
+      },
+    };
+    const { run, ai } = setup({ others: [previous], resume: { language: 'en' } });
+    await run();
+    expect(ai.calls[0]?.promptInput.corrections).toEqual({ edited: [], removed: [] });
   });
 
   it('não chama a IA sem consentimento ou sem fatos', async () => {
@@ -255,7 +337,13 @@ describe('ResumeService', () => {
   });
 
   function setup(
-    o: { consent?: boolean; facts?: ProfileFact[]; queueFails?: boolean; initial?: Resume[] } = {},
+    o: {
+      consent?: boolean;
+      facts?: ProfileFact[];
+      queueFails?: boolean;
+      initial?: Resume[];
+      jobs?: Job[];
+    } = {},
   ) {
     const { repo, rows } = memoryRepo(o.initial);
     const addConfirmed = vi.fn(async () => {});
@@ -270,6 +358,7 @@ describe('ResumeService', () => {
       { enqueue },
       audit,
       quota,
+      { find: async (_u: string, id: string) => (o.jobs ?? []).find((j) => j.id === id) ?? null },
     );
     return { service, rows, addConfirmed, enqueue, quota };
   }
@@ -278,10 +367,34 @@ describe('ResumeService', () => {
     status: 'draft',
     content: draftContent(),
     failureCode: null,
+    language: 'pt',
+    jobId: null,
     approvedAt: null,
     createdAt: new Date(0),
   });
   const bulletOf = (r: Resume, i: number) => r.content!.experiences[0]!.bullets[i]!;
+
+  it('guarda o idioma e a vaga escolhidos', async () => {
+    const { service, rows } = setup({ jobs: [JOB] });
+    const resume = await service.request(USER, { language: 'en', jobId: JOB.id });
+    expect(rows.get(resume.id)).toMatchObject({ language: 'en', jobId: JOB.id });
+  });
+
+  it('recusa vaga de outra pessoa ou ainda em análise, sem gastar o limite', async () => {
+    const missing = setup({ jobs: [] });
+    await expect(
+      missing.service.request(USER, { language: 'pt', jobId: JOB.id }),
+    ).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+    const pending = setup({ jobs: [{ ...JOB, status: 'structuring' }] });
+    await expect(
+      pending.service.request(USER, { language: 'pt', jobId: JOB.id }),
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    expect(pending.quota.consume).not.toHaveBeenCalled();
+  });
 
   it('enfileira só IDs', async () => {
     const { service, enqueue } = setup();

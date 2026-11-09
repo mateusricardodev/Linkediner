@@ -135,6 +135,14 @@ describe('conferência ATS', () => {
     expect(keywords?.recommendation).toMatch(/pedem GraphQL, Terraform, Python, e isso/);
   });
 
+  it('currículo para uma vaga fala da vaga escolhida', () => {
+    const keywords = analyzeAts(
+      input({ jobRequirements: [['GraphQL']], targeted: true }),
+    ).checks.find((c) => c.id === 'job_keywords');
+    expect(keywords).toMatchObject({ label: 'Termos da vaga escolhida' });
+    expect(keywords?.recommendation).toMatch(/^A vaga escolhida pede GraphQL/);
+  });
+
   it('sem vagas salvas, não há conferência de termos', () => {
     expect(analyzeAts(input()).checks.map((c) => c.id)).not.toContain('job_keywords');
   });

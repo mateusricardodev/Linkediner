@@ -1,6 +1,6 @@
 import { and, asc, eq, schema, withUserContext, type Database } from '@linkediner/db';
 import type { FieldCipher, UserCipher } from '../../crypto';
-import type { Resume, ResumeContent } from '../domain/resume';
+import type { Resume, ResumeContent, ResumeOptions } from '../domain/resume';
 import type { ResumeRepository } from '../application/ports/resume-repository';
 
 const { resumes } = schema;
@@ -10,6 +10,8 @@ const CONTENT = 'resumes.content';
 const toResume = (c: UserCipher, r: typeof resumes.$inferSelect): Resume => ({
   id: r.id,
   status: r.status,
+  language: r.language === 'en' ? 'en' : 'pt',
+  jobId: r.jobId,
   content: c.openJson<ResumeContent | null>(CONTENT, r.content) ?? null,
   failureCode: r.failureCode,
   approvedAt: r.approvedAt,
@@ -26,10 +28,13 @@ export class DrizzleResumeRepository implements ResumeRepository {
     return and(eq(resumes.id, id), eq(resumes.userId, userId));
   }
 
-  async insertGenerating(userId: string, id: string) {
+  async insertGenerating(userId: string, id: string, options: ResumeOptions) {
     const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
-      const [row] = await tx.insert(resumes).values({ id, userId }).returning();
+      const [row] = await tx
+        .insert(resumes)
+        .values({ id, userId, language: options.language, jobId: options.jobId })
+        .returning();
       return toResume(c, row!);
     });
   }

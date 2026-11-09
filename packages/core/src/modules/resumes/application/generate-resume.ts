@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { AiGenerationLog, AiProvider, VersionedPrompt } from '../../ai';
 import type { AuditLog } from '../../audit';
+import type { JobRepository } from '../../jobs';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
 import type { QuotaGate } from '../../shared';
@@ -17,6 +18,7 @@ import type { ResumeRepository } from './ports/resume-repository';
 export interface GenerateResumeDeps {
   resumes: Pick<ResumeRepository, 'find' | 'list' | 'saveDraft' | 'markFailed'>;
   facts: Pick<FactRepository, 'list'>;
+  jobs: Pick<JobRepository, 'find'>;
   consents: Pick<ConsentService, 'status'>;
   ai: AiProvider;
   prompt: VersionedPrompt;
@@ -51,8 +53,28 @@ export class GenerateResume {
     // Só o necessário: sem os trechos do documento original.
     const factsForAi = facts.map(({ id, type, data }) => ({ id, type, data }));
     // O que a pessoa corrigiu antes ensina o estilo, mas nunca comprova nada (ADR 0025).
-    const corrections = collectCorrections(await this.deps.resumes.list(userId), resumeId);
-    const promptInput = { facts: factsForAi, corrections };
+    const corrections = collectCorrections(
+      await this.deps.resumes.list(userId),
+      resumeId,
+      undefined,
+      resume.language,
+    );
+    // A vaga só orienta o que destacar: vai sem o texto bruto, só com o que foi analisado.
+    const targetJob = resume.jobId ? await this.deps.jobs.find(userId, resume.jobId) : null;
+    const jobForAi = targetJob
+      ? {
+          title: targetJob.title,
+          company: targetJob.company,
+          mustHave: targetJob.mustHave,
+          niceToHave: targetJob.niceToHave,
+        }
+      : null;
+    const promptInput = {
+      facts: factsForAi,
+      corrections,
+      language: resume.language,
+      ...(jobForAi ? { job: jobForAi } : {}),
+    };
     try {
       const { data, usage } = await this.deps.ai.generateStructured({
         task: 'generate_resume',
@@ -60,7 +82,10 @@ export class GenerateResume {
         promptInput,
         schema: ResumeOutput,
       });
-      const { content, report } = buildResume(data, facts);
+      const { content, report } = buildResume(data, facts, [
+        targetJob?.title ?? null,
+        targetJob?.company ?? null,
+      ]);
       await this.deps.resumes.saveDraft(userId, resumeId, content);
       await this.deps.generations.record({
         userId,

@@ -1,6 +1,6 @@
 import type { BadgeTone } from '../components/ui';
 import { apiBlob } from './api';
-import type { ProfileScore, Resume, ResumeContent, ResumeItem } from './types';
+import type { Job, ProfileScore, Resume, ResumeContent, ResumeItem } from './types';
 
 export const RESUME_STATUS: Record<Resume['status'], { label: string; tone: BadgeTone }> = {
   generating: { label: 'Gerando', tone: 'info' },
@@ -8,6 +8,22 @@ export const RESUME_STATUS: Record<Resume['status'], { label: string; tone: Badg
   approved: { label: 'Aprovado', tone: 'success' },
   failed: { label: 'Não gerado', tone: 'danger' },
 };
+
+export const RESUME_LANGUAGE_LABELS: Record<Resume['language'], string> = {
+  pt: 'Português',
+  en: 'Inglês',
+};
+
+/** "Senior Backend Engineer · Empresa": como a vaga aparece nas escolhas e na lista. */
+export const jobLabel = (job: Pick<Job, 'title' | 'company'>) =>
+  [job.title ?? 'Vaga sem título', job.company].filter(Boolean).join(' · ');
+
+/** "Inglês · Para Senior Backend Engineer · Empresa": o que distingue um currículo do outro. */
+export function resumeDescription(resume: Pick<Resume, 'language' | 'jobId'>, jobs: Job[]) {
+  const job = resume.jobId ? jobs.find((item) => item.id === resume.jobId) : null;
+  const target = resume.jobId ? (job ? `Para ${jobLabel(job)}` : 'Para uma vaga apagada') : 'Geral';
+  return `${RESUME_LANGUAGE_LABELS[resume.language]} · ${target}`;
+}
 
 const FAILURE_MESSAGES: Record<string, string> = {
   no_facts: 'Não há informações suficientes no seu perfil. Envie um documento e tente de novo.',

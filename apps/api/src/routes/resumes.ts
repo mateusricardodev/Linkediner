@@ -2,6 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import {
   AtsReportDto,
+  CreateResumeBody,
   DecideResumeItemBody,
   ExportResumeQuery,
   ProblemDetails,
@@ -10,6 +11,7 @@ import {
 import type { ConsentService } from '@linkediner/core/privacy';
 import type { Resume, ResumeAtsService, ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
+import { AppError } from '@linkediner/core/shared';
 import { actorOf, requireActor } from '../plugins/auth';
 import { requireConsents } from '../plugins/require-consents';
 
@@ -47,12 +49,21 @@ export const resumeRoutes =
         config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
         schema: {
           tags,
-          summary: 'Pede um currículo melhorado. Exige o consentimento de processamento por IA',
+          summary:
+            'Pede um currículo melhorado, geral ou para uma vaga salva, em português ou inglês. Exige o consentimento de processamento por IA',
           response: { 202: ResumeDto, 409: ProblemDetails, 503: ProblemDetails, ...errors },
         },
       },
-      async (req, reply) =>
-        reply.status(202).send(toDto(await deps.resumes.request(actorOf(req).userId))),
+      async (req, reply) => {
+        // Sem corpo, o pedido vale como antes: currículo geral em português.
+        const parsed = CreateResumeBody.safeParse(req.body ?? {});
+        if (!parsed.success) {
+          throw new AppError('VALIDATION_FAILED', 'Idioma ou vaga inválidos.');
+        }
+        const { language, jobId } = parsed.data;
+        const resume = await deps.resumes.request(actorOf(req).userId, { language, jobId });
+        return reply.status(202).send(toDto(resume));
+      },
     );
 
     app.get(

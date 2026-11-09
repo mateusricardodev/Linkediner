@@ -2,7 +2,7 @@ import type { AuditLog } from '../../audit';
 import type { Profile, ProfileLink } from '../../profile';
 import { AppError } from '../../shared';
 import { toExportModel, type ExportFormat, type ResumeExportModel } from '../domain/export-model';
-import type { ResumeContent } from '../domain/resume';
+import type { ResumeContent, ResumeLanguage } from '../domain/resume';
 import type { ResumeRepository } from './ports/resume-repository';
 
 export interface ResumeRenderer {
@@ -44,10 +44,13 @@ export class ResumeExportService {
     if (resume.status !== 'approved' || !resume.content) {
       throw new AppError('CONFLICT', 'Aprove o currículo antes de exportar.');
     }
-    return this.exportContent(userId, resume.content, format, {
-      entityType: 'resume',
-      entityId: resumeId,
-    });
+    return this.exportContent(
+      userId,
+      resume.content,
+      format,
+      { entityType: 'resume', entityId: resumeId },
+      resume.language,
+    );
   }
 
   /** Gera o arquivo de um conteúdo já aprovado, como o material congelado de uma candidatura. */
@@ -56,6 +59,7 @@ export class ResumeExportService {
     content: ResumeContent,
     format: ExportFormat,
     entity: { entityType: string; entityId: string },
+    language: ResumeLanguage = 'pt',
   ) {
     const [user, profile, links, watermark] = await Promise.all([
       this.deps.users.getById(userId),
@@ -71,7 +75,7 @@ export class ResumeExportService {
         headline: profile.headline,
         links: links.map((l) => l.url),
       },
-      { watermark },
+      { watermark, language },
     );
     const bytes = await this.deps.renderers[format].render(model);
 
@@ -80,8 +84,9 @@ export class ResumeExportService {
       actorId: userId,
       action: 'resume.exported',
       ...entity,
-      metadata: { format, watermark },
+      metadata: { format, watermark, language },
     });
-    return { bytes, contentType: CONTENT_TYPES[format], fileName: `curriculo.${format}` };
+    const fileName = `${language === 'en' ? 'resume' : 'curriculo'}.${format}`;
+    return { bytes, contentType: CONTENT_TYPES[format], fileName };
   }
 }

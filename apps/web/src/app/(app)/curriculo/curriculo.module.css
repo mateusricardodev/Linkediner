@@ -418,6 +418,124 @@
   scroll-margin-top: 96px;
 }
 
+/* Pedido de currículo: escolhas à esquerda, resumo à direita */
+.generateGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.generateCard {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-md);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.generateCard > button {
+  align-self: flex-start;
+}
+
+.generateTitle,
+.previewTitle {
+  margin: 0;
+  font-size: var(--type-headline-size);
+  line-height: var(--type-headline-line);
+  font-weight: var(--type-headline-weight);
+}
+
+.choice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.choiceLabel {
+  padding: 0;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--type-subheadline-size);
+  font-weight: 500;
+}
+
+.segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: var(--spacing-2xs);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-fill);
+}
+
+.segment {
+  position: relative;
+  cursor: pointer;
+}
+
+.segment input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segment span {
+  display: block;
+  padding: var(--spacing-xs) var(--spacing-lg);
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: var(--type-callout-size);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.segment input:checked + span {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.segment input:focus-visible + span {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border-strong);
+}
+
+.previewList {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.previewList dt {
+  color: var(--color-text-tertiary);
+}
+
+.previewList dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .generateGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .resumeLink {
     transition: none;

@@ -1,8 +1,8 @@
-import type { Resume, ResumeContent } from '../../domain/resume';
+import type { Resume, ResumeContent, ResumeOptions } from '../../domain/resume';
 
 /** Toda operação usa o contexto do usuário dono (RLS). */
 export interface ResumeRepository {
-  insertGenerating(userId: string, id: string): Promise<Resume>;
+  insertGenerating(userId: string, id: string, options: ResumeOptions): Promise<Resume>;
   find(userId: string, id: string): Promise<Resume | null>;
   list(userId: string): Promise<Resume[]>;
   saveDraft(userId: string, id: string, content: ResumeContent): Promise<void>;

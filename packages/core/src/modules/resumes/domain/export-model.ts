@@ -1,5 +1,5 @@
 import type { FactData } from '../../profile';
-import type { ResumeContent, ResumeItem } from './resume';
+import type { ResumeContent, ResumeItem, ResumeLanguage } from './resume';
 
 export const EXPORT_FORMATS = ['pdf', 'docx'] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
@@ -25,8 +25,38 @@ export interface ExportExperience {
   bullets: string[];
 }
 
+/** Títulos das seções no idioma do currículo. */
+export const SECTION_TITLES: Record<
+  ResumeLanguage,
+  Record<
+    'summary' | 'experience' | 'skills' | 'education' | 'certifications' | 'projects' | 'languages',
+    string
+  >
+> = {
+  pt: {
+    summary: 'Resumo',
+    experience: 'Experiência',
+    skills: 'Competências',
+    education: 'Formação',
+    certifications: 'Certificações',
+    projects: 'Projetos',
+    languages: 'Idiomas',
+  },
+  en: {
+    summary: 'Summary',
+    experience: 'Experience',
+    skills: 'Skills',
+    education: 'Education',
+    certifications: 'Certifications',
+    projects: 'Projects',
+    languages: 'Languages',
+  },
+};
+
 /** O que vai para o arquivo, sem depender do formato. */
 export interface ResumeExportModel {
+  /** Títulos de Resumo e Experiência, que os renderizadores escrevem. */
+  titles: { summary: string; experience: string };
   name: string | null;
   headline: string | null;
   contacts: string[];
@@ -59,17 +89,19 @@ const languageLine = (d: FactData) => join([d.name, d.level], ': ');
 export function toExportModel(
   content: ResumeContent,
   owner: ExportOwner,
-  opts: { watermark: boolean },
+  opts: { watermark: boolean; language?: ResumeLanguage },
 ): ResumeExportModel {
+  const titles = SECTION_TITLES[opts.language ?? 'pt'];
   const sections: ExportSection[] = [
-    { title: 'Competências', lines: content.skills.length ? [content.skills.join(', ')] : [] },
-    { title: 'Formação', lines: content.education.map(educationLine) },
-    { title: 'Certificações', lines: content.certifications.map(certificationLine) },
-    { title: 'Projetos', lines: content.projects.map(projectLine) },
-    { title: 'Idiomas', lines: content.languages.map(languageLine) },
+    { title: titles.skills, lines: content.skills.length ? [content.skills.join(', ')] : [] },
+    { title: titles.education, lines: content.education.map(educationLine) },
+    { title: titles.certifications, lines: content.certifications.map(certificationLine) },
+    { title: titles.projects, lines: content.projects.map(projectLine) },
+    { title: titles.languages, lines: content.languages.map(languageLine) },
   ].filter((section) => section.lines.length > 0);
 
   return {
+    titles: { summary: titles.summary, experience: titles.experience },
     name: owner.name,
     headline: owner.headline,
     contacts: [owner.email, ...owner.links].filter((c): c is string => Boolean(c)),

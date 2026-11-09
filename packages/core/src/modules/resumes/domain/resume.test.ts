@@ -162,6 +162,8 @@ describe('collectCorrections', () => {
     id,
     status: 'draft',
     failureCode: null,
+    language: 'pt',
+    jobId: null,
     approvedAt: null,
     createdAt: new Date(day * 86_400_000),
     content: {

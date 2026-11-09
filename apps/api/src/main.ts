@@ -233,6 +233,7 @@ const app = await buildServer({
       await createQueue<GenerateResumeJob>(boss, RESUMES_GENERATE_QUEUE),
       audit,
       quota,
+      jobRepository,
     ),
     accountDeletion: new AccountDeletionService(
       new DrizzleAccountDeletionRepository(database.db),
