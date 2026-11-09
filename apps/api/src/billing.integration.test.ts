@@ -186,6 +186,23 @@ describe('limites', () => {
     expect(detail.json().application.state).toBe('saved');
     expect(t.materialQueue.jobs).toEqual([]);
   });
+
+  it('as vagas encontradas são só do plano pago', async () => {
+    await t.db.pool.query(`UPDATE job_sources SET status = 'active'`);
+    try {
+      const { cookie, userId } = await setup('vagas-encontradas@example.com');
+      expect((await t.call(cookie, 'GET', '/v1/discovery')).json()).toEqual({
+        state: 'upgrade_required',
+      });
+      const save = await t.call(cookie, 'POST', `/v1/discovery/${userId}/save`);
+      expect(save.statusCode).toBe(403);
+
+      expect((await webhook(userId)).statusCode).toBe(200);
+      expect((await t.call(cookie, 'GET', '/v1/discovery')).json().state).toBe('needs_goal');
+    } finally {
+      await t.db.pool.query(`UPDATE job_sources SET status = 'disabled'`);
+    }
+  });
 });
 
 describe('assinatura', () => {

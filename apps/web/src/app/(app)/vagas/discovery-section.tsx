@@ -105,6 +105,11 @@ export function DiscoverySection({ goalState }: { goalState: ReturnType<typeof u
         <Notice tone="danger">{error.message}</Notice>
       ) : !data ? (
         <Skeleton height={120} />
+      ) : data.state === 'upgrade_required' ? (
+        <p className={styles.empty}>
+          Nos planos pagos, buscamos vagas novas para o seu objetivo direto no site das empresas. No
+          seu plano, você continua importando vagas pelo texto ou pelo link.
+        </p>
       ) : data.state === 'needs_goal' ? (
         <p className={styles.empty}>
           Para buscarmos vagas, <Link href="/perfil#objetivos">defina um objetivo de carreira</Link>

@@ -61,7 +61,22 @@ async function setSource(status: 'active' | 'disabled') {
   await t.db.pool.query('UPDATE job_sources SET status = $1', [status]);
 }
 
-async function goalFor(cookie: string, body: Record<string, unknown> = {}) {
+/** Assinatura paga gravada direto, sem passar pela Stripe: aqui só importa o plano em vigor. */
+async function makePaid(cookie: string) {
+  const userId = (await t.call(cookie, 'GET', '/v1/me')).json().user.id as string;
+  await t.db.pool.query(
+    `INSERT INTO subscriptions
+       (id, user_id, plan_id, status, provider, provider_customer_id, provider_subscription_id, last_event_at)
+     SELECT gen_random_uuid(), $1::uuid, id, 'active', 'stripe', 'cus_' || $1::text, 'sub_' || $1::text, now()
+     FROM plans WHERE key = 'pro'
+     ON CONFLICT (user_id) DO NOTHING`,
+    [userId],
+  );
+}
+
+/** Objetivo de quem está no plano pago, que é quem recebe as vagas encontradas. */
+async function goalFor(cookie: string, body: Record<string, unknown> = {}, { paid = true } = {}) {
+  if (paid) await makePaid(cookie);
   const res = await t.call(cookie, 'POST', '/v1/career-goals', {
     title: 'Backend',
     seniority: 'senior',
@@ -141,6 +156,23 @@ describe('vagas automáticas', () => {
       ]);
       expect(result.items[0]).toMatchObject({ analyzed: false, score: null, source: 'greenhouse' });
       expect(result.disclaimer).toMatch(/Não indica chance de contratação/);
+    });
+
+    it('objetivo de quem está no plano gratuito não gasta análise', async () => {
+      const cookie = await t.signUp('gratuito@example.com');
+      await goalFor(cookie, {}, { paid: false });
+      // Só o objetivo gratuito fica ativo durante a rodada.
+      const { rows } = await t.db.pool.query<{ id: string }>(
+        `UPDATE career_goals SET is_active = false
+         WHERE is_active AND user_id <> (SELECT id FROM users WHERE email = 'gratuito@example.com')
+         RETURNING id`,
+      );
+      const calls = ai.calls.length;
+      await expect(structure.run()).resolves.toMatchObject({ structured: 0 });
+      expect(ai.calls.length).toBe(calls);
+      await t.db.pool.query(`UPDATE career_goals SET is_active = true WHERE id = ANY($1)`, [
+        rows.map((r) => r.id),
+      ]);
     });
 
     it('a análise roda uma vez para todo mundo, e cada um vê a sua nota', async () => {

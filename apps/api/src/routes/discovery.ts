@@ -44,7 +44,7 @@ export const discoveryRoutes =
       async (req) => {
         const { userId } = actorOf(req);
         const feed = await deps.discovery.feed(userId, req.query.goalId);
-        if (feed.state === 'disabled') return feed;
+        if (feed.state === 'disabled' || feed.state === 'upgrade_required') return feed;
         if (feed.state === 'needs_goal') {
           return { state: feed.state, lastSyncedAt: iso(feed.lastSyncedAt) };
         }

@@ -38,7 +38,7 @@ Colar vaga por vaga não é o produto desejado: as vagas precisam aparecer de ac
 - **Não é o mercado inteiro.** A lista é de 33 empresas, com tendência a vagas de tecnologia e de quem usa Greenhouse ou Lever. A tela diz isso.
 - **"Vagas escondidas" não são garantidas.** Estas vagas vêm direto do sistema da empresa, mas não há como saber se também estão no LinkedIn.
 - **Filtro por palavras:** um cargo com nome incomum pode ficar de fora, e uma vaga em local ambíguo pode entrar.
-- **O plano ainda não limita isto.** A tabela do doc 09 reserva o monitoramento (`monitoring.frequency_hours`) para os planos pagos, mas ele está aberto a todos durante a validação. É uma decisão de negócio pendente.
+- **Só nos planos pagos** (decidido em 2026-11-09). Quem não tem `monitoring.frequency_hours` no plano vê um aviso no lugar da lista, e salvar uma vaga do catálogo responde 403. A análise do worker considera só objetivos de quem tem a funcionalidade, para não gastar IA com vagas que ninguém vai ver. A frequência ainda é a mesma, de 6 horas, para todos os planos pagos: o valor do plano (24 no Pro, 6 no Avançado) ainda não muda a frequência.
 - **Consulta sem cache por pessoa:** cada abertura calcula a nota em memória. Serve para o volume atual, e deve ser revisto com muitos usuários.
 - **Prazo de análise:** uma vaga nova pode levar até 6 horas para aparecer, e mais 30 minutos para ter nota. Com muitas vagas pendentes, o teto alonga a fila.
 

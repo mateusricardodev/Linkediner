@@ -1,4 +1,5 @@
 export {
+  GRANTING_STATUSES,
   PAID_PLANS,
   grantsPlan,
   periodOf,
