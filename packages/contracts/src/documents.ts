@@ -6,6 +6,22 @@ export const DocumentStatus = z
   .meta({ id: 'DocumentStatus' });
 
 /** O caminho interno do arquivo no storage nunca é exposto. */
+export const FileCheckDto = z
+  .object({
+    version: z.string(),
+    passed: z.number().int(),
+    total: z.number().int(),
+    checks: z.array(
+      z.object({
+        id: z.string(),
+        ok: z.boolean(),
+        label: z.string(),
+        recommendation: z.string().nullable(),
+      }),
+    ),
+  })
+  .meta({ id: 'FileCheck' });
+
 export const DocumentDto = z
   .object({
     id: z.uuid(),
@@ -16,6 +32,8 @@ export const DocumentDto = z
     /** O que a conferência da análise deixou de fora, por não estar comprovado no documento. */
     discardedFacts: z.number().int(),
     droppedFields: z.number().int(),
+    /** Como um sistema de recrutamento leria o arquivo. Só para currículo. */
+    fileCheck: FileCheckDto.nullable(),
     mimeType: z.string(),
     sizeBytes: z.number().int(),
     uploadedAt: z.iso.datetime().nullable(),

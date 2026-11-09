@@ -21,6 +21,7 @@ const document = (o: Partial<DocumentRecord> = {}): DocumentRecord => ({
   objectKey: 'users/u/documents/d',
   discardedFacts: 0,
   droppedFields: 0,
+  fileCheck: null,
   mimeType: 'application/pdf',
   sizeBytes: 100,
   sha256: 'x',

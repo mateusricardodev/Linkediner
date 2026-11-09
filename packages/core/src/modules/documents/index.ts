@@ -15,7 +15,17 @@ export type {
   DocumentRepository,
   DocumentRetentionRepository,
 } from './application/ports/document-repository';
-export { DocumentService } from './application/document-service';
+export { DocumentService, type FileSignalsPort } from './application/document-service';
+export {
+  FILE_CHECK_VERSION,
+  evaluateFileCheck,
+  textSignals,
+  type FileCheck,
+  type FileCheckId,
+  type FileCheckReport,
+  type FileSignals,
+} from './domain/file-check';
+export { FileSignalsReader, sideBySideRatio } from './infrastructure/file-signals';
 export { ExpireDocuments } from './application/expire-documents';
 export { S3ObjectStorage, type S3StorageConfig } from './infrastructure/s3-object-storage';
 export {

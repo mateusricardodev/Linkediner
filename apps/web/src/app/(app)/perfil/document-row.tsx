@@ -12,6 +12,7 @@ import {
   formatDate,
 } from '../../../lib/documents';
 import type { DocumentRecord } from '../../../lib/types';
+import { FileCheckPanel } from './file-check';
 import styles from './perfil.module.css';
 
 const STATUS: Record<DocumentRecord['status'], { label: string; tone: BadgeTone }> = {
@@ -65,6 +66,7 @@ export function DocumentRow({
         <p className={styles.failure}>{failureMessage(document.failureCode)}</p>
       ) : null}
       {note ? <Notice tone="warning">{note}</Notice> : null}
+      {document.fileCheck ? <FileCheckPanel report={document.fileCheck} /> : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
 
       {confirming ? (

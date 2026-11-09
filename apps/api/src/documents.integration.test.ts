@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DrizzleDocumentRetentionRepository, ExpireDocuments } from '@linkediner/core/documents';
+import { buildTestPdf } from '@linkediner/core/testing';
 import { startTestApp } from './testing/app';
 
 let t: Awaited<ReturnType<typeof startTestApp>>;
@@ -51,6 +52,23 @@ describe('upload de documentos', () => {
       sizeBytes: PDF.byteLength,
     });
     docId = r.id!;
+  });
+
+  it('confere como um ATS leria o currículo, sem quebrar o envio quando não consegue', async () => {
+    // PDF válido, mas com uma linha só: quase nada para um sistema de recrutamento ler.
+    const thin = await upload(alice, 'resume', 'application/pdf', buildTestPdf('Ana Teste'));
+    const check = thin.complete?.json().fileCheck;
+    expect(check).toMatchObject({ version: 'v1', total: 7 });
+    expect(check.checks.find((c: { id: string }) => c.id === 'readable_text').ok).toBe(false);
+    // O conteúdo do documento não aparece no resultado.
+    expect(JSON.stringify(check)).not.toContain('Ana Teste');
+
+    // O PDF do LinkedIn tem o layout do LinkedIn: a pessoa não muda, então não há conferência.
+    const linkedin = await upload(alice, 'linkedin_pdf', 'application/pdf', buildTestPdf('Ana'));
+    expect(linkedin.complete?.json().fileCheck).toBeNull();
+
+    // Um PDF que o leitor não consegue medir ainda é aceito, só sem a conferência.
+    expect((await t.call(alice, 'GET', `/v1/documents/${docId}`)).json().fileCheck).toBeNull();
   });
 
   it('nunca expõe o caminho interno do arquivo', async () => {

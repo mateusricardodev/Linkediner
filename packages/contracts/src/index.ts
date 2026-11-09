@@ -19,6 +19,7 @@ export {
   DocumentKind,
   DocumentStatus,
   DownloadResponse,
+  FileCheckDto,
   RequestUploadBody,
   RequestUploadResponse,
 } from './documents';

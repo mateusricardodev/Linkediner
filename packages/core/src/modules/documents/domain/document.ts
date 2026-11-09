@@ -1,3 +1,4 @@
+import type { FileCheckReport } from './file-check';
 import { AppError } from '../../shared';
 
 export const DOCUMENT_KINDS = ['resume', 'linkedin_pdf'] as const;
@@ -31,6 +32,8 @@ export interface DocumentRecord {
   failureCode: string | null;
   discardedFacts: number;
   droppedFields: number;
+  /** Conferência do arquivo pelo padrão ATS. Só para currículo, e nula se o arquivo não pôde ser lido. */
+  fileCheck: FileCheckReport | null;
   uploadedAt: Date | null;
   expiresAt: Date;
   createdAt: Date;

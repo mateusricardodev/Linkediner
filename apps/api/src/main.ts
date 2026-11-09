@@ -59,6 +59,7 @@ import {
 } from '@linkediner/core/profile';
 import {
   DocumentService,
+  FileSignalsReader,
   DrizzleDocumentRepository,
   S3ObjectStorage,
 } from '@linkediner/core/documents';
@@ -154,10 +155,16 @@ const app = await buildServer({
       new DrizzleScoreRepository(database.db),
     ),
     facts: new FactService(factRepository, audit),
-    documents: new DocumentService(documentRepository, storage, audit, {
-      deleteForDocument: (userId, documentId) =>
-        factRepository.deleteUnconfirmedForDocument(userId, documentId),
-    }),
+    documents: new DocumentService(
+      documentRepository,
+      storage,
+      audit,
+      {
+        deleteForDocument: (userId, documentId) =>
+          factRepository.deleteUnconfirmedForDocument(userId, documentId),
+      },
+      new FileSignalsReader(),
+    ),
     applications: new ApplicationService(
       applicationRepository,
       jobRepository,
