@@ -8,8 +8,34 @@ import type { Dashboard, ProfileScore, Recommendations } from '../../../lib/type
 import { useResource } from '../../../lib/use-resource';
 import { useMe } from '../app-shell';
 import styles from './inicio.module.css';
+import { ScoreTrend } from './score-trend';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** Os três caminhos principais, sempre à mão no topo. */
+const SHORTCUTS = [
+  {
+    href: '/perfil#documentos',
+    title: 'Analisar currículo',
+    text: 'Veja o score e como os sistemas de recrutamento leem o seu arquivo.',
+    action: 'Analisar',
+    icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M9 13l2 2 4-4',
+  },
+  {
+    href: '/curriculo',
+    title: 'Gerar currículo',
+    text: 'Em português ou inglês, geral ou pensado para uma vaga salva.',
+    action: 'Gerar',
+    icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M12 11v6M9 14h6',
+  },
+  {
+    href: '/vagas',
+    title: 'Ver vagas',
+    text: 'Compare o seu perfil com cada vaga, requisito por requisito.',
+    action: 'Ver vagas',
+    icon: 'M4 8h16v11H4zM9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16',
+  },
+];
 
 function Rows({ count = 3 }: { count?: number }) {
   return (
@@ -45,6 +71,30 @@ export default function HomePage() {
         ) : null}
       </header>
 
+      <nav className={styles.shortcuts} aria-label="Atalhos">
+        {SHORTCUTS.map((item) => (
+          <Link key={item.href} href={item.href} className={styles.shortcut}>
+            <span className={styles.shortcutIcon} aria-hidden>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d={item.icon} />
+              </svg>
+            </span>
+            <span className={styles.shortcutTitle}>{item.title}</span>
+            <span className={styles.shortcutText}>{item.text}</span>
+            <span className={styles.shortcutAction}>{item.action} →</span>
+          </Link>
+        ))}
+      </nav>
+
       <div className={styles.columns}>
         <div className={styles.main}>
           <section aria-labelledby="atencao">
@@ -56,7 +106,12 @@ export default function HomePage() {
             ) : !dashboard.data ? (
               <Rows count={2} />
             ) : dashboard.data.needsAttention.length === 0 ? (
-              <p className={styles.empty}>Nenhuma candidatura esperando por você.</p>
+              <div className={styles.empty}>
+                <p>Nenhuma candidatura esperando por você.</p>
+                <ButtonLink variant="secondary" href="/vagas">
+                  Encontrar uma vaga
+                </ButtonLink>
+              </div>
             ) : (
               <ul className={styles.list}>
                 {dashboard.data.needsAttention.map((application) => {
@@ -88,9 +143,12 @@ export default function HomePage() {
             ) : !recommendations.data ? (
               <Rows />
             ) : recommendations.data.items.length === 0 ? (
-              <p className={styles.empty}>
-                <Link href="/vagas">Importe uma vaga</Link> para ver a compatibilidade com ela.
-              </p>
+              <div className={styles.empty}>
+                <p>Importe uma vaga para ver o quanto ela combina com o seu perfil.</p>
+                <ButtonLink variant="secondary" href="/vagas">
+                  Importar vaga
+                </ButtonLink>
+              </div>
             ) : (
               <>
                 <ul className={styles.list}>
@@ -158,6 +216,7 @@ export default function HomePage() {
                     </ul>
                   </div>
                 ) : null}
+                <ScoreTrend history={score.data.history} />
                 <ButtonLink variant="secondary" full href="/perfil">
                   Documentos e fatos
                 </ButtonLink>
