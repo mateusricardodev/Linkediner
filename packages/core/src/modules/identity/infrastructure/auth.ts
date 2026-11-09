@@ -87,7 +87,12 @@ export function createAuth({ db, config, audit, pseudonymize }: AuthDeps) {
     }),
     user: { modelName: 'users' },
     session: { modelName: 'sessions', expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
-    account: { modelName: 'auth_identities' },
+    account: {
+      modelName: 'auth_identities',
+      // O e-mail do cadastro com senha ainda não é confirmado. Ligar um login social a essa conta
+      // daria acesso a quem cadastrou o e-mail de outra pessoa: aí o login social é recusado.
+      accountLinking: { requireLocalEmailVerified: true },
+    },
     verification: { modelName: 'verifications' },
     emailAndPassword: {
       enabled: true,
