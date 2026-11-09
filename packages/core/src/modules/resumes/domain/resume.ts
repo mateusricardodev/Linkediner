@@ -126,6 +126,17 @@ const KNOWN_TECH = [
   'vue',
 ];
 
+/**
+ * Palavras de cargo que a tradução escreve com maiúscula ("Backend Developer" para "Desenvolvedora
+ * Backend"). Elas não nomeiam empresa nem tecnologia. Nível e chefia ficam de fora de propósito:
+ * "Senior", "Lead" e "Manager" afirmam algo e precisam estar nos fatos.
+ */
+const ROLE_WORDS = new Set(
+  `developer developers engineer engineers analyst analysts designer architect scientist specialist
+  consultant programmer backend back-end frontend front-end fullstack full-stack software web mobile
+  data platform qa devops`.split(/\s+/),
+);
+
 const has = (corpus: string, term: string) =>
   corpus.includes(normalizeText(term).replace(/[.,;:!?)]+$/, ''));
 
@@ -149,7 +160,9 @@ export function findUnsupportedTerms(
     const words = sentence.trim().split(/\s+/).slice(1);
     for (const word of words) {
       const clean = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}+#]+$/gu, '');
-      if (/^\p{Lu}/u.test(clean) && !has(corpus, clean)) unsupported.add(clean);
+      if (/^\p{Lu}/u.test(clean) && !has(corpus, clean) && !ROLE_WORDS.has(normalizeText(clean))) {
+        unsupported.add(clean);
+      }
     }
   }
   const normalized = normalizeText(text);

@@ -32,3 +32,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0026 | [Novas fontes de vagas: Ashby, SmartRecruiters e comunidades no GitHub](0026-novas-fontes-de-vagas.md) | Proposto |
 | 0027 | [Login com LinkedIn, Termos de Uso e Política de Privacidade](0027-login-linkedin-e-textos-legais.md) | Proposto |
 | 0028 | [Conferência do arquivo do currículo pelo padrão ATS](0028-conferencia-do-arquivo.md) | Proposto |
+| 0029 | [Currículo em inglês e orientado por uma vaga salva](0029-curriculo-idioma-e-vaga.md) | Proposto |

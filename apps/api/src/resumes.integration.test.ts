@@ -217,9 +217,24 @@ describe('conferência ATS e correções', () => {
 });
 
 describe('idioma e vaga', () => {
+  // Outro endereço: a rota limita 10 pedidos por minuto, e os testes acima já usaram parte.
+  let ip = 0;
+  const request = (cookie: string, body?: Record<string, unknown>) =>
+    t.app.inject({
+      method: 'POST',
+      url: '/v1/resumes',
+      headers: {
+        cookie,
+        origin: 'http://localhost:3000',
+        ...(body ? { 'content-type': 'application/json' } : {}),
+      },
+      ...(body ? { payload: body } : {}),
+      remoteAddress: `10.0.9.${++ip}`,
+    });
+
   it('pede um currículo em inglês, e sem corpo continua geral em português', async () => {
     const cookie = await userWithFacts('ingles@example.com');
-    const en = await t.call(cookie, 'POST', '/v1/resumes', { language: 'en' });
+    const en = await request(cookie, { language: 'en' });
     expect(en.statusCode).toBe(202);
     expect(en.json()).toMatchObject({ language: 'en', jobId: null });
     for (const job of t.resumeQueue.jobs.splice(0))
@@ -227,14 +242,14 @@ describe('idioma e vaga', () => {
     expect(ai.calls.at(-1)?.promptInput.language).toBe('en');
 
     const other = await userWithFacts('portugues@example.com');
-    const pt = await t.call(other, 'POST', '/v1/resumes');
+    const pt = await request(other);
     expect(pt.json()).toMatchObject({ language: 'pt', jobId: null });
   });
 
   it('recusa idioma desconhecido e vaga que não é da pessoa', async () => {
     const cookie = await userWithFacts('vaga-alheia@example.com');
-    expect((await t.call(cookie, 'POST', '/v1/resumes', { language: 'es' })).statusCode).toBe(400);
-    const res = await t.call(cookie, 'POST', '/v1/resumes', {
+    expect((await request(cookie, { language: 'es' })).statusCode).toBe(400);
+    const res = await request(cookie, {
       language: 'pt',
       jobId: '01960000-0000-7000-8000-0000000000aa',
     });
