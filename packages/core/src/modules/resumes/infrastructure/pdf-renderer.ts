@@ -55,11 +55,11 @@ export class PdfResumeRenderer implements ResumeRenderer {
         body(model.contacts.join(' | '));
       }
       if (model.summary.length) {
-        heading('Resumo');
+        heading(model.titles.summary);
         body(model.summary.join(' '));
       }
       if (model.experiences.length) {
-        heading('Experiência');
+        heading(model.titles.experience);
         for (const experience of model.experiences) {
           doc.font(BOLD).fontSize(10).fillColor('#000000').text(printable(experience.heading));
           const details = [experience.period, experience.location].filter(Boolean).join(' | ');

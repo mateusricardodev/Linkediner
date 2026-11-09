@@ -67,6 +67,16 @@ describe('findUnsupportedTerms', () => {
   });
 });
 
+describe('findUnsupportedTerms em inglês', () => {
+  const pt = [{ data: { title: 'Desenvolvedora Backend', description: 'APIs em Node.js' } }];
+  it('aceita a palavra de cargo traduzida, mas não um nível que os fatos não têm', () => {
+    expect(findUnsupportedTerms('Experienced Backend Developer with Node.js.', pt)).toEqual([]);
+    expect(findUnsupportedTerms('Experienced Senior Developer with Node.js.', pt)).toEqual([
+      'Senior',
+    ]);
+  });
+});
+
 describe('buildResume', () => {
   it('copia empresa, cargo e datas dos fatos, em vez de confiar na IA', () => {
     const { content } = buildResume(output(), facts);
@@ -162,6 +172,8 @@ describe('collectCorrections', () => {
     id,
     status: 'draft',
     failureCode: null,
+    language: 'pt',
+    jobId: null,
     approvedAt: null,
     createdAt: new Date(day * 86_400_000),
     content: {

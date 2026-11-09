@@ -17,6 +17,8 @@ const resume = (status: Resume['status']): Resume => ({
   status,
   content,
   failureCode: null,
+  language: 'pt',
+  jobId: null,
   approvedAt: status === 'approved' ? new Date(0) : null,
   createdAt: new Date(0),
 });
@@ -64,7 +66,7 @@ describe('ResumeExportService', () => {
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'resume.exported',
-        metadata: { format: 'docx', watermark: true },
+        metadata: { format: 'docx', watermark: true, language: 'pt' },
       }),
     );
   });

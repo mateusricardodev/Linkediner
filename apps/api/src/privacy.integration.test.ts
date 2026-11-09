@@ -209,7 +209,7 @@ describe('criptografia por usuário', () => {
 
     const resumes = new DrizzleResumeRepository(t.db.db, t.cipher);
     const resumeId = crypto.randomUUID();
-    await resumes.insertGenerating(userId, resumeId);
+    await resumes.insertGenerating(userId, resumeId, { language: 'pt', jobId: null });
     await resumes.saveDraft(userId, resumeId, {
       summary: [],
       experiences: [],

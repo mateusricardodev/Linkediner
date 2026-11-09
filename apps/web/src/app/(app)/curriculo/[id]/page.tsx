@@ -9,10 +9,11 @@ import { formatDate } from '../../../../lib/documents';
 import {
   downloadResume,
   pendingCount,
+  resumeDescription,
   RESUME_STATUS,
   resumeFailureMessage,
 } from '../../../../lib/resumes';
-import type { AtsReport, Resume } from '../../../../lib/types';
+import type { AtsReport, Job, Resume } from '../../../../lib/types';
 import { usePollWhile } from '../../../../lib/use-poll';
 import { useResource } from '../../../../lib/use-resource';
 import styles from '../curriculo.module.css';
@@ -23,6 +24,7 @@ export default function ResumePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { data: resume, error, reload } = useResource(() => api<Resume>(`/v1/resumes/${id}`));
+  const jobs = useResource(() => api<Job[]>('/v1/jobs'));
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -72,7 +74,9 @@ export default function ResumePage() {
           {status ? <Badge tone={status.tone}>{status.label}</Badge> : null}
         </div>
         {resume ? (
-          <p className={styles.subtitle}>Gerado em {formatDate(resume.createdAt)}</p>
+          <p className={styles.subtitle}>
+            Gerado em {formatDate(resume.createdAt)} · {resumeDescription(resume, jobs.data ?? [])}
+          </p>
         ) : null}
       </header>
 

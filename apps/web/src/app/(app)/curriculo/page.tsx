@@ -1,30 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import {
-  Badge,
-  Button,
-  ButtonLink,
-  Notice,
-  Skeleton,
-  SyntheticDataNotice,
-} from '../../../components/ui';
-import { api, ApiError } from '../../../lib/api';
+import { Badge, ButtonLink, Notice, Skeleton, SyntheticDataNotice } from '../../../components/ui';
+import { api } from '../../../lib/api';
 import { formatDate } from '../../../lib/documents';
-import { RESUME_STATUS, resumeFailureMessage } from '../../../lib/resumes';
-import type { Me, Resume } from '../../../lib/types';
+import { RESUME_STATUS, resumeDescription, resumeFailureMessage } from '../../../lib/resumes';
+import type { Job, Me, ProfileFact, Resume } from '../../../lib/types';
 import { usePollWhile } from '../../../lib/use-poll';
 import { useResource } from '../../../lib/use-resource';
 import styles from './curriculo.module.css';
+import { GenerateForm } from './generate-form';
 
 export default function ResumesPage() {
-  const router = useRouter();
   const me = useResource(() => api<Me>('/v1/me'));
   const resumes = useResource(() => api<Resume[]>('/v1/resumes'));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
+  const facts = useResource(() => api<ProfileFact[]>('/v1/profile/facts'));
+  const jobs = useResource(() => api<Job[]>('/v1/jobs'));
 
   // A API lista do mais antigo para o mais novo.
   const items = [...(resumes.data ?? [])].reverse();
@@ -32,18 +23,6 @@ export default function ResumesPage() {
   usePollWhile(generating, resumes.reload, resumes.data);
 
   const aiAllowed = Boolean(me.data?.consents.granted.ai_processing);
-
-  async function generate() {
-    setBusy(true);
-    setError(null);
-    try {
-      const resume = await api<Resume>('/v1/resumes', { method: 'POST' });
-      router.push(`/curriculo/${resume.id}`);
-    } catch (cause) {
-      setError(cause instanceof ApiError ? cause : new ApiError('Algo deu errado.', 0, 'UNKNOWN'));
-      setBusy(false);
-    }
-  }
 
   return (
     <div className={styles.page}>
@@ -65,18 +44,15 @@ export default function ResumesPage() {
           </ButtonLink>
         </div>
       ) : me.data ? (
-        <div className={styles.generate}>
+        <>
           {me.data.syntheticDataOnly ? <SyntheticDataNotice /> : null}
-          <Button disabled={busy || generating} onClick={() => void generate()}>
-            {busy ? 'Pedindo…' : generating ? 'Gerando…' : 'Gerar novo currículo'}
-          </Button>
-          {error ? <Notice tone="danger">{error.message}</Notice> : null}
-          {error?.code === 'CONFLICT' ? (
-            <ButtonLink variant="secondary" href="/perfil">
-              Ir para o perfil
-            </ButtonLink>
-          ) : null}
-        </div>
+          <GenerateForm
+            name={me.data.user.name}
+            facts={facts.data ?? []}
+            jobs={jobs.data ?? []}
+            generating={generating}
+          />
+        </>
       ) : null}
 
       {resumes.error && !resumes.data ? (
@@ -95,6 +71,9 @@ export default function ResumesPage() {
                   <span className={styles.rowText}>
                     <span className={styles.rowTitle}>
                       Currículo de {formatDate(resume.createdAt)}
+                    </span>
+                    <span className={styles.rowMeta}>
+                      {resumeDescription(resume, jobs.data ?? [])}
                     </span>
                     {resume.status === 'failed' ? (
                       <span className={styles.rowMeta}>

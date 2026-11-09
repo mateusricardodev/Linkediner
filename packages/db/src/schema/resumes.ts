@@ -1,5 +1,6 @@
 import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './identity';
+import { jobs } from './jobs';
 
 export const resumeStatus = pgEnum('resume_status', ['generating', 'draft', 'approved', 'failed']);
 
@@ -12,6 +13,10 @@ export const resumes = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     status: resumeStatus().notNull().default('generating'),
+    /** Idioma em que o currículo é escrito: pt ou en. */
+    language: text().notNull().default('pt'),
+    /** Vaga que orientou o que destacar. Nula no currículo geral. Apagar a vaga não apaga o currículo. */
+    jobId: uuid().references(() => jobs.id, { onDelete: 'set null' }),
     content: jsonb().$type<unknown>(),
     /** Motivo da falha (código estável, sem conteúdo). */
     failureCode: text(),

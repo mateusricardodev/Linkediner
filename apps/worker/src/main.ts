@@ -8,7 +8,7 @@ import {
   extractProfileV1,
   FakeAiProvider,
   formAnswersV1,
-  generateResumeV2,
+  generateResumeV3,
   structureJobV1,
   tailorResumeV1,
 } from '@linkediner/core/ai';
@@ -223,9 +223,10 @@ const tasks = [
     generate: new GenerateResume({
       resumes: new DrizzleResumeRepository(database.db, cipher),
       facts: factRepository,
+      jobs: new DrizzleJobRepository(database.db),
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       ai,
-      prompt: generateResumeV2,
+      prompt: generateResumeV3,
       generations,
       quota,
       audit,

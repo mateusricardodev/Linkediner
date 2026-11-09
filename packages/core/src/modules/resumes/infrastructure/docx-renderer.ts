@@ -13,9 +13,10 @@ export class DocxResumeRenderer implements ResumeRenderer {
     if (model.name) children.push(new Paragraph({ text: model.name, heading: HeadingLevel.TITLE }));
     if (model.headline) children.push(line(model.headline));
     if (model.contacts.length) children.push(line(model.contacts.join(' | ')));
-    if (model.summary.length) children.push(heading('Resumo'), line(model.summary.join(' ')));
+    if (model.summary.length)
+      children.push(heading(model.titles.summary), line(model.summary.join(' ')));
     if (model.experiences.length) {
-      children.push(heading('Experiência'));
+      children.push(heading(model.titles.experience));
       for (const experience of model.experiences) {
         children.push(bold(experience.heading));
         const details = [experience.period, experience.location].filter(Boolean).join(' | ');

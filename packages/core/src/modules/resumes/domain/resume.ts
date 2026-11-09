@@ -59,9 +59,22 @@ export interface ResumeContent {
   languages: FactData[];
 }
 
+/** Idiomas em que o currículo pode ser escrito. */
+export const RESUME_LANGUAGES = ['pt', 'en'] as const;
+export type ResumeLanguage = (typeof RESUME_LANGUAGES)[number];
+
+/** O que a pessoa escolhe ao pedir um currículo. */
+export interface ResumeOptions {
+  language: ResumeLanguage;
+  jobId: string | null;
+}
+
 export interface Resume {
   id: string;
   status: ResumeStatus;
+  language: ResumeLanguage;
+  /** Vaga que orientou o que destacar. Nula no currículo geral, ou se a vaga foi apagada. */
+  jobId: string | null;
   content: ResumeContent | null;
   failureCode: string | null;
   approvedAt: Date | null;
@@ -113,6 +126,17 @@ const KNOWN_TECH = [
   'vue',
 ];
 
+/**
+ * Palavras de cargo que a tradução escreve com maiúscula ("Backend Developer" para "Desenvolvedora
+ * Backend"). Elas não nomeiam empresa nem tecnologia. Nível e chefia ficam de fora de propósito:
+ * "Senior", "Lead" e "Manager" afirmam algo e precisam estar nos fatos.
+ */
+const ROLE_WORDS = new Set(
+  `developer developers engineer engineers analyst analysts designer architect scientist specialist
+  consultant programmer backend back-end frontend front-end fullstack full-stack software web mobile
+  data platform qa devops`.split(/\s+/),
+);
+
 const has = (corpus: string, term: string) =>
   corpus.includes(normalizeText(term).replace(/[.,;:!?)]+$/, ''));
 
@@ -136,7 +160,9 @@ export function findUnsupportedTerms(
     const words = sentence.trim().split(/\s+/).slice(1);
     for (const word of words) {
       const clean = word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}+#]+$/gu, '');
-      if (/^\p{Lu}/u.test(clean) && !has(corpus, clean)) unsupported.add(clean);
+      if (/^\p{Lu}/u.test(clean) && !has(corpus, clean) && !ROLE_WORDS.has(normalizeText(clean))) {
+        unsupported.add(clean);
+      }
     }
   }
   const normalized = normalizeText(text);
@@ -188,6 +214,8 @@ export interface ResumeReport {
 export function buildResume(
   output: ResumeOutput,
   facts: ProfileFact[],
+  /** Cargo e empresa da vaga: podem ser citados, mas não comprovam nada (ADR 0018). */
+  mentions: readonly (string | null)[] = [],
 ): { content: ResumeContent; report: ResumeReport } {
   const usable = facts.filter(
     (f) => f.verification === 'extracted' || f.verification === 'user_confirmed',
@@ -198,7 +226,7 @@ export function buildResume(
   const report: ResumeReport = { grounded: 0, suggested: 0, discardedBullets: 0 };
 
   const item = (claim: { text: string; factIds: string[] }) => {
-    const result = toResumeItem(claim, factsById);
+    const result = toResumeItem(claim, factsById, mentions);
     if (result.status === 'grounded') report.grounded++;
     else report.suggested++;
     return result;
@@ -254,14 +282,16 @@ export interface ResumeCorrections {
  * Só currículos dela, e o que está sendo gerado fica de fora.
  */
 export function collectCorrections(
-  resumes: Pick<Resume, 'id' | 'content' | 'createdAt'>[],
+  resumes: Pick<Resume, 'id' | 'content' | 'createdAt' | 'language'>[],
   excludeId: string,
   limit = CORRECTIONS_LIMIT,
+  /** Só correções no mesmo idioma: uma frase corrigida em português não ensina o estilo em inglês. */
+  language?: ResumeLanguage,
 ): ResumeCorrections {
   const result: ResumeCorrections = { edited: [], removed: [] };
   const seen = new Set<string>();
   const newestFirst = [...resumes]
-    .filter((r) => r.id !== excludeId && r.content)
+    .filter((r) => r.id !== excludeId && r.content && (!language || r.language === language))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   for (const resume of newestFirst) {
     const content = resume.content!;

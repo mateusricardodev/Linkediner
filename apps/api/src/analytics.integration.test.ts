@@ -44,7 +44,7 @@ async function readyJob(userId: string, n = 1) {
 async function approvedResume(userId: string) {
   const resumes = new DrizzleResumeRepository(t.db.db, t.cipher);
   const id = crypto.randomUUID();
-  await resumes.insertGenerating(userId, id);
+  await resumes.insertGenerating(userId, id, { language: 'pt', jobId: null });
   await resumes.saveDraft(userId, id, {
     summary: [],
     experiences: [],

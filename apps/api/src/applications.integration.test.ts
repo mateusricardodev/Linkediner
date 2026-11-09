@@ -51,7 +51,7 @@ async function setup(email: string) {
   });
 
   const resumeId = crypto.randomUUID();
-  await resumes.insertGenerating(userId, resumeId);
+  await resumes.insertGenerating(userId, resumeId, { language: 'pt', jobId: null });
   await resumes.saveDraft(userId, resumeId, CONTENT);
   await resumes.approve(userId, resumeId, new Date());
   return { cookie, userId, jobId, resumeId };
@@ -134,7 +134,7 @@ describe('fluxo da candidatura', () => {
   it('só aceita currículo aprovado', async () => {
     const { cookie, userId, jobId } = await setup('cand-rascunho@example.com');
     const draftId = crypto.randomUUID();
-    await resumes.insertGenerating(userId, draftId);
+    await resumes.insertGenerating(userId, draftId, { language: 'pt', jobId: null });
     await resumes.saveDraft(userId, draftId, CONTENT);
     const id = (await post(cookie, '/v1/applications', { jobId })).json().id as string;
     const res = await t.call(cookie, 'PUT', `/v1/applications/${id}/resume`, { resumeId: draftId });

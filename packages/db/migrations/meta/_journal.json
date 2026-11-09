@@ -260,6 +260,13 @@
       "when": 1794252698253,
       "tag": "0036_conferencia_arquivo",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794254130964,
+      "tag": "0037_curriculo_idioma_vaga",
+      "breakpoints": true
     }
   ]
 }

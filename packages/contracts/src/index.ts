@@ -29,9 +29,11 @@ export {
   ExportResumeQuery,
   DecideResumeItemBody,
   AtsReportDto,
+  CreateResumeBody,
   ResumeContentDto,
   ResumeDto,
   ResumeItemDto,
+  ResumeLanguage,
   ResumeStatus,
 } from './resumes';
 export { ImportJobBody, JobDto, JobStatus, RemotePolicy } from './jobs';

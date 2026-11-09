@@ -250,6 +250,7 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         resumeQueue,
         audit,
         quota,
+        jobRepository,
       ),
       extraction: new ExtractionRequests(documentRepository, consents, queue, quota),
       entitlements,

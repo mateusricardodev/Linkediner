@@ -31,15 +31,19 @@ export class ResumeAtsService {
       this.deps.profiles.listLinks(userId),
       this.deps.jobs.list(userId),
     ]);
-    const recent = jobs
-      .filter((job) => job.status === 'ready')
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, RECENT_JOBS);
+    const ready = jobs.filter((job) => job.status === 'ready');
+    // Currículo para uma vaga: os termos que faltam são os dessa vaga, e não os de todas as salvas.
+    const target = resume.jobId ? ready.filter((job) => job.id === resume.jobId) : [];
+    const recent =
+      target.length > 0
+        ? target
+        : ready.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, RECENT_JOBS);
     return analyzeAts({
       content: resume.content,
       headline: profile.headline,
       linkKinds: links.map((l) => l.kind),
       jobRequirements: recent.map((job) => [...job.mustHave, ...job.niceToHave]),
+      targeted: target.length > 0,
     });
   }
 }

@@ -4,6 +4,8 @@ export const ResumeStatus = z
   .enum(['generating', 'draft', 'approved', 'failed'])
   .meta({ id: 'ResumeStatus' });
 
+export const ResumeLanguage = z.enum(['pt', 'en']).meta({ id: 'ResumeLanguage' });
+
 export const ResumeItemDto = z
   .object({
     id: z.string(),
@@ -43,6 +45,10 @@ export const ResumeDto = z
   .object({
     id: z.uuid(),
     status: ResumeStatus,
+    /** Idioma em que o currículo foi escrito. */
+    language: ResumeLanguage,
+    /** Vaga que orientou o que destacar. Nula no currículo geral, ou se a vaga foi apagada. */
+    jobId: z.uuid().nullable(),
     content: ResumeContentDto.nullable(),
     /** Motivo da falha: no_facts, consent_revoked ou processing_error. */
     failureCode: z.string().nullable(),
@@ -50,6 +56,15 @@ export const ResumeDto = z
     createdAt: z.iso.datetime(),
   })
   .meta({ id: 'Resume' });
+
+export const CreateResumeBody = z
+  .object({
+    language: ResumeLanguage.default('pt'),
+    /** Uma vaga salva e já analisada, para orientar o que destacar. Sem ela, o currículo é geral. */
+    jobId: z.uuid().nullable().default(null),
+  })
+  .strict()
+  .meta({ id: 'CreateResumeBody' });
 
 export const DecideResumeItemBody = z
   .discriminatedUnion('action', [
