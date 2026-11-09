@@ -140,6 +140,10 @@
 }
 
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
   margin: 0;
   padding: var(--spacing-xl);
   border-radius: var(--radius-lg);
@@ -189,6 +193,188 @@
 
 .factors li + li {
   margin-top: var(--spacing-xs);
+}
+
+.empty p {
+  margin: 0;
+}
+
+/* Atalhos no topo */
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.shortcut {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: box-shadow 150ms ease;
+}
+
+.shortcut:hover {
+  box-shadow: var(--shadow-card);
+}
+
+.shortcutIcon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--spacing-xs);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-subtle);
+  color: var(--color-text-accent);
+}
+
+.shortcutTitle {
+  font-weight: 600;
+}
+
+.shortcutText {
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.shortcutAction {
+  margin-top: auto;
+  padding-top: var(--spacing-sm);
+  color: var(--color-text-accent);
+  font-size: var(--type-callout-size);
+  font-weight: 600;
+}
+
+/* Evolução do score */
+.trend {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.trendCaption {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  font-size: var(--type-callout-size);
+  font-weight: 600;
+}
+
+.trendDelta {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.trendPlot {
+  position: relative;
+}
+
+.trendSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: pan-y;
+}
+
+.trendGrid {
+  stroke: var(--color-border-separator);
+  stroke-width: 1;
+}
+
+.trendAxis {
+  fill: var(--color-text-tertiary);
+  font-size: 10px;
+}
+
+.trendLine {
+  fill: none;
+  stroke: var(--color-accent-default);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.trendDot {
+  fill: var(--color-accent-default);
+  stroke: var(--color-bg-surface);
+  stroke-width: 2;
+}
+
+.trendCrosshair {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.trendTip {
+  position: absolute;
+  top: -6px;
+  transform: translate(-50%, -100%);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  font-size: var(--type-footnote-size);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.trendEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  font-size: var(--type-callout-size);
+  color: var(--color-text-secondary);
+}
+
+.trendEmpty p {
+  margin: 0;
+}
+
+.trendEmpty a {
+  color: var(--color-text-accent);
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .shortcuts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  /* No celular, o atalho vira uma linha: ícone, título e ação. */
+  .shortcut {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .shortcutIcon {
+    margin-bottom: 0;
+  }
+
+  .shortcutText {
+    display: none;
+  }
+
+  .shortcutAction {
+    margin: 0 0 0 auto;
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut {
+    transition: none;
+  }
 }
 
 .profile .disclaimer {

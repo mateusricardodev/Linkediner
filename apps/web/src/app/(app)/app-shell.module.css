@@ -76,6 +76,41 @@
   font-weight: 500;
 }
 
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+}
+
+.planName {
+  font-size: var(--type-callout-size);
+  font-weight: 600;
+}
+
+.planBar {
+  display: block;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-fill);
+  overflow: hidden;
+}
+
+.planBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent-default);
+}
+
+.planText {
+  color: var(--color-text-secondary);
+  font-size: var(--type-footnote-size);
+}
+
 .account {
   display: flex;
   align-items: center;
@@ -132,6 +167,11 @@
   }
 
   .accountName {
+    display: none;
+  }
+
+  /* No menu do topo não cabe: o plano continua visível nos limites de cada tela. */
+  .plan {
     display: none;
   }
 

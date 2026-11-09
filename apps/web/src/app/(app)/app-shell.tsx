@@ -8,6 +8,7 @@ import { api } from '../../lib/api';
 import type { Me } from '../../lib/types';
 import { useResource } from '../../lib/use-resource';
 import styles from './app-shell.module.css';
+import { PlanUsage } from './plan-usage';
 
 const MeContext = createContext<Me | null>(null);
 
@@ -128,6 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
+          <PlanUsage />
           <div className={styles.account}>
             <span className={styles.accountName}>{me.user.name ?? me.user.email}</span>
             <Button variant="plain" disabled={leaving} onClick={() => void signOut()}>
