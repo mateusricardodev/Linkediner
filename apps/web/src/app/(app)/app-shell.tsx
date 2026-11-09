@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     try {
       await api('/v1/auth/sign-out', { method: 'POST', body: {} });
     } finally {
-      router.replace('/entrar');
+      router.replace('/');
     }
   }
 
