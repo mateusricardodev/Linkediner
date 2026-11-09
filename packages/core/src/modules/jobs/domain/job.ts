@@ -45,6 +45,8 @@ export interface JobFields {
 export interface Job extends JobFields {
   id: string;
   source: string;
+  /** A vaga do catálogo de onde esta foi salva. */
+  externalJobId: string | null;
   status: JobStatus;
   failureCode: string | null;
   rawText: string;
@@ -57,6 +59,12 @@ export interface NewJob {
   rawText: string;
   applyUrl: string | null;
   dedupeHash: string;
+}
+
+/** Vaga já analisada, copiada do catálogo. */
+export interface NewCatalogJob extends NewJob, JobFields {
+  source: string;
+  externalJobId: string;
 }
 
 const value = z.string().trim().min(1).max(500).nullable();

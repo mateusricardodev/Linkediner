@@ -1,5 +1,5 @@
 import { and, asc, eq, schema, withUserContext, type Database } from '@linkediner/db';
-import type { Job, JobFields, NewJob } from '../domain/job';
+import type { Job, JobFields, NewCatalogJob, NewJob } from '../domain/job';
 import type { JobRepository } from '../application/ports/job-repository';
 
 const { jobs } = schema;
@@ -7,6 +7,7 @@ const { jobs } = schema;
 const toJob = (r: typeof jobs.$inferSelect): Job => ({
   id: r.id,
   source: r.source,
+  externalJobId: r.externalJobId,
   status: r.status,
   failureCode: r.failureCode,
   rawText: r.rawText,
@@ -28,6 +29,17 @@ export class DrizzleJobRepository implements JobRepository {
 
   private owned(userId: string, id: string) {
     return and(eq(jobs.id, id), eq(jobs.userId, userId));
+  }
+
+  insertFromCatalog(userId: string, job: NewCatalogJob) {
+    return withUserContext(this.db, userId, async (tx) => {
+      const [row] = await tx
+        .insert(jobs)
+        .values({ ...job, userId, status: 'ready' })
+        .onConflictDoNothing({ target: [jobs.userId, jobs.dedupeHash] })
+        .returning();
+      return row ? toJob(row) : null;
+    });
   }
 
   insert(userId: string, job: NewJob) {

@@ -50,6 +50,7 @@ import {
   ResumeService,
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
+import { DiscoveryService, DrizzleCatalogReader } from '@linkediner/core/discovery';
 import { DrizzleJobRepository, JobService, type StructureJobPayload } from '@linkediner/core/jobs';
 import {
   DrizzleFeedbackRepository,
@@ -187,6 +188,14 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         materialQueue,
         audit,
         quota,
+      ),
+      discovery: new DiscoveryService(
+        new DrizzleCatalogReader(db),
+        jobRepository,
+        factRepository,
+        profileRepository,
+        new DrizzleFeedbackRepository(db),
+        audit,
       ),
       feedback: new FeedbackService(
         new DrizzleFeedbackRepository(db),

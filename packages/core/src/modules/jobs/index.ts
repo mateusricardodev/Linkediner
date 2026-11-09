@@ -11,6 +11,7 @@ export {
   type Job,
   type JobFields,
   type JobStatus,
+  type NewCatalogJob,
   type RemotePolicy,
   type StructureJobPayload,
 } from './domain/job';

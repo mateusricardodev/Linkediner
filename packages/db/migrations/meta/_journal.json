@@ -232,6 +232,20 @@
       "when": 1794070321189,
       "tag": "0032_light_iron_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794071991086,
+      "tag": "0033_catalogo_vagas",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794071993762,
+      "tag": "0034_catalogo_vagas_dados",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,11 @@
-import type { Job, JobFields, NewJob } from '../../domain/job';
+import type { Job, JobFields, NewCatalogJob, NewJob } from '../../domain/job';
 
 /** Toda operação usa o contexto do usuário dono (RLS). */
 export interface JobRepository {
   /** Devolve a vaga criada, ou null se o usuário já tiver importado o mesmo texto. */
   insert(userId: string, job: NewJob): Promise<Job | null>;
+  /** Devolve a vaga criada, ou null se a pessoa já a tiver salvo. */
+  insertFromCatalog(userId: string, job: NewCatalogJob): Promise<Job | null>;
   findByHash(userId: string, dedupeHash: string): Promise<Job | null>;
   find(userId: string, id: string): Promise<Job | null>;
   list(userId: string): Promise<Job[]>;

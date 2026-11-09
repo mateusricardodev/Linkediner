@@ -7,6 +7,7 @@ import type {
   BillingSummaryDto,
   CareerGoalDto,
   DashboardResponse as DashboardSchema,
+  DiscoveryResponse,
   DocumentDto,
   DocumentKind as DocumentKindSchema,
   FeedbackReason as FeedbackReasonSchema,
@@ -49,3 +50,4 @@ export interface FormAnswersContent {
 }
 export type BillingSummary = z.infer<typeof BillingSummaryDto>;
 export type CareerGoal = z.infer<typeof CareerGoalDto>;
+export type Discovery = z.infer<typeof DiscoveryResponse>;

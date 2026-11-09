@@ -8,6 +8,7 @@ const USER = 'u1';
 const job = (id: string, o: Partial<Job> = {}): Job => ({
   id,
   source: 'manual',
+  externalJobId: null,
   status: 'ready',
   failureCode: null,
   rawText: 'texto',

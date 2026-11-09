@@ -19,6 +19,7 @@ function memoryRepo(initial: Job[] = []) {
       const row: Job = {
         id: job.id,
         source: 'manual',
+        externalJobId: null,
         status: 'structuring',
         failureCode: null,
         rawText: job.rawText,
@@ -31,6 +32,7 @@ function memoryRepo(initial: Job[] = []) {
       rows.set(job.id, row);
       return row;
     },
+    insertFromCatalog: async () => null,
     findByHash: async (_u, hash) => rows.get(hashes.get(hash) ?? '') ?? null,
     find: async (_u, id) => rows.get(id) ?? null,
     list: async () => [...rows.values()],
@@ -124,6 +126,7 @@ describe('StructureJob', () => {
   const job = (status: Job['status'] = 'structuring'): Job => ({
     id: 'j1',
     source: 'manual',
+    externalJobId: null,
     status,
     failureCode: null,
     rawText: TEXT,

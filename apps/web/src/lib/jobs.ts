@@ -107,3 +107,24 @@ export function hiddenJobs(jobs: readonly Job[], recommendations: Recommendation
   const shown = new Set(recommendations.items.map((item) => item.job.id));
   return jobs.filter((job) => job.status === 'ready' && !shown.has(job.id));
 }
+
+const SOURCE_LABELS: Record<string, string> = { greenhouse: 'Greenhouse', lever: 'Lever' };
+
+export const sourceLabel = (source: string) => SOURCE_LABELS[source] ?? source;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const NEW_POSTING_DAYS = 7;
+
+const daysAgo = (iso: string, now: number) => Math.floor((now - new Date(iso).getTime()) / DAY_MS);
+
+/** Publicada nos últimos dias: é o que a lista prioriza. */
+export const isNewPosting = (iso: string | null, now = Date.now()) =>
+  iso !== null && daysAgo(iso, now) < NEW_POSTING_DAYS;
+
+export function postedLabel(iso: string | null, now = Date.now()): string | null {
+  if (!iso) return null;
+  const days = daysAgo(iso, now);
+  if (days <= 0) return 'Publicada hoje';
+  if (days === 1) return 'Publicada ontem';
+  return `Publicada há ${days} dias`;
+}

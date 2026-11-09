@@ -30,3 +30,15 @@ O ADR 0007 prevê combinar rubrica e similaridade de embeddings no score de comp
 |---|---|
 | Embeddings desde a v1 | Sem validação possível, sem explicação por requisito e com custo por chamada |
 | IA julga cada requisito | Instável entre execuções e contrária ao ADR 0007 |
+
+## Atualização (2026-11-07): rubrica v2
+
+Com vagas reais, a v1 dava notas sem sentido: 0 a 23 para uma pessoa com a stack pedida. Ela foi testada com tópicos curtos, mas vagas reais escrevem frases, e a regra exigia metade das palavras do requisito, inclusive "proficiency" ou "wide". Requisitos como "excelente comunicação" contavam como lacuna, embora nada consiga verificá-los.
+
+- **Tópico curto, de até 3 termos, segue como antes.**
+- **Em frases, só contam tecnologias conhecidas e nomes próprios no meio da frase.** A lista está no código, e nomes ambíguos, como Go e Rest, dependem da maiúscula.
+- **Frase sem nada comparável fica "não verificável"** e não conta contra nem a favor.
+- **Quando a frase oferece opções ou dá exemplos** ("AWS, Azure ou GCP"), um termo basta. Sem isso, faltar um termo deixa o requisito como parcial.
+- **O tempo de experiência continua deixando como parcial.**
+
+**Limites:** a lista de tecnologias precisa de manutenção. Uma ferramenta desconhecida, escrita em minúsculas, é ignorada. Uma palavra comum com maiúscula no meio da frase conta como nome e pode aparecer como não encontrada. A nota compara o que está escrito: ter a palavra no perfil não comprova domínio.

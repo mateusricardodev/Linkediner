@@ -81,4 +81,12 @@ O CI roda lint, typecheck, testes de unidade, integração e arquitetura em todo
 
 O SeaweedFS local ignora o pedido de download na URL assinada e abre o PDF na mesma aba. A conferir no provedor escolhido: no S3 e no R2, a resposta deve vir como anexo.
 
+**Fontes de vagas:** começam desligadas ([ADR 0024](../adr/0024-vagas-automaticas.md)). Em produção, ligar exige a revisão jurídica dos termos e o registro da data:
+
+```sql
+UPDATE job_sources SET status = 'active', terms_reviewed_at = now() WHERE key IN ('greenhouse', 'lever');
+```
+
+Empresas ficam em `job_boards`. Falhas aparecem em `job_boards.last_error`, sem interromper as outras.
+
 A arquitetura não depende de nenhum desses provedores.

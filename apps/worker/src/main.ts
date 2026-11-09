@@ -30,6 +30,13 @@ import {
 } from '@linkediner/core/billing';
 import { createFieldCipher } from '@linkediner/core/crypto';
 import {
+  DrizzleCatalogRepository,
+  GreenhouseAdapter,
+  LeverAdapter,
+  StructureCatalog,
+  SyncCatalog,
+} from '@linkediner/core/discovery';
+import {
   DrizzleDocumentRepository,
   DrizzleDocumentRetentionRepository,
   ExpireDocuments,
@@ -76,6 +83,7 @@ import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
+import { sourcesStructure, sourcesSync } from './handlers/sources-catalog';
 import { privacyExpireDocuments } from './handlers/privacy-expire-documents';
 import { systemHeartbeat } from './handlers/system-heartbeat';
 import { registerTasks } from './runner';
@@ -152,8 +160,22 @@ const purge = new PurgeUser({
   ]),
 });
 const exportRepository = new DrizzleDataExportRepository(database.db);
+const catalog = new DrizzleCatalogRepository(database.db);
 const tasks = [
   systemHeartbeat({ ping: () => pingDb(database.db) }),
+  sourcesSync({
+    sync: new SyncCatalog({ catalog, adapters: [new GreenhouseAdapter(), new LeverAdapter()] }),
+  }),
+  sourcesStructure({
+    structure: new StructureCatalog({
+      catalog,
+      ai,
+      prompt: structureJobV1,
+      // Teto por rodada, a cada 30 minutos. O intervalo respeita as 15 chamadas por minuto do plano gratuito.
+      limit: 40,
+      intervalMs: 4500,
+    }),
+  }),
   documentsExtract({
     extract: new ExtractDocument({
       documents: new DrizzleDocumentRepository(database.db),

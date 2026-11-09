@@ -11,6 +11,7 @@
     "./audit": "./src/modules/audit/index.ts",
     "./billing": "./src/modules/billing/index.ts",
     "./crypto": "./src/modules/crypto/index.ts",
+    "./discovery": "./src/modules/discovery/index.ts",
     "./privacy": "./src/modules/privacy/index.ts",
     "./privacy/account": "./src/modules/privacy/account.ts",
     "./privacy/account-worker": "./src/modules/privacy/account-worker.ts",
