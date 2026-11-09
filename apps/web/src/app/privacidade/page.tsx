@@ -276,8 +276,9 @@ export default function PrivacyPage() {
                 </li>
               </ul>
               <p>
-                Para qualquer pedido, escreva para {mail}. Respondemos em até 15 dias, como prevê a
-                lei.
+                Exportar os seus dados, retirar a autorização de IA e excluir a conta você faz na
+                página <a href="/conta">Conta</a>, depois de entrar. Para qualquer outro pedido,
+                escreva para {mail}. Respondemos em até 15 dias, como prevê a lei.
               </p>
             </>
           ),

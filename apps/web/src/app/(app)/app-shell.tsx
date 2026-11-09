@@ -45,6 +45,11 @@ const NAV = [
     label: 'Currículo',
     icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M9 12h6M9 16h6',
   },
+  {
+    href: '/conta',
+    label: 'Conta',
+    icon: 'M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1M15 5v4M9 10v4M17 15v4',
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

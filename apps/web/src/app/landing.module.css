@@ -6,6 +6,16 @@
   flex-direction: column;
 }
 
+/* Aviso depois de excluir a conta */
+.deleted {
+  margin: 0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-status-success-subtle);
+  color: var(--color-text-primary);
+  text-align: center;
+  font-size: var(--type-callout-size);
+}
+
 /* Topo */
 .header {
   position: sticky;
