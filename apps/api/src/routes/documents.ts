@@ -26,6 +26,7 @@ const toDto = (d: DocumentRecord) => ({
   failureCode: d.failureCode,
   discardedFacts: d.discardedFacts,
   droppedFields: d.droppedFields,
+  fileCheck: d.fileCheck,
   mimeType: d.mimeType,
   sizeBytes: d.sizeBytes,
   uploadedAt: d.uploadedAt?.toISOString() ?? null,

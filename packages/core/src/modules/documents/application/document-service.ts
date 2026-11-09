@@ -10,10 +10,16 @@ import {
   type DocumentKind,
   type DocumentRecord,
 } from '../domain/document';
+import { evaluateFileCheck, type FileCheckReport, type FileSignals } from '../domain/file-check';
 import type { DocumentDerivedData, DocumentRepository } from './ports/document-repository';
 import type { ObjectStorage } from './ports/object-storage';
 
 const notFound = () => new AppError('NOT_FOUND', 'Documento não encontrado.');
+
+/** Lê os sinais do arquivo para a conferência ATS. Nulo quando o formato não se aplica. */
+export interface FileSignalsPort {
+  read(mimeType: string, bytes: Uint8Array): Promise<FileSignals | null>;
+}
 
 export class DocumentService {
   constructor(
@@ -21,6 +27,7 @@ export class DocumentService {
     private readonly storage: ObjectStorage,
     private readonly audit: AuditLog,
     private readonly derivedData: DocumentDerivedData,
+    private readonly fileSignals: FileSignalsPort,
     private readonly clock: Clock = systemClock,
   ) {}
 
@@ -78,10 +85,12 @@ export class DocumentService {
       const bytes = await this.storage.getBytes(doc.objectKey);
       inspectFileContent(doc.mimeType, bytes);
       const sha256 = createHash('sha256').update(bytes).digest('hex');
+      const fileCheck = doc.kind === 'resume' ? await this.checkFile(doc.mimeType, bytes) : null;
       const updated = await this.repo.markUploaded(userId, id, {
         sha256,
         sizeBytes: bytes.byteLength,
         uploadedAt: this.clock.now(),
+        fileCheck,
       });
       await this.audit.record({
         actorType: 'user',
@@ -96,6 +105,19 @@ export class DocumentService {
       await this.storage.delete(doc.objectKey);
       await this.repo.delete(userId, id);
       throw error;
+    }
+  }
+
+  /**
+   * Conferência ATS do arquivo, sem IA. O PDF do LinkedIn fica de fora: o layout é do LinkedIn.
+   * Se o arquivo não puder ser medido, o envio segue normalmente, só sem a conferência.
+   */
+  private async checkFile(mimeType: string, bytes: Uint8Array): Promise<FileCheckReport | null> {
+    try {
+      const signals = await this.fileSignals.read(mimeType, bytes);
+      return signals ? evaluateFileCheck(signals) : null;
+    } catch {
+      return null;
     }
   }
 

@@ -1,3 +1,4 @@
+import type { FileCheckReport } from '../domain/file-check';
 import { and, asc, eq, schema, sql, withUserContext, type Database } from '@linkediner/db';
 import type { DocumentRecord, DocumentStatus } from '../domain/document';
 import type {
@@ -17,6 +18,7 @@ const toRecord = (r: typeof documents.$inferSelect): DocumentRecord => ({
   sha256: r.sha256,
   failureCode: r.failureCode,
   discardedFacts: r.discardedFacts,
+  fileCheck: (r.fileCheck as FileCheckReport | null) ?? null,
   droppedFields: r.droppedFields,
   uploadedAt: r.uploadedAt,
   expiresAt: r.expiresAt,
@@ -61,7 +63,12 @@ export class DrizzleDocumentRepository implements DocumentRepository {
   markUploaded(
     userId: string,
     id: string,
-    data: { sha256: string; sizeBytes: number; uploadedAt: Date },
+    data: {
+      sha256: string;
+      sizeBytes: number;
+      uploadedAt: Date;
+      fileCheck: FileCheckReport | null;
+    },
   ) {
     return withUserContext(this.db, userId, async (tx) => {
       const [row] = await tx

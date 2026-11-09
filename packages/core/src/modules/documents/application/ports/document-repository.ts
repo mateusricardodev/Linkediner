@@ -1,3 +1,4 @@
+import type { FileCheckReport } from '../../domain/file-check';
 import type { DocumentKind, DocumentRecord, DocumentStatus } from '../../domain/document';
 
 /** Operações do usuário: sempre com contexto de usuário (RLS). */
@@ -10,6 +11,7 @@ export interface DocumentRepository {
       | 'failureCode'
       | 'discardedFacts'
       | 'droppedFields'
+      | 'fileCheck'
       | 'uploadedAt'
       | 'createdAt'
       | 'status'
@@ -22,7 +24,12 @@ export interface DocumentRepository {
   markUploaded(
     userId: string,
     id: string,
-    data: { sha256: string; sizeBytes: number; uploadedAt: Date },
+    data: {
+      sha256: string;
+      sizeBytes: number;
+      uploadedAt: Date;
+      fileCheck: FileCheckReport | null;
+    },
   ): Promise<DocumentRecord>;
   /** Muda o estado. O código de falha é limpo quando não informado. */
   setStatus(

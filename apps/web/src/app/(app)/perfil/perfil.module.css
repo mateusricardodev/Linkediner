@@ -364,3 +364,90 @@
     transition: none;
   }
 }
+
+/* Conferência do arquivo pelos sistemas de recrutamento */
+.fileCheck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-canvas);
+}
+
+.fileCheckHead {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.fileCheckTitle {
+  font-weight: 600;
+}
+
+.fileCheckScore {
+  flex: none;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.fileCheckOk {
+  margin: 0;
+  color: var(--color-status-success-text);
+  font-size: var(--type-callout-size);
+}
+
+.fileCheckList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.fileCheckList li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  padding-left: var(--spacing-xl);
+}
+
+.fileCheckList li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-status-warning);
+}
+
+.fileCheckList li[data-ok='true']::before {
+  background: var(--color-status-success);
+}
+
+.fileCheckLabel {
+  font-weight: 600;
+  font-size: var(--type-callout-size);
+}
+
+.fileCheckText {
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.fileCheckPassed summary {
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+}
+
+.fileCheckPassed .fileCheckList {
+  margin-top: var(--spacing-md);
+}

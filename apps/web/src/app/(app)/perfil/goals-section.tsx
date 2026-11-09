@@ -292,8 +292,9 @@ export function GoalsSection({ onChanged }: { onChanged: () => void }) {
         </>
       )}
       <p className={styles.footnote}>
-        Hoje, a senioridade e a preferência por vagas remotas entram na compatibilidade. Cargos,
-        locais e salário ficam guardados para a busca automática de vagas, que ainda não existe.
+        Cargos, locais e a preferência por vagas remotas escolhem as vagas encontradas para você,
+        nos planos pagos. A senioridade e o formato de trabalho entram na compatibilidade. O salário
+        fica guardado, mas ainda não filtra as vagas.
       </p>
     </section>
   );

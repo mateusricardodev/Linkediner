@@ -253,6 +253,13 @@
       "when": 1794248465744,
       "tag": "0035_novas_fontes_vagas",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794252698253,
+      "tag": "0036_conferencia_arquivo",
+      "breakpoints": true
     }
   ]
 }

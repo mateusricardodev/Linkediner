@@ -10,6 +10,7 @@ import type {
   DashboardResponse as DashboardSchema,
   DiscoveryResponse,
   DocumentDto,
+  FileCheckDto,
   DocumentKind as DocumentKindSchema,
   FeedbackReason as FeedbackReasonSchema,
   JobDto,
@@ -32,6 +33,7 @@ export type ApplicationState = z.infer<typeof ApplicationStateSchema>;
 export type ProfileScore = z.infer<typeof ScoreSchema>;
 export type Recommendations = z.infer<typeof RecommendationsSchema>;
 export type DocumentRecord = z.infer<typeof DocumentDto>;
+export type FileCheck = z.infer<typeof FileCheckDto>;
 export type DocumentKind = z.infer<typeof DocumentKindSchema>;
 export type RequestUpload = z.infer<typeof RequestUploadSchema>;
 export type ProfileFact = z.infer<typeof ProfileFactDto>;

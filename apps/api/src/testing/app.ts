@@ -39,7 +39,11 @@ import {
   ProfileScoreService,
   ProfileService,
 } from '@linkediner/core/profile';
-import { DocumentService, DrizzleDocumentRepository } from '@linkediner/core/documents';
+import {
+  DocumentService,
+  DrizzleDocumentRepository,
+  FileSignalsReader,
+} from '@linkediner/core/documents';
 import {
   DocxResumeRenderer,
   PdfResumeRenderer,
@@ -168,10 +172,16 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
       profile: new ProfileService(profileRepository),
       scores,
       facts: new FactService(factRepository, audit),
-      documents: new DocumentService(documentRepository, s3.storage, audit, {
-        deleteForDocument: (userId, documentId) =>
-          factRepository.deleteUnconfirmedForDocument(userId, documentId),
-      }),
+      documents: new DocumentService(
+        documentRepository,
+        s3.storage,
+        audit,
+        {
+          deleteForDocument: (userId, documentId) =>
+            factRepository.deleteUnconfirmedForDocument(userId, documentId),
+        },
+        new FileSignalsReader(),
+      ),
       applications: new ApplicationService(
         applicationRepository,
         jobRepository,

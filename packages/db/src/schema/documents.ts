@@ -2,6 +2,7 @@ import {
   bigint,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -42,6 +43,8 @@ export const documents = pgTable(
     /** Resultado da conferência da análise: só contagens, sem conteúdo do documento. */
     discardedFacts: integer().notNull().default(0),
     droppedFields: integer().notNull().default(0),
+    /** Conferência do arquivo pelo padrão ATS: só o resultado, sem conteúdo do documento (ADR 0028). */
+    fileCheck: jsonb(),
     uploadedAt: timestamp({ withTimezone: true }),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
