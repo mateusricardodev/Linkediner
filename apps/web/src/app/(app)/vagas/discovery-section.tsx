@@ -10,6 +10,7 @@ import { safeExternalUrl } from '../../../lib/jobs';
 import type { Discovery, Job } from '../../../lib/types';
 import { goalQuery, type useGoal } from '../../../lib/use-goal';
 import { useResource } from '../../../lib/use-resource';
+import { GoalSuggestion } from '../perfil/goal-suggestion';
 import styles from './vagas.module.css';
 
 type Item = Extract<Discovery, { state: 'ready' }>['items'][number];
@@ -111,10 +112,13 @@ export function DiscoverySection({ goalState }: { goalState: ReturnType<typeof u
           seu plano, você continua importando vagas pelo texto ou pelo link.
         </p>
       ) : data.state === 'needs_goal' ? (
-        <p className={styles.empty}>
-          Para buscarmos vagas, <Link href="/perfil#objetivos">defina um objetivo de carreira</Link>
-          .
-        </p>
+        <>
+          <p className={styles.empty}>
+            Para buscarmos vagas, precisamos de um objetivo de carreira.{' '}
+            <Link href="/perfil#objetivos">Definir no perfil</Link>
+          </p>
+          <GoalSuggestion onCreated={() => void goalState.reload()} />
+        </>
       ) : data.items.length === 0 ? (
         <p className={styles.empty}>
           {data.lastSyncedAt
