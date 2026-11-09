@@ -3,33 +3,33 @@
     "bg": {
       "canvas": {
         "$type": "color",
-        "$value": "{primitive.black}"
+        "$value": "{primitive.ink}"
       },
       "surface": {
         "$type": "color",
-        "$value": "{primitive.gray.900}"
+        "$value": "{primitive.night.surface}"
       },
       "surface-secondary": {
         "$type": "color",
-        "$value": "{primitive.gray.850}"
+        "$value": "{primitive.night.surface-secondary}"
       },
       "fill": {
         "$type": "color",
-        "$value": "{primitive.gray.tint-dark}"
+        "$value": "{primitive.night.tint}"
       }
     },
     "text": {
       "primary": {
         "$type": "color",
-        "$value": "{primitive.white}"
+        "$value": "{primitive.cream.100}"
       },
       "secondary": {
         "$type": "color",
-        "$value": "{primitive.gray.600}"
+        "$value": "{primitive.night.text-secondary}"
       },
       "tertiary": {
         "$type": "color",
-        "$value": "{primitive.gray.750}"
+        "$value": "{primitive.night.text-tertiary}"
       },
       "on-accent": {
         "$type": "color",
@@ -37,31 +37,31 @@
       },
       "accent": {
         "$type": "color",
-        "$value": "{primitive.blue.dark}"
+        "$value": "{primitive.electric.soft}"
       }
     },
     "border": {
       "separator": {
         "$type": "color",
-        "$value": "{primitive.gray.820}"
+        "$value": "{primitive.night.separator}"
       },
       "strong": {
         "$type": "color",
-        "$value": "{primitive.gray.800}"
+        "$value": "{primitive.night.strong}"
       },
       "focus": {
         "$type": "color",
-        "$value": "{primitive.blue.dark}"
+        "$value": "{primitive.electric.soft}"
       }
     },
     "accent": {
       "default": {
         "$type": "color",
-        "$value": "{primitive.blue.dark}"
+        "$value": "{primitive.electric.default}"
       },
       "subtle": {
         "$type": "color",
-        "$value": "{primitive.blue.tint-dark}"
+        "$value": "{primitive.electric.tint-dark}"
       }
     },
     "status": {
@@ -115,11 +115,11 @@
       },
       "neutral-text": {
         "$type": "color",
-        "$value": "{primitive.gray.600}"
+        "$value": "{primitive.night.text-secondary}"
       },
       "neutral-subtle": {
         "$type": "color",
-        "$value": "{primitive.gray.tint-dark}"
+        "$value": "{primitive.night.tint}"
       }
     }
   }

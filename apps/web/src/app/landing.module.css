@@ -6,10 +6,6 @@
   flex-direction: column;
 }
 
-.page a {
-  color: inherit;
-}
-
 /* Topo */
 .header {
   position: sticky;
@@ -34,6 +30,7 @@
   align-items: center;
   gap: var(--spacing-sm);
   font-weight: var(--type-headline-weight);
+  color: var(--color-text-primary);
   text-decoration: none;
 }
 
@@ -75,6 +72,7 @@
 .signIn {
   font-size: var(--type-subheadline-size);
   font-weight: 500;
+  color: var(--color-text-primary);
   text-decoration: none;
 }
 
