@@ -25,12 +25,15 @@ export function ResumeContentView({
   onChanged,
   readOnly = false,
   createsFacts = true,
+  tips,
 }: {
   content: ResumeContent;
   path: (itemId: string) => string;
   onChanged: () => void;
   readOnly?: boolean;
   createsFacts?: boolean;
+  /** Melhorias pontuais da conferência ATS, por frase. */
+  tips?: ReadonlyMap<string, string[]>;
 }) {
   const itemProps = { path, onChanged, readOnly, createsFacts };
   const hasGenerated = content.summary.length > 0 || content.experiences.length > 0;
@@ -41,7 +44,7 @@ export function ResumeContentView({
           <h2 className={styles.sectionTitle}>Resumo</h2>
           <ul className={styles.list}>
             {content.summary.map((item) => (
-              <ReviewItem key={item.id} item={item} {...itemProps} />
+              <ReviewItem key={item.id} item={item} tips={tips?.get(item.id)} {...itemProps} />
             ))}
           </ul>
         </section>
@@ -65,7 +68,12 @@ export function ResumeContentView({
               {experience.bullets.length > 0 ? (
                 <ul className={styles.list}>
                   {experience.bullets.map((item) => (
-                    <ReviewItem key={item.id} item={item} {...itemProps} />
+                    <ReviewItem
+                      key={item.id}
+                      item={item}
+                      tips={tips?.get(item.id)}
+                      {...itemProps}
+                    />
                   ))}
                 </ul>
               ) : null}

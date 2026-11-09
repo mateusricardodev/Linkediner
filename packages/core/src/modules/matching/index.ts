@@ -3,6 +3,8 @@ export {
   MATCH_RUBRIC_VERSION,
   MATCH_V1_WEIGHTS,
   computeCompatibility,
+  technologyTerms,
+  tokenize,
   type MatchCriterion,
   type MatchFactor,
   type MatchInput,

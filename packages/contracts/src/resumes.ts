@@ -63,3 +63,22 @@ export const DecideResumeItemBody = z
 export const ExportResumeQuery = z
   .object({ format: z.enum(['pdf', 'docx']) })
   .meta({ id: 'ExportResumeQuery' });
+
+export const AtsReportDto = z
+  .object({
+    rulesVersion: z.string(),
+    passed: z.number().int(),
+    total: z.number().int(),
+    checks: z.array(
+      z.object({
+        id: z.string(),
+        ok: z.boolean(),
+        label: z.string(),
+        /** O que fazer, quando a conferência falha. */
+        recommendation: z.string().nullable(),
+      }),
+    ),
+    /** Melhorias pontuais, cada uma ligada a uma frase do currículo. */
+    tips: z.array(z.object({ itemId: z.string(), code: z.string(), message: z.string() })),
+  })
+  .meta({ id: 'AtsReport' });

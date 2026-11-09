@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FakeAiProvider, generateResumeV1, type AiGenerationRecord } from '../../ai';
+import { FakeAiProvider, generateResumeV2, type AiGenerationRecord } from '../../ai';
 import type { ProfileFact } from '../../profile';
 import { newId } from '../../shared';
-import type { Resume, ResumeContent, ResumeOutput } from '../domain/resume';
+import type { Resume, ResumeContent, ResumeItem, ResumeOutput } from '../domain/resume';
 import { GenerateResume } from './generate-resume';
 import type { ResumeRepository } from './ports/resume-repository';
 import { ResumeService } from './resume-service';
@@ -74,8 +74,10 @@ describe('GenerateResume', () => {
     createdAt: new Date(0),
   };
 
-  function setup(o: { consent?: boolean; facts?: ProfileFact[]; output?: ResumeOutput } = {}) {
-    const { repo, rows } = memoryRepo([{ ...generating }]);
+  function setup(
+    o: { consent?: boolean; facts?: ProfileFact[]; output?: ResumeOutput; others?: Resume[] } = {},
+  ) {
+    const { repo, rows } = memoryRepo([{ ...generating }, ...(o.others ?? [])]);
     const generations: AiGenerationRecord[] = [];
     const ai = new FakeAiProvider().respond(
       'generate_resume',
@@ -94,7 +96,7 @@ describe('GenerateResume', () => {
       facts: { list: async () => o.facts ?? [EXPERIENCE] },
       consents: consent(o.consent ?? true),
       ai,
-      prompt: generateResumeV1,
+      prompt: generateResumeV2,
       quota: { refund },
       generations: {
         record: async (e) => {
@@ -124,7 +126,7 @@ describe('GenerateResume', () => {
     expect(bullets.map((b) => b.status)).toEqual(['grounded', 'suggested']);
     expect(generations[0]).toMatchObject({
       task: 'generate_resume',
-      usage: { promptId: 'generate_resume', promptVersion: 1 },
+      usage: { promptId: 'generate_resume', promptVersion: 2 },
       validation: { grounded: 1, suggested: 1, discardedBullets: 0 },
     });
   });
@@ -133,6 +135,61 @@ describe('GenerateResume', () => {
     const { run, ai } = setup();
     await run();
     expect(JSON.stringify(ai.calls[0]?.promptInput)).not.toContain('trecho do documento');
+  });
+
+  it('envia à IA o que a pessoa corrigiu e removeu nos currículos anteriores', async () => {
+    const bullet = (o: Partial<ResumeItem>): ResumeItem => ({
+      id: newId(),
+      text: 'Reduzi o build em 40%',
+      factIds: ['e1'],
+      status: 'grounded',
+      reason: null,
+      ...o,
+    });
+    const previous: Resume = {
+      id: 'r0',
+      status: 'approved',
+      approvedAt: new Date(0),
+      failureCode: null,
+      createdAt: new Date(0),
+      content: {
+        summary: [bullet({ text: 'Sou apaixonada por tecnologia.', status: 'removed' })],
+        experiences: [
+          {
+            factId: 'e1',
+            company: 'Nubank',
+            title: 'Engenheira',
+            startDate: null,
+            endDate: null,
+            location: null,
+            bullets: [
+              bullet({
+                text: 'Reduzi o tempo de build em 40% com cache.',
+                originalText: 'Responsável por melhorar o build.',
+                status: 'user_confirmed',
+              }),
+              bullet({}),
+            ],
+          },
+        ],
+        skills: [],
+        education: [],
+        certifications: [],
+        projects: [],
+        languages: [],
+      },
+    };
+    const { run, ai } = setup({ others: [previous] });
+    await run();
+    expect(ai.calls[0]?.promptInput.corrections).toEqual({
+      edited: [
+        {
+          before: 'Responsável por melhorar o build.',
+          after: 'Reduzi o tempo de build em 40% com cache.',
+        },
+      ],
+      removed: ['Sou apaixonada por tecnologia.'],
+    });
   });
 
   it('não chama a IA sem consentimento ou sem fatos', async () => {
@@ -272,11 +329,36 @@ describe('ResumeService', () => {
       action: 'confirm',
       text: 'Reduzi em 30%',
     });
-    expect(bulletOf(updated, 0).text).toBe('Reduzi em 30%');
+    expect(bulletOf(updated, 0)).toMatchObject({
+      text: 'Reduzi em 30%',
+      originalText: 'Reduzi em 90%',
+    });
     expect(addConfirmed).toHaveBeenCalledWith(USER, {
       type: 'achievement',
       data: { description: 'Reduzi em 30%' },
     });
+  });
+
+  it('corrigir de novo mantém o texto que a IA gerou como original', async () => {
+    const { service } = setup({ initial: [draft()] });
+    await service.decideItem(USER, 'r1', 'b2', { action: 'confirm', text: 'Reduzi em 41%' });
+    const updated = await service.decideItem(USER, 'r1', 'b2', {
+      action: 'confirm',
+      text: 'Reduzi o tempo em 41%',
+    });
+    expect(bulletOf(updated, 1)).toMatchObject({
+      text: 'Reduzi o tempo em 41%',
+      originalText: 'Reduzi em 40%',
+    });
+  });
+
+  it('confirmar sem mudar o texto não registra correção', async () => {
+    const { service } = setup({ initial: [draft()] });
+    const updated = await service.decideItem(USER, 'r1', 'b2', {
+      action: 'confirm',
+      text: 'Reduzi em 40%',
+    });
+    expect(bulletOf(updated, 1).originalText).toBeUndefined();
   });
 
   it('confirmar frase já comprovada, sem editar, não cria fato novo', async () => {

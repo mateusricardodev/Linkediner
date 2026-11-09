@@ -47,6 +47,7 @@ import {
 } from '@linkediner/core/resumes/export';
 import {
   DrizzleResumeRepository,
+  ResumeAtsService,
   ResumeService,
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
@@ -219,6 +220,11 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         new DrizzleMatchRepository(db),
       ),
       jobs: new JobService(jobRepository, consents, jobQueue, audit, quota),
+      resumeAts: new ResumeAtsService({
+        resumes: resumeRepository,
+        profiles: profileRepository,
+        jobs: jobRepository,
+      }),
       resumeExport: new ResumeExportService({
         resumes: resumeRepository,
         users: userReader,

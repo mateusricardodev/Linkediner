@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Notice, Skeleton } from '../../../../components/ui';
 import { api, ApiError } from '../../../../lib/api';
 import { formatDate } from '../../../../lib/documents';
@@ -12,10 +12,11 @@ import {
   RESUME_STATUS,
   resumeFailureMessage,
 } from '../../../../lib/resumes';
-import type { Resume } from '../../../../lib/types';
+import type { AtsReport, Resume } from '../../../../lib/types';
 import { usePollWhile } from '../../../../lib/use-poll';
 import { useResource } from '../../../../lib/use-resource';
 import styles from '../curriculo.module.css';
+import { AtsPanel } from '../ats-panel';
 import { ResumeContentView } from '../resume-content';
 
 export default function ResumePage() {
@@ -27,6 +28,22 @@ export default function ResumePage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   usePollWhile(resume?.status === 'generating', reload, resume);
+
+  // A conferência ATS depende do conteúdo: refaz a cada mudança do currículo.
+  const hasContent = Boolean(resume?.content);
+  const { data: ats, reload: reloadAts } = useResource(() =>
+    hasContent ? api<AtsReport>(`/v1/resumes/${id}/ats`) : Promise.resolve(null),
+  );
+  useEffect(() => {
+    if (hasContent) void reloadAts();
+  }, [resume, hasContent, reloadAts]);
+  const tips = useMemo(() => {
+    const byItem = new Map<string, string[]>();
+    for (const tip of ats?.tips ?? []) {
+      byItem.set(tip.itemId, [...(byItem.get(tip.itemId) ?? []), tip.message]);
+    }
+    return byItem;
+  }, [ats]);
 
   async function run(name: string, action: () => Promise<unknown>) {
     setBusy(name);
@@ -71,11 +88,15 @@ export default function ResumePage() {
       ) : resume.status === 'failed' ? (
         <Notice tone="danger">{resumeFailureMessage(resume.failureCode)}</Notice>
       ) : resume.content ? (
-        <ResumeContentView
-          content={resume.content}
-          path={(itemId) => `/v1/resumes/${resume.id}/items/${itemId}`}
-          onChanged={() => void reload()}
-        />
+        <>
+          {ats ? <AtsPanel report={ats} /> : null}
+          <ResumeContentView
+            content={resume.content}
+            path={(itemId) => `/v1/resumes/${resume.id}/items/${itemId}`}
+            onChanged={() => void reload()}
+            tips={tips}
+          />
+        </>
       ) : null}
 
       {reviewable ? (

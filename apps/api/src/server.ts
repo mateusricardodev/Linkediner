@@ -25,7 +25,7 @@ import type { ExtractionRequests } from '@linkediner/core/extraction';
 import type { FactService, ProfileScoreService, ProfileService } from '@linkediner/core/profile';
 import type { DiscoveryService } from '@linkediner/core/discovery';
 import type { DocumentService } from '@linkediner/core/documents';
-import type { ResumeService } from '@linkediner/core/resumes';
+import type { ResumeAtsService, ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
 import type { ProductEvents } from '@linkediner/core/analytics';
 import type { ApplicationService, MaterialService } from '@linkediner/core/applications';
@@ -57,6 +57,7 @@ export interface ServerDeps {
     feedback: FeedbackService;
     discovery: DiscoveryService;
     resumes: ResumeService;
+    resumeAts: ResumeAtsService;
     resumeExport: ResumeExportService;
     extraction: ExtractionRequests;
     events: ProductEvents;

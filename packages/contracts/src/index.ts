@@ -27,6 +27,7 @@ export { ProfileScoreResponse, ScoreCriterion, ScoreFactorDto } from './score';
 export {
   ExportResumeQuery,
   DecideResumeItemBody,
+  AtsReportDto,
   ResumeContentDto,
   ResumeDto,
   ResumeItemDto,

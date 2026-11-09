@@ -35,6 +35,8 @@ export interface ResumeItem {
   factIds: string[];
   status: ResumeItemStatus;
   reason: SuggestionReason | null;
+  /** O texto gerado, guardado quando a pessoa corrige a frase. Ensina as próximas gerações. */
+  originalText?: string;
 }
 
 export interface ResumeExperience {
@@ -235,4 +237,50 @@ export function findItem(content: ResumeContent, itemId: string): ResumeItem | u
   return [...content.summary, ...content.experiences.flatMap((e) => e.bullets)].find(
     (i) => i.id === itemId,
   );
+}
+
+/** Até quantas correções de cada tipo seguem para a próxima geração. */
+export const CORRECTIONS_LIMIT = 10;
+
+export interface ResumeCorrections {
+  /** Frases que a pessoa reescreveu: a IA segue o estilo da versão final. */
+  edited: { before: string; after: string }[];
+  /** Frases que a pessoa removeu: a IA não volta a escrever algo parecido. */
+  removed: string[];
+}
+
+/**
+ * O que a pessoa corrigiu nos currículos anteriores, do mais recente para o mais antigo.
+ * Só currículos dela, e o que está sendo gerado fica de fora.
+ */
+export function collectCorrections(
+  resumes: Pick<Resume, 'id' | 'content' | 'createdAt'>[],
+  excludeId: string,
+  limit = CORRECTIONS_LIMIT,
+): ResumeCorrections {
+  const result: ResumeCorrections = { edited: [], removed: [] };
+  const seen = new Set<string>();
+  const newestFirst = [...resumes]
+    .filter((r) => r.id !== excludeId && r.content)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  for (const resume of newestFirst) {
+    const content = resume.content!;
+    for (const item of [...content.summary, ...content.experiences.flatMap((e) => e.bullets)]) {
+      const key = normalizeText(item.originalText ?? item.text);
+      if (seen.has(key)) continue;
+      if (item.status === 'removed' && result.removed.length < limit) {
+        seen.add(key);
+        result.removed.push(item.originalText ?? item.text);
+      } else if (
+        item.status !== 'removed' &&
+        item.originalText !== undefined &&
+        item.originalText !== item.text &&
+        result.edited.length < limit
+      ) {
+        seen.add(key);
+        result.edited.push({ before: item.originalText, after: item.text });
+      }
+    }
+  }
+  return result;
 }

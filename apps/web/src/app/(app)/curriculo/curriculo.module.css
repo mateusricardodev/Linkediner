@@ -272,6 +272,152 @@
   gap: var(--spacing-xs);
 }
 
+/* Conferência ATS */
+.ats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.atsHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.atsTitle {
+  margin: 0 0 var(--spacing-xs);
+  font-size: var(--type-title-3-size);
+  line-height: var(--type-title-3-line);
+  font-weight: var(--type-title-3-weight);
+}
+
+.atsScore {
+  margin: 0;
+  flex: none;
+  font-size: var(--type-title-1-size);
+  line-height: var(--type-title-1-line);
+  font-weight: 700;
+}
+
+.atsScore span {
+  font-size: var(--type-callout-size);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.atsBar {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-fill);
+  overflow: hidden;
+}
+
+.atsBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent-default);
+}
+
+.atsLabel {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--type-caption-size);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.atsReady {
+  margin: 0;
+  color: var(--color-status-success-text);
+}
+
+.atsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.atsList li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  padding-left: var(--spacing-xl);
+}
+
+.atsList li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-status-warning);
+}
+
+.atsList li[data-ok='true']::before {
+  background: var(--color-status-success);
+}
+
+.atsCheckLabel {
+  font-weight: 600;
+}
+
+.atsRecommendation {
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.atsRecommendation a {
+  color: var(--color-text-accent);
+}
+
+.atsPassed summary {
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+}
+
+.atsPassed .atsList {
+  margin-top: var(--spacing-md);
+}
+
+/* Dicas pontuais embaixo de cada frase */
+.tips {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  list-style: none;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-subtle);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}
+
+.tips li + li {
+  margin-top: var(--spacing-xs);
+}
+
+.tips li::before {
+  content: 'ATS · ';
+  font-weight: 600;
+  color: var(--color-text-accent);
+}
+
+.item[id] {
+  scroll-margin-top: 96px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .resumeLink {
     transition: none;

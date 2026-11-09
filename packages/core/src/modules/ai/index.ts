@@ -18,6 +18,7 @@ export { createAiProvider } from './infrastructure/create-ai-provider';
 export { DrizzleAiGenerationLog } from './infrastructure/drizzle-ai-generation-log';
 export { extractProfileV1 } from './prompts/extract-profile/v1';
 export { generateResumeV1 } from './prompts/generate-resume/v1';
+export { generateResumeV2 } from './prompts/generate-resume/v2';
 export { tailorResumeV1 } from './prompts/tailor-resume/v1';
 export { coverLetterV1 } from './prompts/cover-letter/v1';
 export { formAnswersV1 } from './prompts/form-answers/v1';

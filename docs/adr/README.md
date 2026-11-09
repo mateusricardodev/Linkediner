@@ -28,3 +28,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0022 | [Eventos de produto e métricas em SQL](0022-eventos-e-metricas.md) | Proposto |
 | 0023 | [Avaliação de IA com armadilhas](0023-avaliacao-de-ia.md) | Proposto |
 | 0024 | [Vagas automáticas por um catálogo de fontes públicas](0024-vagas-automaticas.md) | Proposto |
+| 0025 | [Conferência ATS e aprendizado com as correções](0025-analise-ats.md) | Proposto |

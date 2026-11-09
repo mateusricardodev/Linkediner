@@ -8,7 +8,7 @@ import {
   extractProfileV1,
   FakeAiProvider,
   formAnswersV1,
-  generateResumeV1,
+  generateResumeV2,
   structureJobV1,
   tailorResumeV1,
 } from '@linkediner/core/ai';
@@ -213,7 +213,7 @@ const tasks = [
       facts: factRepository,
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       ai,
-      prompt: generateResumeV1,
+      prompt: generateResumeV2,
       generations,
       quota,
       audit,
