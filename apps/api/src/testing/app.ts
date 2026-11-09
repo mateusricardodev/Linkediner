@@ -196,6 +196,13 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         profileRepository,
         new DrizzleFeedbackRepository(db),
         audit,
+        // Sem limites reais, o plano libera tudo, como nos outros testes de fluxo.
+        {
+          allowed: (userId) =>
+            opts.realQuota
+              ? entitlements.enabled(userId, 'monitoring.frequency_hours')
+              : Promise.resolve(true),
+        },
       ),
       feedback: new FeedbackService(
         new DrizzleFeedbackRepository(db),

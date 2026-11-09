@@ -18,8 +18,8 @@ export interface PlanWithEntitlements {
 }
 
 /** Só estes status dão direito ao plano pago. `past_due`: o provedor ainda está tentando cobrar. */
-const GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due']);
-export const grantsPlan = (status: string) => GRANTING_STATUSES.has(status);
+export const GRANTING_STATUSES: readonly string[] = ['active', 'trialing', 'past_due'];
+export const grantsPlan = (status: string) => GRANTING_STATUSES.includes(status);
 
 /** Período mensal em UTC. */
 export function periodOf(now: Date): { key: string; resetsAt: Date } {

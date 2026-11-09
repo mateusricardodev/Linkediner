@@ -182,6 +182,7 @@ const app = await buildServer({
       profileRepository,
       new DrizzleFeedbackRepository(database.db),
       audit,
+      { allowed: (userId) => quota.enabled(userId, 'monitoring.frequency_hours') },
     ),
     feedback: new FeedbackService(
       new DrizzleFeedbackRepository(database.db),

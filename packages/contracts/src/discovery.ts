@@ -22,6 +22,8 @@ export const DiscoveryResponse = z
   .discriminatedUnion('state', [
     /** Nenhuma fonte ligada. */
     z.object({ state: z.literal('disabled') }),
+    /** As vagas encontradas fazem parte dos planos pagos. */
+    z.object({ state: z.literal('upgrade_required') }),
     z.object({ state: z.literal('needs_goal'), lastSyncedAt: z.iso.datetime().nullable() }),
     z.object({
       state: z.literal('ready'),

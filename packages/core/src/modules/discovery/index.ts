@@ -16,6 +16,7 @@ export type {
 export { StructureCatalog, SyncCatalog } from './application/sync-catalog';
 export {
   DiscoveryService,
+  type DiscoveryAccess,
   type DiscoveryFeed,
   type DiscoveryItem,
 } from './application/discovery-service';

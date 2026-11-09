@@ -20,6 +20,8 @@ export interface DiscoveryItem {
 
 export type DiscoveryFeed =
   | { state: 'disabled' }
+  /** As vagas encontradas são do plano pago. */
+  | { state: 'upgrade_required' }
   | { state: 'needs_goal'; lastSyncedAt: Date | null }
   | {
       state: 'ready';
@@ -31,6 +33,16 @@ export type DiscoveryFeed =
 
 const FEED_LIMIT = 30;
 
+/** O plano libera as vagas encontradas? Responde sem saber qual é o plano (ADR 0021). */
+export interface DiscoveryAccess {
+  allowed(userId: string): Promise<boolean>;
+}
+
+const upgradeRequired = () =>
+  new AppError('FORBIDDEN', 'As vagas encontradas para você fazem parte dos planos pagos.', {
+    feature: 'monitoring.frequency_hours',
+  });
+
 export class DiscoveryService {
   constructor(
     private readonly catalog: CatalogReader,
@@ -39,6 +51,7 @@ export class DiscoveryService {
     private readonly profiles: Pick<ProfileRepository, 'listGoals'>,
     private readonly feedback: Pick<FeedbackRepository, 'list'>,
     private readonly audit: AuditLog,
+    private readonly access: DiscoveryAccess,
   ) {}
 
   /**
@@ -47,6 +60,7 @@ export class DiscoveryService {
    */
   async feed(userId: string, goalId?: string): Promise<DiscoveryFeed> {
     if (!(await this.catalog.isEnabled(userId))) return { state: 'disabled' };
+    if (!(await this.access.allowed(userId))) return { state: 'upgrade_required' };
     const [goals, lastSyncedAt] = await Promise.all([
       this.profiles.listGoals(userId),
       this.catalog.lastSyncedAt(userId),
@@ -92,6 +106,7 @@ export class DiscoveryService {
 
   /** Copia a vaga para as da pessoa. A partir daí, ela segue o caminho de qualquer vaga dela. */
   async save(userId: string, postingId: string): Promise<Job> {
+    if (!(await this.access.allowed(userId))) throw upgradeRequired();
     const posting = await this.catalog.find(userId, postingId);
     if (!posting) throw new AppError('NOT_FOUND', 'Esta vaga não está mais aberta.');
     if (!posting.structured) {

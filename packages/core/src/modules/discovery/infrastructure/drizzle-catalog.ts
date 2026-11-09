@@ -1,9 +1,12 @@
 import { and, desc, eq, schema, sql, withUserContext, type Database } from '@linkediner/db';
-import { newId } from '../../shared';
+import { GRANTING_STATUSES } from '../../billing';
+import { newId, type FeatureKey } from '../../shared';
 import type { Board, CatalogPosting, CatalogReader, CatalogRepository } from '../application/ports';
 import { buildRawText, contentHash, type ExternalPosting } from '../domain/discovery';
 
 const { careerGoals, externalJobs, jobBoards, jobSources } = schema;
+
+const MONITORING_FEATURE: FeatureKey = 'monitoring.frequency_hours';
 
 const postingColumns = {
   id: externalJobs.id,
@@ -164,7 +167,15 @@ export class DrizzleCatalogRepository implements CatalogRepository {
     return rows.map(toPosting);
   }
 
+  /**
+   * Só objetivos de quem tem as vagas encontradas no plano: quem não vê a lista não gasta análise.
+   * O plano vale como em `planOf`: o da assinatura válida ou, sem ela, o gratuito.
+   */
   activeGoals() {
+    const granting = sql.join(
+      GRANTING_STATUSES.map((status) => sql`${status}`),
+      sql`, `,
+    );
     return this.db
       .select({
         title: careerGoals.title,
@@ -173,7 +184,21 @@ export class DrizzleCatalogRepository implements CatalogRepository {
         remoteOnly: careerGoals.remoteOnly,
       })
       .from(careerGoals)
-      .where(eq(careerGoals.isActive, true));
+      .where(
+        and(
+          eq(careerGoals.isActive, true),
+          sql`exists (
+            select 1
+            from plans p
+            join plan_entitlements e on e.plan_id = p.id
+            left join subscriptions s
+              on s.user_id = ${careerGoals.userId} and s.status in (${granting})
+            where e.feature_key = ${MONITORING_FEATURE}
+              and e.limit_value > 0
+              and (p.id = s.plan_id or (s.id is null and p.key = 'free' and p.active))
+          )`,
+        ),
+      );
   }
 
   async saveStructured(
