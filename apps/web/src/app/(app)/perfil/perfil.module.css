@@ -472,3 +472,64 @@
   text-decoration: none;
   padding-inline: var(--spacing-sm);
 }
+
+/* Ajustes no LinkedIn, marcados pela própria pessoa */
+.checklistHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.checklistCount {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  overflow: hidden;
+}
+
+.checklist > li + li {
+  border-top: 1px solid var(--color-border-separator);
+}
+
+.checklistItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  cursor: pointer;
+}
+
+.checklistItem input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--color-accent-default);
+}
+
+.checklistTitle,
+.checklistDone {
+  display: block;
+  font-weight: 600;
+}
+
+.checklistDone {
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
+}
+
+.checklistHow {
+  display: block;
+  margin-top: var(--spacing-2xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}

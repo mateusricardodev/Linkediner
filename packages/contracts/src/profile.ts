@@ -13,12 +13,18 @@ export const ProfileLinkDto = z
   .object({ kind: LinkKind, url: z.string().max(300) })
   .meta({ id: 'ProfileLink' });
 
+export const LinkedinChecklistItem = z
+  .enum(['open_to_work', 'custom_url', 'headline', 'about', 'skills', 'job_preferences', 'photo'])
+  .meta({ id: 'LinkedinChecklistItem' });
+
 export const ProfileDto = z
   .object({
     id: z.uuid(),
     headline: z.string().nullable(),
     summary: z.string().nullable(),
     yearsExperience: z.number().int().nullable(),
+    /** Ajustes do LinkedIn que a pessoa marcou como feitos. */
+    linkedinChecklist: z.array(LinkedinChecklistItem),
     links: z.array(ProfileLinkDto),
   })
   .meta({ id: 'Profile' });
@@ -28,6 +34,7 @@ export const UpdateProfileBody = z
     headline: z.string().max(500).nullable().optional(),
     summary: z.string().max(5000).nullable().optional(),
     yearsExperience: z.number().int().nullable().optional(),
+    linkedinChecklist: z.array(LinkedinChecklistItem).max(20).optional(),
   })
   .strict()
   .meta({ id: 'UpdateProfileBody' });

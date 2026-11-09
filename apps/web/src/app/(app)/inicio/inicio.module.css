@@ -386,3 +386,26 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Cartão dos ajustes no LinkedIn, abaixo do perfil */
+.linkedinCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.linkedinTitle {
+  font-weight: 600;
+}
+
+.linkedinText {
+  color: var(--color-text-secondary);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+}

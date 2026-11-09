@@ -10,6 +10,7 @@ import { useResource } from '../../../lib/use-resource';
 import { DocumentRow } from './document-row';
 import { FactItem } from './fact-item';
 import { GoalsSection } from './goals-section';
+import { LinkedinChecklist } from './linkedin-checklist';
 import styles from './perfil.module.css';
 import { ScoreSection } from './score-section';
 import { UploadCard } from './upload-card';
@@ -187,6 +188,8 @@ export default function ProfilePage() {
           </details>
         ) : null}
       </section>
+
+      <LinkedinChecklist />
     </div>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "linkedin_checklist" text[] DEFAULT '{}' NOT NULL;

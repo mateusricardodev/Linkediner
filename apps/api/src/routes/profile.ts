@@ -64,11 +64,12 @@ export const profileRoutes =
         },
       },
       async (req) => {
-        const { headline, summary, yearsExperience } = req.body;
+        const { headline, summary, yearsExperience, linkedinChecklist } = req.body;
         return deps.profile.update(actorOf(req).userId, {
           ...(headline !== undefined ? { headline } : {}),
           ...(summary !== undefined ? { summary } : {}),
           ...(yearsExperience !== undefined ? { yearsExperience } : {}),
+          ...(linkedinChecklist !== undefined ? { linkedinChecklist } : {}),
         });
       },
     );

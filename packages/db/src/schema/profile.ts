@@ -29,6 +29,8 @@ export const profiles = pgTable('profiles', {
   headline: text(),
   summary: text(),
   yearsExperience: integer(),
+  /** Ajustes do LinkedIn que a própria pessoa marcou como feitos. Nada é lido do LinkedIn. */
+  linkedinChecklist: text().array().notNull().default([]),
   ...timestamps,
 });
 

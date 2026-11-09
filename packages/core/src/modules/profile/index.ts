@@ -1,6 +1,7 @@
 export {
   CURRENCIES,
   LIMITS as PROFILE_LIMITS,
+  LINKEDIN_CHECKLIST_ITEMS,
   LINK_KINDS,
   SALARY_PERIODS,
   SENIORITIES,
@@ -12,6 +13,7 @@ export {
   type CareerGoalInput,
   type Currency,
   type LinkKind,
+  type LinkedinChecklistItem,
   type Profile,
   type ProfileLink,
   type SalaryPeriod,

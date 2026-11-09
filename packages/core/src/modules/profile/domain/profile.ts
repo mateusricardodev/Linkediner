@@ -31,11 +31,27 @@ export const LIMITS = {
   listItem: 60,
 } as const;
 
+/**
+ * Ajustes do perfil do LinkedIn que ajudam recrutadores a encontrar a pessoa. A pessoa marca o que
+ * fez: o LinkedIner não acessa a conta dela. Os textos de cada item ficam no front.
+ */
+export const LINKEDIN_CHECKLIST_ITEMS = [
+  'open_to_work',
+  'custom_url',
+  'headline',
+  'about',
+  'skills',
+  'job_preferences',
+  'photo',
+] as const;
+export type LinkedinChecklistItem = (typeof LINKEDIN_CHECKLIST_ITEMS)[number];
+
 export interface Profile {
   id: string;
   headline: string | null;
   summary: string | null;
   yearsExperience: number | null;
+  linkedinChecklist: LinkedinChecklistItem[];
 }
 
 export interface ProfileLink {
@@ -88,6 +104,16 @@ export function validateProfilePatch(
       );
     }
     out.yearsExperience = v;
+  }
+  if (patch.linkedinChecklist !== undefined) {
+    const known = new Set<string>(LINKEDIN_CHECKLIST_ITEMS);
+    if (patch.linkedinChecklist.some((item) => !known.has(item))) {
+      throw invalid('Item desconhecido na lista de ajustes do LinkedIn.', 'linkedinChecklist');
+    }
+    // Na ordem da lista, sem repetir: a mesma marcação sempre gera o mesmo valor.
+    out.linkedinChecklist = LINKEDIN_CHECKLIST_ITEMS.filter((item) =>
+      patch.linkedinChecklist!.includes(item),
+    );
   }
   return out;
 }

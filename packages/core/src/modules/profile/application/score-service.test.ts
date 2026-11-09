@@ -17,6 +17,7 @@ function setup(initialFacts: ProfileFact[] = []) {
         headline: null,
         summary: null,
         yearsExperience: null,
+        linkedinChecklist: [],
       }),
       listLinks: async () => [],
       listGoals: async () => [],
