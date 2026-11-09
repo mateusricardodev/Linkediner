@@ -31,8 +31,11 @@ import {
 import { createFieldCipher } from '@linkediner/core/crypto';
 import {
   DrizzleCatalogRepository,
+  AshbyAdapter,
+  GitHubIssuesAdapter,
   GreenhouseAdapter,
   LeverAdapter,
+  SmartRecruitersAdapter,
   StructureCatalog,
   SyncCatalog,
 } from '@linkediner/core/discovery';
@@ -164,7 +167,16 @@ const catalog = new DrizzleCatalogRepository(database.db);
 const tasks = [
   systemHeartbeat({ ping: () => pingDb(database.db) }),
   sourcesSync({
-    sync: new SyncCatalog({ catalog, adapters: [new GreenhouseAdapter(), new LeverAdapter()] }),
+    sync: new SyncCatalog({
+      catalog,
+      adapters: [
+        new GreenhouseAdapter(),
+        new LeverAdapter(),
+        new AshbyAdapter(),
+        new SmartRecruitersAdapter(),
+        new GitHubIssuesAdapter(),
+      ],
+    }),
   }),
   sourcesStructure({
     structure: new StructureCatalog({

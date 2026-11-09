@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildRawText, contentHash, htmlToText, isRelevantPosting, matchesGoal } from './discovery';
+import {
+  buildRawText,
+  contentHash,
+  htmlToText,
+  isRelevantPosting,
+  markdownToText,
+  matchesGoal,
+  parseCommunityTitle,
+} from './discovery';
 
 const posting = (
   title: string,
@@ -154,5 +162,103 @@ describe('matchesGoal', () => {
     it('vaga remota vale em qualquer local', () => {
       expect(matchesGoal(posting('Dev', 'São Paulo', 'remote'), recife)).toBe(true);
     });
+  });
+});
+
+describe('parseCommunityTitle', () => {
+  // Títulos no formato real dos repositórios, com empresas fictícias.
+  it.each([
+    [
+      '[Remoto] Desenvolvedor(a) Backend Pleno - White Label e Plataforma - Empresa A',
+      'Desenvolvedor(a) Backend Pleno - White Label e Plataforma',
+      'Empresa A',
+      'Remoto, Brasil',
+    ],
+    [
+      '[Remoto] Desenvolvedor(a) Full Stack Sênior — AI & Agents na Empresa B | 4 dias / 32h',
+      'Desenvolvedor(a) Full Stack Sênior — AI & Agents',
+      'Empresa B',
+      'Remoto, Brasil',
+    ],
+    [
+      '[Nova Lima, Brasil] Full Cycle Developer (Júnior) na Empresa C',
+      'Full Cycle Developer (Júnior)',
+      'Empresa C',
+      'Nova Lima, Brasil',
+    ],
+    [
+      '[Remoto] Desenvolvedor(a) Java Pleno (Carteira Digital) | Confidencial (vaga via Empresa D)',
+      'Desenvolvedor(a) Java Pleno (Carteira Digital)',
+      null,
+      'Remoto, Brasil',
+    ],
+    [
+      'Senior Full Stack Software Engineer (React / Python) | Remote | Empresa E',
+      'Senior Full Stack Software Engineer (React / Python)',
+      null,
+      'Brasil',
+    ],
+    ['Desenvolvedor no time de dados', 'Desenvolvedor no time de dados', null, 'Brasil'],
+    [
+      '[Remoto] Senior Front-end Engineer (React) na Empresa H — 4 dias / 32h',
+      'Senior Front-end Engineer (React)',
+      'Empresa H',
+      'Remoto, Brasil',
+    ],
+    [
+      'Empresa I - Desenvolvedor Fullstack Sênior (PHP) - 100% Presencial na Barra da Tijuca',
+      'Desenvolvedor Fullstack Sênior (PHP) - 100% Presencial na Barra da Tijuca',
+      'Empresa I',
+      'Brasil',
+    ],
+    [
+      '[Remoto] Senior Backend Engineer PHP - Empresa J (PJ, LATAM)',
+      'Senior Backend Engineer PHP',
+      'Empresa J',
+      'Remoto, Brasil',
+    ],
+    [
+      '[HÍBRIDO] [São Paulo] Tech Lead | Data Foundation',
+      'Tech Lead',
+      null,
+      'HÍBRIDO - São Paulo, Brasil',
+    ],
+    [
+      'Dev Pleno (PHP) - 100% Presencial | Jardim Europa, São Paulo',
+      'Dev Pleno (PHP) - 100% Presencial',
+      null,
+      'Brasil',
+    ],
+  ])('%s', (raw, title, company, location) => {
+    expect(parseCommunityTitle(raw)).toMatchObject({ title, company, location });
+  });
+
+  it('lê o formato pelas etiquetas, mesmo com emoji', () => {
+    expect(
+      parseCommunityTitle('Dev React Pleno - Empresa F', ['🏠 Remoto', '⚖️ PJ']),
+    ).toMatchObject({
+      location: 'Remoto, Brasil',
+      remote: true,
+    });
+    expect(parseCommunityTitle('[Híbrido - São Paulo] Dev React', [])).toMatchObject({
+      location: 'Híbrido - São Paulo, Brasil',
+      remote: false,
+    });
+  });
+
+  it('local de outro país não ganha "Brasil"', () => {
+    expect(parseCommunityTitle('[Remote - USA] Backend Engineer - Empresa G').location).toBe(
+      'Remote - USA',
+    );
+  });
+});
+
+describe('markdownToText', () => {
+  it('tira marcação, imagens e endereços de links', () => {
+    expect(
+      markdownToText(
+        '# Vaga\n\n![logo](https://x.example/a.png)\n- **Node.js**\n- [x] Inglês\n> citação\n\nCandidate-se em [este link](https://x.example/form) <!-- oculto -->',
+      ),
+    ).toBe('Vaga\n• Node.js\n• Inglês\ncitação\n\nCandidate-se em este link');
   });
 });
