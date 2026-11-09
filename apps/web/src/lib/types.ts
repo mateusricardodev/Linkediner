@@ -16,6 +16,7 @@ import type {
   JobDto,
   JobMatchResponse,
   MeResponse as MeSchema,
+  ProfileDto,
   ProfileFactDto,
   ProfileScoreResponse as ScoreSchema,
   RecommendationsResponse as RecommendationsSchema,
@@ -36,6 +37,7 @@ export type DocumentRecord = z.infer<typeof DocumentDto>;
 export type FileCheck = z.infer<typeof FileCheckDto>;
 export type DocumentKind = z.infer<typeof DocumentKindSchema>;
 export type RequestUpload = z.infer<typeof RequestUploadSchema>;
+export type Profile = z.infer<typeof ProfileDto>;
 export type ProfileFact = z.infer<typeof ProfileFactDto>;
 export type Resume = z.infer<typeof ResumeDto>;
 export type ResumeContent = z.infer<typeof ResumeContentDto>;

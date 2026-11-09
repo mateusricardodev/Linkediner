@@ -35,8 +35,26 @@ describe('perfil profissional', () => {
       headline: null,
       summary: null,
       yearsExperience: null,
+      linkedinChecklist: [],
       links: [],
     });
+  });
+
+  it('guarda os ajustes do LinkedIn marcados, na ordem da lista e sem repetir', async () => {
+    const res = await t.call(alice, 'PATCH', '/v1/profile', {
+      linkedinChecklist: ['skills', 'open_to_work', 'skills'],
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().linkedinChecklist).toEqual(['open_to_work', 'skills']);
+    // Mudar outro campo não apaga a lista.
+    await t.call(alice, 'PATCH', '/v1/profile', { summary: 'Resumo fictício.' });
+    expect((await t.call(alice, 'GET', '/v1/profile')).json().linkedinChecklist).toEqual([
+      'open_to_work',
+      'skills',
+    ]);
+    const unknown = await t.call(alice, 'PATCH', '/v1/profile', { linkedinChecklist: ['senha'] });
+    expect(unknown.statusCode).toBe(400);
+    await t.call(alice, 'PATCH', '/v1/profile', { linkedinChecklist: [], summary: null });
   });
 
   it('atualiza título, resumo e anos de experiência', async () => {

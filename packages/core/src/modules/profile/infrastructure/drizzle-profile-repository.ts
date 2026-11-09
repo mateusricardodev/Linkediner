@@ -1,6 +1,13 @@
 import { and, asc, eq, schema, sql, withUserContext, type Database } from '@linkediner/db';
 import { newId } from '../../shared';
-import type { CareerGoal, CareerGoalInput, Profile, ProfileLink } from '../domain/profile';
+import {
+  LINKEDIN_CHECKLIST_ITEMS,
+  type CareerGoal,
+  type CareerGoalInput,
+  type LinkedinChecklistItem,
+  type Profile,
+  type ProfileLink,
+} from '../domain/profile';
 import type { ProfileRepository } from '../application/ports/profile-repository';
 
 const { profiles, profileLinks, careerGoals } = schema;
@@ -10,6 +17,9 @@ const toProfile = (r: typeof profiles.$inferSelect): Profile => ({
   headline: r.headline,
   summary: r.summary,
   yearsExperience: r.yearsExperience,
+  linkedinChecklist: r.linkedinChecklist.filter((item): item is LinkedinChecklistItem =>
+    (LINKEDIN_CHECKLIST_ITEMS as readonly string[]).includes(item),
+  ),
 });
 
 const toGoal = (r: typeof careerGoals.$inferSelect): CareerGoal => ({

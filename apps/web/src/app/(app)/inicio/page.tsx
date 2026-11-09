@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { APPLICATION_STATE_LABELS } from '../../../components/application-state';
 import { Badge, ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
 import { api } from '../../../lib/api';
-import type { Dashboard, ProfileScore, Recommendations } from '../../../lib/types';
+import { CHECKLIST } from '../../../lib/linkedin-checklist';
+import type { Dashboard, Profile, ProfileScore, Recommendations } from '../../../lib/types';
 import { useResource } from '../../../lib/use-resource';
 import { useMe } from '../app-shell';
 import styles from './inicio.module.css';
@@ -54,6 +55,8 @@ export default function HomePage() {
   const dashboard = useResource(() => api<Dashboard>('/v1/dashboard'));
   const recommendations = useResource(() => api<Recommendations>('/v1/jobs/recommendations'));
   const score = useResource(() => api<ProfileScore>('/v1/profile/score'));
+  const profile = useResource(() => api<Profile>('/v1/profile'));
+  const checklistDone = profile.data?.linkedinChecklist.length ?? 0;
   const firstName = me.user.name?.split(' ')[0];
   const gaps = score.data?.factors.filter((f) => f.kind === 'gap').slice(0, 3) ?? [];
   const positives = score.data?.factors.filter((f) => f.kind === 'positive').slice(0, 2) ?? [];
@@ -224,6 +227,17 @@ export default function HomePage() {
               </>
             )}
           </div>
+          {profile.data && checklistDone < CHECKLIST.length ? (
+            <Link href="/perfil#linkedin" className={styles.linkedinCard}>
+              <span className={styles.linkedinTitle}>Ajustes no LinkedIn</span>
+              <span className={styles.linkedinText}>
+                {checklistDone === 0
+                  ? `${CHECKLIST.length} mudanças rápidas que ajudam recrutadores a encontrar você.`
+                  : `${checklistDone} de ${CHECKLIST.length} feitos. Faltam ${CHECKLIST.length - checklistDone}.`}
+              </span>
+              <span className={styles.shortcutAction}>Ver os ajustes →</span>
+            </Link>
+          ) : null}
         </aside>
       </div>
     </div>
