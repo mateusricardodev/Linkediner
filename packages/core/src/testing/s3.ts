@@ -1,6 +1,26 @@
 import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainers';
 import { S3ObjectStorage } from '../modules/documents/infrastructure/s3-object-storage';
 
+/**
+ * Para o container sem derrubar a suíte. Com a máquina carregada, o Docker pode recusar a remoção
+ * porque o container ainda está parando (HTTP 409). Os testes já terminaram: o que sobrar, o Ryuk do
+ * Testcontainers remove ao fim da execução.
+ */
+async function stopQuietly(container: { stop(options?: { timeout?: number }): Promise<unknown> }) {
+  try {
+    await container.stop({ timeout: 10_000 });
+  } catch (error) {
+    const status = (error as { statusCode?: number }).statusCode;
+    const message = error instanceof Error ? error.message : '';
+    if (
+      status !== 409 &&
+      !/container is running|removal of container .* is already in progress/i.test(message)
+    ) {
+      throw error;
+    }
+  }
+}
+
 /** Sobe um S3 local (SeaweedFS) em container para testes de integração. */
 export async function startTestS3(bucket = 'test-documents') {
   const container: StartedTestContainer = await new GenericContainer('chrislusf/seaweedfs:3.97')
@@ -27,5 +47,5 @@ export async function startTestS3(bucket = 'test-documents') {
       await new Promise((r) => setTimeout(r, 500));
     }
   }
-  return { storage, config, stop: () => container.stop() };
+  return { storage, config, stop: () => stopQuietly(container) };
 }
