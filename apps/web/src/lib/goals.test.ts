@@ -6,6 +6,7 @@ import {
   goalSummary,
   parseList,
   resolveGoal,
+  suggestGoal,
 } from './goals';
 import type { CareerGoal } from './types';
 
@@ -108,5 +109,60 @@ describe('resolveGoal', () => {
   it('sem objetivo ativo, não há o que usar', () => {
     expect(resolveGoal([goal('a', false)], null)).toBeNull();
     expect(resolveGoal([], null)).toBeNull();
+  });
+});
+
+describe('suggestGoal', () => {
+  const experience = (data: Record<string, string | null>, verification = 'extracted') => ({
+    type: 'experience' as const,
+    verification: verification as 'extracted',
+    data,
+  });
+
+  it('usa a experiência atual e tira o nível do nome', () => {
+    const suggestion = suggestGoal([
+      experience({ title: 'Desenvolvedora Junior', startDate: '2019', endDate: '2021' }),
+      experience({ title: 'Desenvolvedora Backend Pleno', startDate: '03/2021', endDate: 'atual' }),
+    ]);
+    expect(suggestion).toMatchObject({
+      role: 'Desenvolvedora Backend',
+      seniorityFound: true,
+      form: {
+        title: 'Desenvolvedora Backend',
+        targetRoles: 'Desenvolvedora Backend',
+        seniority: 'mid',
+      },
+    });
+  });
+
+  it('sem experiência atual, fica a que começou por último, mesmo em formatos diferentes', () => {
+    const suggestion = suggestGoal([
+      experience({ title: 'Analista de Dados', startDate: 'jan 2020', endDate: 'dez 2022' }),
+      experience({ title: 'Senior Data Engineer', startDate: '2023-02', endDate: '2024-06' }),
+    ]);
+    expect(suggestion).toMatchObject({ role: 'Data Engineer', form: { seniority: 'senior' } });
+  });
+
+  it('liderança faz parte do cargo, e sem nível no título a sugestão diz isso', () => {
+    expect(
+      suggestGoal([experience({ title: 'Tech Lead', startDate: '2022', endDate: null })]),
+    ).toMatchObject({
+      role: 'Tech Lead',
+      form: { seniority: 'lead' },
+    });
+    expect(
+      suggestGoal([
+        experience({ title: 'Engenheira de Software', startDate: '2022', endDate: null }),
+      ]),
+    ).toMatchObject({ seniorityFound: false, form: { seniority: 'mid' } });
+  });
+
+  it('ignora experiência recusada ou sem cargo, e sem nenhuma não sugere nada', () => {
+    expect(
+      suggestGoal([
+        experience({ title: 'Cargo recusado', startDate: '2024', endDate: null }, 'rejected'),
+        experience({ title: null, startDate: '2024', endDate: null }),
+      ]),
+    ).toBeNull();
   });
 });

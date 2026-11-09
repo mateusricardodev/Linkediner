@@ -16,6 +16,7 @@ import {
 } from '../../../lib/goals';
 import type { CareerGoal } from '../../../lib/types';
 import { useResource } from '../../../lib/use-resource';
+import { GoalSuggestion } from './goal-suggestion';
 import styles from './perfil.module.css';
 
 const message = (cause: unknown) =>
@@ -237,7 +238,7 @@ function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void 
 
 export function GoalsSection({ onChanged }: { onChanged: () => void }) {
   const goals = useResource(() => api<CareerGoal[]>('/v1/career-goals'));
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<GoalForm | null>(null);
   const list = goals.data ?? [];
   const activeCount = list.filter((goal) => goal.isActive).length;
 
@@ -264,16 +265,19 @@ export function GoalsSection({ onChanged }: { onChanged: () => void }) {
               ))}
             </ul>
           ) : !creating ? (
-            <p className={styles.empty}>Nenhum objetivo definido ainda.</p>
+            <>
+              <p className={styles.empty}>Nenhum objetivo definido ainda.</p>
+              <GoalSuggestion onCreated={changed} onAdjust={(form) => setCreating(form)} />
+            </>
           ) : null}
           {creating ? (
             <div className={styles.goalCard}>
               <GoalEditor
-                initial={EMPTY_GOAL_FORM}
+                initial={creating}
                 goalId={null}
-                onCancel={() => setCreating(false)}
+                onCancel={() => setCreating(null)}
                 onDone={() => {
-                  setCreating(false);
+                  setCreating(null);
                   changed();
                 }}
               />
@@ -284,7 +288,7 @@ export function GoalsSection({ onChanged }: { onChanged: () => void }) {
             </p>
           ) : (
             <div>
-              <Button variant="secondary" onClick={() => setCreating(true)}>
+              <Button variant="secondary" onClick={() => setCreating(EMPTY_GOAL_FORM)}>
                 Novo objetivo
               </Button>
             </div>

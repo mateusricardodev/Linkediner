@@ -39,6 +39,7 @@ export function useGoal() {
     active: (all ?? []).filter((goal) => goal.isActive),
     goal: all ? resolveGoal(all, chosenId) : null,
     choose,
+    reload: goals.reload,
   };
 }
 

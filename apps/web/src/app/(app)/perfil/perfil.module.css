@@ -451,3 +451,24 @@
 .fileCheckPassed .fileCheckList {
   margin-top: var(--spacing-md);
 }
+
+/* Objetivo sugerido a partir da experiência mais recente */
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-subtle);
+}
+
+.suggestionText {
+  margin: 0;
+}
+
+.suggestionLink {
+  color: var(--color-text-accent);
+  font-weight: 500;
+  text-decoration: none;
+  padding-inline: var(--spacing-sm);
+}
