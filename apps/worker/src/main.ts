@@ -2,15 +2,15 @@ import { PgBoss } from 'pg-boss';
 import { loadConfig } from '@linkediner/config';
 import { createDb, pingDb } from '@linkediner/db';
 import {
-  coverLetterV1,
+  coverLetterV2,
   createAiProvider,
   DrizzleAiGenerationLog,
   extractProfileV1,
   FakeAiProvider,
-  formAnswersV1,
+  formAnswersV2,
   generateResumeV3,
   structureJobV1,
-  tailorResumeV1,
+  tailorResumeV2,
 } from '@linkediner/core/ai';
 import {
   DrizzleApplicationRepository,
@@ -237,13 +237,14 @@ const tasks = [
       materials: new DrizzleMaterialRepository(database.db, cipher),
       applications: new DrizzleApplicationRepository(database.db, cipher),
       jobs: new DrizzleJobRepository(database.db),
+      resumes: new DrizzleResumeRepository(database.db, cipher),
       facts: factRepository,
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       ai,
       prompts: {
-        resume: tailorResumeV1,
-        cover_letter: coverLetterV1,
-        form_answers: formAnswersV1,
+        resume: tailorResumeV2,
+        cover_letter: coverLetterV2,
+        form_answers: formAnswersV2,
       },
       generations,
       quota,

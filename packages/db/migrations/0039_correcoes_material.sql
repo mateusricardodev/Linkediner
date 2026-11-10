@@ -1,0 +1,1 @@
+ALTER TABLE "application_materials" ADD COLUMN "corrections" jsonb;

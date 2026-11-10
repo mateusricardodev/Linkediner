@@ -24,6 +24,11 @@ export const applicationMaterials = pgTable(
     /** Perguntas do formulário, quando o tipo é form_answers. */
     questions: jsonb().$type<string[]>().notNull().default([]),
     content: jsonb().$type<unknown>(),
+    /**
+     * Correções da versão anterior, cifradas como o conteúdo. Gerar de novo limpa o conteúdo, e é
+     * daqui que a nova versão aprende o que a pessoa corrigiu (ADR 0030).
+     */
+    corrections: jsonb().$type<unknown>(),
     /** Motivo da falha (código estável, sem conteúdo). */
     failureCode: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

@@ -1,11 +1,13 @@
-import { and, asc, eq, schema, withUserContext, type Database } from '@linkediner/db';
+import { and, asc, desc, eq, schema, withUserContext, type Database } from '@linkediner/db';
 import type { FieldCipher, UserCipher } from '../../crypto';
-import type { ApplicationMaterial, MaterialContent } from '../domain/material';
+import type { ResumeCorrections } from '../../resumes';
+import type { ApplicationMaterial, MaterialContent, MaterialKind } from '../domain/material';
 import type { MaterialRepository } from '../application/material-service';
 
 const { applicationMaterials } = schema;
 
 const CONTENT = 'application_materials.content';
+const CORRECTIONS = 'application_materials.corrections';
 
 const toMaterial = (
   c: UserCipher,
@@ -17,6 +19,7 @@ const toMaterial = (
   status: r.status,
   questions: r.questions,
   content: c.openJson<MaterialContent | null>(CONTENT, r.content) ?? null,
+  corrections: c.openJson<ResumeCorrections | null>(CORRECTIONS, r.corrections) ?? null,
   failureCode: r.failureCode,
 });
 
@@ -36,14 +39,17 @@ export class DrizzleMaterialRepository implements MaterialRepository {
   ) {
     const c = await this.cipher.forUser(userId);
     return withUserContext(this.db, userId, async (tx) => {
+      const { corrections, ...fields } = material;
+      const sealed = corrections ? c.sealJson(CORRECTIONS, corrections) : null;
       const [row] = await tx
         .insert(applicationMaterials)
-        .values({ ...material, userId })
+        .values({ ...fields, userId, corrections: sealed })
         .onConflictDoUpdate({
           target: [applicationMaterials.applicationId, applicationMaterials.kind],
           set: {
             status: 'generating',
             content: null,
+            corrections: sealed,
             failureCode: null,
             questions: material.questions,
           },
@@ -51,6 +57,20 @@ export class DrizzleMaterialRepository implements MaterialRepository {
         .returning();
       return toMaterial(c, row!);
     });
+  }
+
+  /** Materiais de um tipo, de todas as candidaturas, do mais recente para o mais antigo. */
+  async listByKind(userId: string, kind: MaterialKind) {
+    const c = await this.cipher.forUser(userId);
+    return withUserContext(this.db, userId, async (tx) =>
+      (
+        await tx
+          .select()
+          .from(applicationMaterials)
+          .where(and(eq(applicationMaterials.userId, userId), eq(applicationMaterials.kind, kind)))
+          .orderBy(desc(applicationMaterials.updatedAt), desc(applicationMaterials.id))
+      ).map((row) => toMaterial(c, row)),
+    );
   }
 
   async find(userId: string, id: string) {

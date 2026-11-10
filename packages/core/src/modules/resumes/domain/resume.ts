@@ -288,14 +288,54 @@ export function collectCorrections(
   /** Só correções no mesmo idioma: uma frase corrigida em português não ensina o estilo em inglês. */
   language?: ResumeLanguage,
 ): ResumeCorrections {
-  const result: ResumeCorrections = { edited: [], removed: [] };
-  const seen = new Set<string>();
   const newestFirst = [...resumes]
     .filter((r) => r.id !== excludeId && r.content && (!language || r.language === language))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  for (const resume of newestFirst) {
-    const content = resume.content!;
-    for (const item of [...content.summary, ...content.experiences.flatMap((e) => e.bullets)]) {
+  return correctionsFromItems(
+    newestFirst.map((r) => [
+      ...r.content!.summary,
+      ...r.content!.experiences.flatMap((e) => e.bullets),
+    ]),
+    limit,
+  );
+}
+
+/** Junta correções, as mais recentes primeiro, sem repetir e dentro do limite. */
+export function mergeCorrections(
+  lists: readonly (ResumeCorrections | null | undefined)[],
+  limit = CORRECTIONS_LIMIT,
+): ResumeCorrections {
+  const result: ResumeCorrections = { edited: [], removed: [] };
+  const seen = new Set<string>();
+  for (const list of lists) {
+    for (const edit of list?.edited ?? []) {
+      const key = normalizeText(edit.before);
+      if (seen.has(key) || result.edited.length >= limit) continue;
+      seen.add(key);
+      result.edited.push(edit);
+    }
+    for (const text of list?.removed ?? []) {
+      const key = normalizeText(text);
+      if (seen.has(key) || result.removed.length >= limit) continue;
+      seen.add(key);
+      result.removed.push(text);
+    }
+  }
+  return result;
+}
+
+/**
+ * O que a pessoa corrigiu e removeu em grupos de frases, já do mais recente para o mais antigo.
+ * Serve ao currículo e ao material por vaga: carta, respostas e currículo adaptado.
+ */
+export function correctionsFromItems(
+  groups: readonly (readonly ResumeItem[])[],
+  limit = CORRECTIONS_LIMIT,
+): ResumeCorrections {
+  const result: ResumeCorrections = { edited: [], removed: [] };
+  const seen = new Set<string>();
+  for (const items of groups) {
+    for (const item of items) {
       const key = normalizeText(item.originalText ?? item.text);
       if (seen.has(key)) continue;
       if (item.status === 'removed' && result.removed.length < limit) {

@@ -5,6 +5,8 @@ export {
   CORRECTIONS_LIMIT,
   buildResume,
   collectCorrections,
+  correctionsFromItems,
+  mergeCorrections,
   findUnsupportedTerms,
   toResumeItem,
   type GenerateResumeJob,

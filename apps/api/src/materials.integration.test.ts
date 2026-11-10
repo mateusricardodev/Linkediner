@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
-  coverLetterV1,
+  coverLetterV2,
   DrizzleAiGenerationLog,
   FakeAiProvider,
-  formAnswersV1,
-  tailorResumeV1,
+  formAnswersV2,
+  tailorResumeV2,
 } from '@linkediner/core/ai';
 import {
   DrizzleApplicationRepository,
@@ -13,6 +13,7 @@ import {
 } from '@linkediner/core/applications';
 import { DrizzleJobRepository, jobDedupeHash } from '@linkediner/core/jobs';
 import { DrizzleFactRepository } from '@linkediner/core/profile';
+import { DrizzleResumeRepository } from '@linkediner/core/resumes';
 import { startTestApp, WEB } from './testing/app';
 
 // Dados fictícios. Nenhuma chamada real de IA acontece aqui.
@@ -53,10 +54,11 @@ beforeAll(async () => {
     materials: new DrizzleMaterialRepository(db, t.cipher),
     applications: new DrizzleApplicationRepository(db, t.cipher),
     jobs: new DrizzleJobRepository(db),
+    resumes: new DrizzleResumeRepository(db, t.cipher),
     facts: new DrizzleFactRepository(db, t.cipher),
     consents: t.consents,
     ai,
-    prompts: { resume: tailorResumeV1, cover_letter: coverLetterV1, form_answers: formAnswersV1 },
+    prompts: { resume: tailorResumeV2, cover_letter: coverLetterV2, form_answers: formAnswersV2 },
     generations: new DrizzleAiGenerationLog(db, t.cipher),
     quota: t.quota,
     audit: t.audit,
@@ -208,7 +210,7 @@ describe('material por vaga', () => {
     const { rows } = await t.db.pool.query(
       "SELECT prompt_id, prompt_version FROM ai_generations WHERE task = 'generate_cover_letter'",
     );
-    expect(rows.at(-1)).toEqual({ prompt_id: 'cover_letter', prompt_version: 1 });
+    expect(rows.at(-1)).toEqual({ prompt_id: 'cover_letter', prompt_version: 2 });
   });
 
   it('formulário: exige perguntas, e pergunta sem fatos fica sem resposta', async () => {
@@ -379,5 +381,68 @@ describe('recomendações', () => {
     const after = (await t.call(cookie, 'GET', '/v1/jobs/recommendations')).json();
     expect(after.items.map((i: { job: { id: string } }) => i.job.id)).not.toContain(jobId);
     expect(after.hidden).toBe(1);
+  });
+});
+
+describe('aprender com as correções do material', () => {
+  it('gerar de novo usa o que a pessoa corrigiu, e a carta de outra vaga também aprende', async () => {
+    const { cookie, id, userId } = await setup('mat-correcoes@example.com');
+    await requestMaterial(cookie, id, { kind: 'cover_letter' });
+    await runQueue();
+    const [letter] = await materialsOf(cookie, id);
+    const [first, second] = letter.content.paragraphs;
+    const base = `/v1/applications/${id}/materials/${letter.id}/items`;
+    await t.call(cookie, 'PATCH', `${base}/${first.id}`, {
+      action: 'confirm',
+      text: 'Gostaria de contribuir com a Empresa Fictícia.',
+    });
+    await t.call(cookie, 'PATCH', `${base}/${second.id}`, { action: 'remove' });
+
+    const expected = {
+      edited: [
+        {
+          before: 'Quero atuar na Empresa Fictícia.',
+          after: 'Gostaria de contribuir com a Empresa Fictícia.',
+        },
+      ],
+      removed: ['Domino GraphQL.'],
+    };
+
+    // Gerar de novo a mesma carta: o conteúdo é limpo, mas as correções passam adiante.
+    await requestMaterial(cookie, id, { kind: 'cover_letter' });
+    const { rows } = await t.db.pool.query(
+      'SELECT corrections::text AS c FROM application_materials WHERE id = $1',
+      [letter.id],
+    );
+    expect(rows[0].c).not.toContain('Gostaria de contribuir');
+    ai.calls.length = 0;
+    await runQueue();
+    expect(ai.calls[0]?.promptInput.corrections).toEqual(expected);
+
+    // Outra candidatura da mesma pessoa: a carta nova também aprende.
+    const jobs = new DrizzleJobRepository(t.db.db);
+    const jobId = crypto.randomUUID();
+    await jobs.insert(userId, {
+      id: jobId,
+      rawText: `Outra vaga fictícia ${jobId}`,
+      applyUrl: null,
+      dedupeHash: jobDedupeHash(jobId),
+    });
+    await jobs.saveFields(userId, jobId, {
+      title: 'Backend Pleno',
+      company: 'Outra Empresa Fictícia',
+      location: null,
+      employmentType: null,
+      salaryText: null,
+      remotePolicy: 'remote',
+      seniority: null,
+      mustHave: ['Go'],
+      niceToHave: [],
+    });
+    const other = (await t.call(cookie, 'POST', '/v1/applications', { jobId })).json().id as string;
+    await requestMaterial(cookie, other, { kind: 'cover_letter' });
+    ai.calls.length = 0;
+    await runQueue();
+    expect(ai.calls[0]?.promptInput.corrections).toEqual(expected);
   });
 });
