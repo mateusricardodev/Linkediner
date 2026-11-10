@@ -5,6 +5,7 @@ import {
   ResumeOutput,
   toResumeItem,
   type ResumeContent,
+  type ResumeCorrections,
   type ResumeItem,
 } from '../../resumes';
 import { AppError, type FeatureKey } from '../../shared';
@@ -82,6 +83,8 @@ export interface ApplicationMaterial {
   status: MaterialStatus;
   questions: string[];
   content: MaterialContent | null;
+  /** Correções da versão anterior deste material, guardadas ao gerar de novo. */
+  corrections: ResumeCorrections | null;
   failureCode: string | null;
 }
 

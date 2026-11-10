@@ -2,6 +2,7 @@ import type { AuditLog } from '../../audit';
 import type { JobRepository } from '../../jobs';
 import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
+import { correctionsFromItems, mergeCorrections, type ResumeCorrections } from '../../resumes';
 import { AppError, newId, type QuotaGate } from '../../shared';
 import { assertTransition } from '../domain/application';
 import {
@@ -22,8 +23,17 @@ export interface MaterialRepository {
   /** Cria o material do tipo ou reinicia o existente: gerar de novo substitui. */
   upsertGenerating(
     userId: string,
-    material: { id: string; applicationId: string; kind: MaterialKind; questions: string[] },
+    material: {
+      id: string;
+      applicationId: string;
+      kind: MaterialKind;
+      questions: string[];
+      /** Correções da versão anterior, que a próxima geração usa. */
+      corrections: ResumeCorrections | null;
+    },
   ): Promise<ApplicationMaterial>;
+  /** Materiais de um tipo, de todas as candidaturas, do mais recente para o mais antigo. */
+  listByKind(userId: string, kind: MaterialKind): Promise<ApplicationMaterial[]>;
   find(userId: string, id: string): Promise<ApplicationMaterial | null>;
   list(userId: string, applicationId: string): Promise<ApplicationMaterial[]>;
   saveReady(userId: string, id: string, content: MaterialContent): Promise<void>;
@@ -106,11 +116,22 @@ export class MaterialService {
       }
     }
 
+    // Gerar de novo limpa o conteúdo: antes disso, guarda o que a pessoa corrigiu nesta versão.
+    const previous = current.find((m) => m.kind === input.kind);
+    const corrections = previous
+      ? mergeCorrections([
+          previous.content
+            ? correctionsFromItems([materialItems(input.kind, previous.content)])
+            : null,
+          previous.corrections,
+        ])
+      : null;
     const material = await this.materials.upsertGenerating(userId, {
       id: newId(),
       applicationId,
       kind: input.kind,
       questions,
+      corrections,
     });
     try {
       await this.queue.enqueue({ userId, applicationId, materialId: material.id, usageId });
@@ -157,7 +178,11 @@ export class MaterialService {
         item.status = 'removed';
         return;
       }
-      if (decision.text !== undefined) item.text = decision.text;
+      if (decision.text !== undefined && decision.text !== item.text) {
+        // A primeira versão gerada fica guardada: é com ela que a próxima geração aprende.
+        item.originalText ??= item.text;
+        item.text = decision.text;
+      }
       if (item.status === 'suggested' || decision.text !== undefined) newFact = item.text;
       item.status = 'user_confirmed';
       item.reason = null;

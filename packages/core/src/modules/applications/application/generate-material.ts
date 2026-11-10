@@ -6,10 +6,17 @@ import type { ConsentService } from '../../privacy';
 import type { FactRepository } from '../../profile';
 import type { QuotaGate } from '../../shared';
 import {
+  collectCorrections,
+  correctionsFromItems,
+  mergeCorrections,
+  type ResumeRepository,
+} from '../../resumes';
+import {
   buildMaterial,
   MATERIAL_FAILURES,
   MATERIAL_FEATURES,
   MATERIAL_OUTPUTS,
+  materialItems,
   materialPromptInput,
   materialUsageKey,
   type ApplicationMaterial,
@@ -20,7 +27,9 @@ import type { ApplicationRepository } from './application-service';
 import type { MaterialRepository } from './material-service';
 
 export interface GenerateMaterialDeps {
-  materials: Pick<MaterialRepository, 'find' | 'list' | 'saveReady' | 'markFailed'>;
+  materials: Pick<MaterialRepository, 'find' | 'list' | 'listByKind' | 'saveReady' | 'markFailed'>;
+  /** Currículos gerais: o currículo adaptado também aprende com o que foi corrigido neles. */
+  resumes: Pick<ResumeRepository, 'list'>;
   applications: Pick<ApplicationRepository, 'find' | 'transition'>;
   jobs: Pick<JobRepository, 'find'>;
   facts: Pick<FactRepository, 'list'>;
@@ -68,7 +77,8 @@ export class GenerateMaterial {
     );
     if (facts.length === 0) return this.fail(job, material, MATERIAL_FAILURES.noFacts);
 
-    const promptInput = materialPromptInput(facts, vacancy, material.questions);
+    const corrections = await this.corrections(userId, material);
+    const promptInput = { ...materialPromptInput(facts, vacancy, material.questions), corrections };
     try {
       const { data, usage } = await this.deps.ai.generateStructured<unknown>({
         task: TASKS[material.kind],
@@ -98,7 +108,13 @@ export class GenerateMaterial {
         action: 'material.generated',
         entityType: 'application_material',
         entityId: materialId,
-        metadata: { kind: material.kind, ...report, promptVersion: usage.promptVersion },
+        metadata: {
+          kind: material.kind,
+          ...report,
+          promptVersion: usage.promptVersion,
+          correctionsEdited: corrections.edited.length,
+          correctionsRemoved: corrections.removed.length,
+        },
       });
       await this.finish(job, 'material_ready');
       return 'ready';
@@ -106,6 +122,26 @@ export class GenerateMaterial {
       if (opts.isLastAttempt) await this.fail(job, material, MATERIAL_FAILURES.processingError);
       throw error;
     }
+  }
+
+  /**
+   * O que a pessoa corrigiu antes, do mais recente para o mais antigo: a versão anterior deste
+   * material, os outros materiais do mesmo tipo e, no currículo adaptado, os currículos gerais em
+   * português (ADR 0030). Correção ensina o estilo, mas nunca comprova nada.
+   */
+  private async corrections(userId: string, material: ApplicationMaterial) {
+    // De cada outro material: o que foi corrigido na versão atual e o que veio das anteriores.
+    const others = (await this.deps.materials.listByKind(userId, material.kind))
+      .filter((m) => m.id !== material.id)
+      .flatMap((m) => [
+        m.content ? correctionsFromItems([materialItems(material.kind, m.content)]) : null,
+        m.corrections,
+      ]);
+    const general =
+      material.kind === 'resume'
+        ? collectCorrections(await this.deps.resumes.list(userId), '', undefined, 'pt')
+        : null;
+    return mergeCorrections([material.corrections, ...others, general]);
   }
 
   private async fail(

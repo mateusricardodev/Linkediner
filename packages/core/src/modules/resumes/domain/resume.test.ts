@@ -3,6 +3,7 @@ import type { ProfileFact } from '../../profile';
 import {
   buildResume,
   collectCorrections,
+  mergeCorrections,
   findItem,
   findUnsupportedTerms,
   type Resume,
@@ -227,5 +228,29 @@ describe('collectCorrections', () => {
   it('respeita o limite de cada tipo', () => {
     const bullets = Array.from({ length: 15 }, (_, i) => item(`Frase ${i}`, { status: 'removed' }));
     expect(collectCorrections([resume('a', 1, bullets)], 'x', 10).removed).toHaveLength(10);
+  });
+});
+
+describe('mergeCorrections', () => {
+  it('junta as listas na ordem, sem repetir e dentro do limite', () => {
+    const recent = { edited: [{ before: 'A', after: 'A2' }], removed: ['X'] };
+    const old = {
+      edited: [
+        { before: 'a', after: 'outra' },
+        { before: 'B', after: 'B2' },
+      ],
+      removed: ['x', 'Y'],
+    };
+    expect(mergeCorrections([recent, null, old], 10)).toEqual({
+      edited: [
+        { before: 'A', after: 'A2' },
+        { before: 'B', after: 'B2' },
+      ],
+      removed: ['X', 'Y'],
+    });
+    expect(mergeCorrections([old], 1)).toEqual({
+      edited: [{ before: 'a', after: 'outra' }],
+      removed: ['x'],
+    });
   });
 });
