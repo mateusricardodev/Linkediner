@@ -296,9 +296,20 @@ const previews = {
 };
 
 /** Página pública de apresentação. Quem já tem conta segue por "Entrar". */
-export default function Landing() {
+export default async function Landing({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const deleted = (await searchParams).conta === 'excluida';
   return (
     <div className={styles.page}>
+      {deleted ? (
+        <p className={styles.deleted} role="status">
+          Sua conta foi excluída. Os seus dados estão sendo apagados, e isso termina em alguns
+          minutos.
+        </p>
+      ) : null}
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand} aria-label="LinkedIner, página inicial">
