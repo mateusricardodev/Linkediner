@@ -3,6 +3,8 @@ import {
   AshbyAdapter,
   GitHubIssuesAdapter,
   GreenhouseAdapter,
+  HimalayasAdapter,
+  JobicyAdapter,
   LeverAdapter,
   SmartRecruitersAdapter,
 } from './source-adapters';
@@ -282,5 +284,117 @@ describe('GitHubIssuesAdapter', () => {
   it('recusa repositório com nome estranho', async () => {
     await expect(adapter([]).listPostings('../../etc')).rejects.toThrow('source_invalid_token');
     await expect(adapter([]).listPostings('acme')).rejects.toThrow('source_invalid_token');
+  });
+});
+
+describe('HimalayasAdapter', () => {
+  const NOW = new Date('2026-11-12T12:00:00Z');
+  const job = (overrides: Record<string, unknown> = {}) => ({
+    guid: 'https://himalayas.app/companies/acme/jobs/dev-1',
+    title: 'Senior React Developer',
+    companyName: ' Acme ',
+    locationRestrictions: ['Brazil'],
+    pubDate: 1794744000,
+    expiryDate: 1797336000,
+    applicationLink: 'https://acme.com/apply/1',
+    description: '<p>Texto da vaga</p>',
+    seniority: ['Senior'],
+    ...overrides,
+  });
+
+  it('traduz a vaga, com a empresa dela e o link de candidatura original', async () => {
+    const fetcher = respondWith({ jobs: [job()] });
+    const [posting] = await new HimalayasAdapter(fetcher, () => NOW).listPostings(
+      'software-engineer',
+    );
+    expect(posting).toEqual({
+      externalId: 'https://himalayas.app/companies/acme/jobs/dev-1',
+      title: 'Senior React Developer',
+      company: 'Acme',
+      location: 'Remoto, Brasil',
+      remoteHint: true,
+      applyUrl: 'https://acme.com/apply/1',
+      postedAt: new Date(1794744000 * 1000),
+      body: 'Texto da vaga',
+    });
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://himalayas.app/jobs/api/search?q=software%20engineer&country=Brazil&sort=recent&page=1',
+      expect.anything(),
+    );
+  });
+
+  it('só fica com vaga que aceita o Brasil e ainda não expirou', async () => {
+    const postings = await new HimalayasAdapter(
+      respondWith({
+        jobs: [
+          job({ guid: 'a', locationRestrictions: ['Brazil', 'Mexico'] }),
+          job({ guid: 'b', locationRestrictions: [] }),
+          job({ guid: 'c', locationRestrictions: ['United States'] }),
+          job({ guid: 'd', expiryDate: 1700000000 }),
+        ],
+      }),
+      () => NOW,
+    ).listPostings('developer');
+    expect(postings.map((p) => [p.externalId, p.location])).toEqual([
+      ['a', 'Remoto, inclui Brasil'],
+    ]);
+  });
+
+  it('segue as páginas até uma incompleta, sem repetir vaga', async () => {
+    const full = Array.from({ length: 20 }, (_, i) => job({ guid: `p1-${i}` }));
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ jobs: full })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ jobs: [job({ guid: 'p1-0' })] })));
+    const postings = await new HimalayasAdapter(
+      fetcher as unknown as typeof fetch,
+      () => NOW,
+    ).listPostings('developer');
+    expect(postings).toHaveLength(20);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('recusa token com caracteres fora do esperado', async () => {
+    await expect(
+      new HimalayasAdapter(respondWith({ jobs: [] })).listPostings('dev&country=US'),
+    ).rejects.toThrow('source_invalid_token');
+  });
+});
+
+describe('JobicyAdapter', () => {
+  const JOB = {
+    id: 161629,
+    url: 'https://jobicy.com/jobs/161629-senior-qa-engineer',
+    jobTitle: 'Senior QA Engineer',
+    companyName: 'Caylent',
+    jobGeo: 'LATAM,  Canada,  USA',
+    jobDescription: '<p>Texto</p>',
+    pubDate: '2026-11-12T13:25:53+00:00',
+  };
+
+  it('traduz a vaga e marca a abrangência do trabalho remoto', async () => {
+    const fetcher = respondWith({ jobs: [JOB, { ...JOB, id: 2, jobGeo: 'Anywhere' }] });
+    const postings = await new JobicyAdapter(fetcher).listPostings('brazil');
+    expect(postings[0]).toEqual({
+      externalId: '161629',
+      title: 'Senior QA Engineer',
+      company: 'Caylent',
+      location: 'Remoto, LATAM, Canada, USA',
+      remoteHint: true,
+      applyUrl: JOB.url,
+      postedAt: new Date('2026-11-12T13:25:53Z'),
+      body: 'Texto',
+    });
+    expect(postings[1]?.location).toBe('Remoto, inclui Brasil (Anywhere)');
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://jobicy.com/api/v2/remote-jobs?count=100&geo=brazil',
+      expect.anything(),
+    );
+  });
+
+  it('sem vagas, a resposta pode vir sem a lista', async () => {
+    expect(await new JobicyAdapter(respondWith({ success: true })).listPostings('brazil')).toEqual(
+      [],
+    );
   });
 });

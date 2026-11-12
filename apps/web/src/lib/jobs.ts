@@ -114,9 +114,19 @@ const SOURCE_LABELS: Record<string, string> = {
   ashby: 'Ashby',
   smartrecruiters: 'SmartRecruiters',
   github: 'comunidade no GitHub',
+  himalayas: 'Himalayas',
+  jobicy: 'Jobicy',
 };
 
 export const sourceLabel = (source: string) => SOURCE_LABELS[source] ?? source;
+
+/** Os portais pedem crédito com link visível para eles (ADR 0031). */
+const SOURCE_LINKS: Record<string, string> = {
+  himalayas: 'https://himalayas.app',
+  jobicy: 'https://jobicy.com',
+};
+
+export const sourceLink = (source: string): string | null => SOURCE_LINKS[source] ?? null;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NEW_POSTING_DAYS = 7;

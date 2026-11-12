@@ -292,6 +292,128 @@ export class SmartRecruitersAdapter implements JobSourceAdapter {
   }
 }
 
+/**
+ * Local das vagas remotas dos portais. Quando a abrangência não cita o Brasil nem a América Latina
+ * ("Anywhere", "Worldwide"), o texto diz que o Brasil está incluído: é o que o filtro do catálogo
+ * procura, e a pessoa entende de onde pode trabalhar.
+ */
+function remoteLocation(scope: string): string {
+  const tidy = scope
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (/\b(brazil|brasil|latam|latin america|south america)\b/i.test(tidy)) return `Remoto, ${tidy}`;
+  return tidy ? `Remoto, inclui Brasil (${tidy})` : 'Remoto, inclui Brasil';
+}
+
+const HimalayasResponse = z.object({
+  jobs: z.array(
+    z.looseObject({
+      guid: z.string().min(1),
+      title: z.string().min(1),
+      companyName: z.string().min(1),
+      locationRestrictions: z.array(z.string()).nullish(),
+      pubDate: z.number().nullish(),
+      expiryDate: z.number().nullish(),
+      applicationLink: httpsUrl,
+      description: z.string().nullish(),
+    }),
+  ),
+});
+
+const HIMALAYAS_PAGE = 20;
+const HIMALAYAS_MAX_PAGES = 5;
+
+/**
+ * Portal de vagas remotas com API gratuita (https://himalayas.app/api). Os termos permitem mostrar
+ * as vagas em outro app, desde que a candidatura use o `applicationLink` e o Himalayas apareça como
+ * fonte. O token é a palavra buscada ("developer"). Só entram vagas que aceitam quem está no Brasil:
+ * vaga sem restrição de país fica de fora, porque muitas são, na prática, só para os EUA.
+ */
+export class HimalayasAdapter implements JobSourceAdapter {
+  readonly key = 'himalayas';
+
+  constructor(
+    private readonly fetcher: Fetch = fetch,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
+
+  async listPostings(token: string): Promise<ExternalPosting[]> {
+    assertToken(token);
+    const query = encodeURIComponent(token.replace(/-/g, ' '));
+    const postings = new Map<string, ExternalPosting>();
+    for (let page = 1; page <= HIMALAYAS_MAX_PAGES; page++) {
+      const data = HimalayasResponse.parse(
+        await getJson(
+          this.fetcher,
+          `https://himalayas.app/jobs/api/search?q=${query}&country=Brazil&sort=recent&page=${page}`,
+        ),
+      );
+      for (const job of data.jobs) {
+        const countries = job.locationRestrictions ?? [];
+        if (!countries.includes('Brazil')) continue;
+        if (job.expiryDate && job.expiryDate * 1000 < this.now().getTime()) continue;
+        postings.set(job.guid, {
+          externalId: job.guid,
+          title: cleanTitle(job.title),
+          company: job.companyName.trim(),
+          location: countries.length === 1 ? 'Remoto, Brasil' : 'Remoto, inclui Brasil',
+          remoteHint: true,
+          applyUrl: job.applicationLink,
+          postedAt: job.pubDate ? safeDate(job.pubDate * 1000) : null,
+          body: htmlToText(job.description ?? ''),
+        });
+      }
+      if (data.jobs.length < HIMALAYAS_PAGE) break;
+    }
+    return [...postings.values()];
+  }
+}
+
+const JobicyResponse = z.object({
+  jobs: z
+    .array(
+      z.looseObject({
+        id: z.number(),
+        url: httpsUrl,
+        jobTitle: z.string().min(1),
+        companyName: z.string().min(1),
+        jobGeo: z.string().nullish(),
+        jobDescription: z.string().nullish(),
+        pubDate: z.string().nullish(),
+      }),
+    )
+    .default([]),
+});
+
+/**
+ * Portal de vagas remotas com API gratuita (https://jobicy.com/jobs-rss-feed). Os termos pedem o
+ * crédito com link e a candidatura pelo endereço da própria vaga. O token é a região da busca
+ * ("brazil"), e a API já devolve só vagas abertas a ela.
+ */
+export class JobicyAdapter implements JobSourceAdapter {
+  readonly key = 'jobicy';
+
+  constructor(private readonly fetcher: Fetch = fetch) {}
+
+  async listPostings(token: string): Promise<ExternalPosting[]> {
+    assertToken(token);
+    const data = JobicyResponse.parse(
+      await getJson(this.fetcher, `https://jobicy.com/api/v2/remote-jobs?count=100&geo=${token}`),
+    );
+    return data.jobs.map((job) => ({
+      externalId: String(job.id),
+      title: cleanTitle(job.jobTitle),
+      company: job.companyName.trim(),
+      location: remoteLocation(job.jobGeo ?? ''),
+      remoteHint: true,
+      applyUrl: job.url,
+      postedAt: safeDate(job.pubDate),
+      body: htmlToText(job.jobDescription ?? ''),
+    }));
+  }
+}
+
 /** "dono/repositório", só com os caracteres que o GitHub aceita. */
 const REPOSITORY = /^[a-z0-9-]{1,39}\/[a-z0-9._-]{1,100}$/i;
 

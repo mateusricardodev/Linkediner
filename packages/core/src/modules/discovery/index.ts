@@ -25,6 +25,8 @@ export {
   AshbyAdapter,
   GitHubIssuesAdapter,
   GreenhouseAdapter,
+  HimalayasAdapter,
+  JobicyAdapter,
   LeverAdapter,
   SmartRecruitersAdapter,
 } from './infrastructure/source-adapters';
