@@ -111,7 +111,7 @@ describe('vagas automáticas', () => {
 
   it('as empresas iniciais estão lá, e a aplicação só consegue ler o catálogo', async () => {
     const { rows } = await t.db.pool.query('SELECT count(*)::int AS n FROM job_boards');
-    expect(rows[0].n).toBe(47);
+    expect(rows[0].n).toBe(52);
     await expect(
       t.db.pool.query(`
         BEGIN;

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Notice, Skeleton } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
-import { isNewPosting, postedLabel, sourceLabel } from '../../../lib/jobs';
+import { isNewPosting, postedLabel, sourceLabel, sourceLink } from '../../../lib/jobs';
 import { safeExternalUrl } from '../../../lib/jobs';
 import type { Discovery, Job } from '../../../lib/types';
 import { goalQuery, type useGoal } from '../../../lib/use-goal';
@@ -43,9 +43,10 @@ function DiscoveryRow({ item }: { item: Item }) {
           </span>
           <span className={styles.discoveryMeta}>
             {isNewPosting(item.postedAt) ? <Badge tone="accent">Nova</Badge> : null}
-            {[postedLabel(item.postedAt), `via ${sourceLabel(item.source)}`]
-              .filter(Boolean)
-              .join(' · ')}
+            <span>
+              {postedLabel(item.postedAt) ? `${postedLabel(item.postedAt)} · ` : null}via{' '}
+              <SourceCredit source={item.source} />
+            </span>
           </span>
         </div>
         {!item.analyzed ? (
@@ -73,6 +74,16 @@ function DiscoveryRow({ item }: { item: Item }) {
         ) : null}
       </div>
     </li>
+  );
+}
+
+function SourceCredit({ source }: { source: string }) {
+  const link = sourceLink(source);
+  if (!link) return <>{sourceLabel(source)}</>;
+  return (
+    <a href={link} target="_blank" rel="noopener" className={styles.sourceCredit}>
+      {sourceLabel(source)}
+    </a>
   );
 }
 

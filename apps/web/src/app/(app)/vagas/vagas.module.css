@@ -309,6 +309,11 @@
   gap: var(--spacing-xs) var(--spacing-md);
 }
 
+.sourceCredit {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .discoveryActions .external {
   margin-top: 0;
   align-self: center;
