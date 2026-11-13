@@ -296,7 +296,7 @@ export default function ApplicationPage() {
                     Desistir desta candidatura? Ela fica encerrada e não pode ser reaberta.
                   </p>
                   <Button
-                    variant="secondary"
+                    variant="danger"
                     disabled={busy}
                     onClick={() => void run(post('close'))}
                   >
@@ -307,7 +307,7 @@ export default function ApplicationPage() {
                   </Button>
                 </>
               ) : (
-                <Button variant="plain" onClick={() => setConfirmingClose(true)}>
+                <Button variant="plain-danger" onClick={() => setConfirmingClose(true)}>
                   Desistir da candidatura
                 </Button>
               )}

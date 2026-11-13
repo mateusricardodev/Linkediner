@@ -36,10 +36,34 @@
   color: var(--color-text-primary);
 }
 
-.plain {
+.plain,
+.plain-danger {
   background: transparent;
-  color: var(--color-text-accent);
   padding-inline: var(--spacing-sm);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.plain {
+  color: var(--color-text-accent);
+}
+
+.plain:hover:not(:disabled) {
+  background: var(--color-accent-subtle);
+}
+
+.plain-danger {
+  color: var(--color-status-danger-text);
+}
+
+.plain-danger:hover:not(:disabled) {
+  background: var(--color-status-danger-subtle);
+}
+
+.danger {
+  background: var(--color-status-danger-text);
+  color: var(--color-text-on-accent);
 }
 
 .full {

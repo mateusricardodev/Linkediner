@@ -198,7 +198,7 @@ function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void 
         <div className={styles.actions}>
           <p className={styles.confirmText}>Apagar este objetivo? Isso não pode ser desfeito.</p>
           <Button
-            variant="secondary"
+            variant="danger"
             disabled={busy}
             onClick={() => void run(() => api(`/v1/career-goals/${goal.id}`, { method: 'DELETE' }))}
           >
@@ -227,7 +227,7 @@ function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void 
           >
             {goal.isActive ? 'Desativar' : 'Ativar'}
           </Button>
-          <Button variant="plain" disabled={busy} onClick={() => setConfirming(true)}>
+          <Button variant="plain-danger" disabled={busy} onClick={() => setConfirming(true)}>
             Apagar
           </Button>
         </div>

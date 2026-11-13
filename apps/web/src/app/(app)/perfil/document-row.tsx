@@ -75,7 +75,7 @@ export function DocumentRow({
             Apagar o arquivo e os fatos ainda não confirmados? Isso não pode ser desfeito.
           </p>
           <Button
-            variant="secondary"
+            variant="danger"
             disabled={busy}
             onClick={() =>
               void run(async () => {
@@ -118,7 +118,7 @@ export function DocumentRow({
           >
             Baixar
           </Button>
-          <Button variant="plain" disabled={busy} onClick={() => setConfirming(true)}>
+          <Button variant="plain-danger" disabled={busy} onClick={() => setConfirming(true)}>
             Apagar
           </Button>
         </div>

@@ -161,7 +161,7 @@ export default function ResumePage() {
                 Apagar este currículo? Isso não pode ser desfeito.
               </p>
               <Button
-                variant="secondary"
+                variant="danger"
                 disabled={busy !== null}
                 onClick={() =>
                   void run('delete', async () => {
@@ -181,7 +181,7 @@ export default function ResumePage() {
               </Button>
             </>
           ) : (
-            <Button variant="plain" onClick={() => setConfirmingDelete(true)}>
+            <Button variant="plain-danger" onClick={() => setConfirmingDelete(true)}>
               Apagar currículo
             </Button>
           )}

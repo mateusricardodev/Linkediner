@@ -146,7 +146,3 @@
   gap: var(--spacing-sm);
 }
 
-.dangerButton {
-  background: var(--color-status-danger-text);
-  color: var(--color-text-on-accent);
-}

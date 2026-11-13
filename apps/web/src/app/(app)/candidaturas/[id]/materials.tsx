@@ -171,7 +171,7 @@ function MaterialCard({
               <p className={styles.confirmText}>
                 Gerar de novo substitui este material, inclusive o que você já revisou.
               </p>
-              <Button variant="secondary" disabled={busy} onClick={() => void generate()}>
+              <Button variant="danger" disabled={busy} onClick={() => void generate()}>
                 {busy ? 'Pedindo…' : 'Substituir'}
               </Button>
               <Button variant="plain" disabled={busy} onClick={() => setConfirming(null)}>
@@ -182,7 +182,7 @@ function MaterialCard({
             <div className={styles.actions}>
               <p className={styles.confirmText}>Apagar este material?</p>
               <Button
-                variant="secondary"
+                variant="danger"
                 disabled={busy}
                 onClick={() =>
                   void run(() =>
@@ -210,7 +210,7 @@ function MaterialCard({
                 {busy ? 'Pedindo…' : ready ? 'Gerar de novo' : 'Gerar'}
               </Button>
               {material && canEdit ? (
-                <Button variant="plain" disabled={busy} onClick={() => setConfirming('delete')}>
+                <Button variant="plain-danger" disabled={busy} onClick={() => setConfirming('delete')}>
                   Apagar
                 </Button>
               ) : null}

@@ -132,7 +132,7 @@ export default function JobPage() {
             <>
               <p className={styles.confirmText}>Apagar esta vaga? Isso não pode ser desfeito.</p>
               <Button
-                variant="secondary"
+                variant="danger"
                 disabled={busy}
                 onClick={() =>
                   void run(async () => {
@@ -148,7 +148,7 @@ export default function JobPage() {
               </Button>
             </>
           ) : (
-            <Button variant="plain" onClick={() => setConfirmingDelete(true)}>
+            <Button variant="plain-danger" onClick={() => setConfirmingDelete(true)}>
               Apagar vaga
             </Button>
           )}

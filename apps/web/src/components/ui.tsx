@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { useId, type ComponentProps, type ReactNode } from 'react';
 import styles from './ui.module.css';
 
-type ButtonVariant = 'primary' | 'secondary' | 'plain';
+/** `danger` confirma o que não tem volta; `plain-danger` é o gatilho que leva até essa confirmação. */
+type ButtonVariant = 'primary' | 'secondary' | 'plain' | 'danger' | 'plain-danger';
 
 const buttonClass = (variant: ButtonVariant, full?: boolean, extra?: string) =>
   [styles.button, styles[variant], full ? styles.full : '', extra ?? ''].filter(Boolean).join(' ');
