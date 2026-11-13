@@ -136,7 +136,13 @@ export default function JobsPage() {
               onChange={(event) => setApplyUrl(event.target.value)}
             />
             <div>
-              <Button type="submit" disabled={busy || text.trim().length === 0}>
+              <Button
+                type="submit"
+                disabled={busy || text.trim().length === 0}
+                reason={
+                  !busy && text.trim().length === 0 ? 'Cole o texto da vaga para analisar.' : null
+                }
+              >
                 {busy ? 'Enviando…' : 'Analisar vaga'}
               </Button>
             </div>

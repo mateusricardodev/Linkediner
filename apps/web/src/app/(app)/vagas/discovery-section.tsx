@@ -64,7 +64,12 @@ function DiscoveryRow({ item }: { item: Item }) {
       ) : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
       <div className={styles.discoveryActions}>
-        <Button variant="plain" disabled={busy || !item.analyzed} onClick={() => void save()}>
+        <Button
+          variant="plain"
+          disabled={busy || !item.analyzed}
+          reason={item.analyzed ? null : 'Disponível quando a análise terminar.'}
+          onClick={() => void save()}
+        >
           {busy ? 'Salvando…' : 'Salvar e ver detalhes'}
         </Button>
         {url ? (

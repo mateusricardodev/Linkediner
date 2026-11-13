@@ -13,9 +13,32 @@ export function Button({
   full,
   className,
   type = 'button',
+  reason,
   ...props
-}: ComponentProps<'button'> & { variant?: ButtonVariant; full?: boolean }) {
-  return <button type={type} className={buttonClass(variant, full, className)} {...props} />;
+}: ComponentProps<'button'> & {
+  variant?: ButtonVariant;
+  full?: boolean;
+  /** O que falta para liberar o botão. Passe só enquanto ele estiver bloqueado por falta de algo. */
+  reason?: string | null;
+}) {
+  const reasonId = useId();
+  const button = (
+    <button
+      type={type}
+      className={buttonClass(variant, full, className)}
+      {...props}
+      aria-describedby={reason ? reasonId : props['aria-describedby']}
+    />
+  );
+  if (!reason) return button;
+  return (
+    <span className={`${styles.withReason} ${full ? styles.withReasonFull : ''}`}>
+      {button}
+      <span id={reasonId} className={styles.reason}>
+        {reason}
+      </span>
+    </span>
+  );
 }
 
 export function ButtonLink({

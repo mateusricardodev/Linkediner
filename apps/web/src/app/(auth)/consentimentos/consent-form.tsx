@@ -114,7 +114,14 @@ export function ConsentForm() {
               </label>
             ))}
           </fieldset>
-          <Button type="submit" full disabled={busy || !canSubmit}>
+          <Button
+            type="submit"
+            full
+            disabled={busy || !canSubmit}
+            reason={
+              !canSubmit && !busy ? 'Marque as autorizações obrigatórias para continuar.' : null
+            }
+          >
             {busy ? 'Salvando…' : 'Continuar'}
           </Button>
           {me.syntheticDataOnly ? null : (

@@ -205,12 +205,21 @@ function MaterialCard({
                 disabled={
                   busy || (kind === 'form_answers' && parseQuestions(questions).length === 0)
                 }
+                reason={
+                  !busy && kind === 'form_answers' && parseQuestions(questions).length === 0
+                    ? 'Escreva ao menos uma pergunta.'
+                    : null
+                }
                 onClick={() => (ready ? setConfirming('replace') : void generate())}
               >
                 {busy ? 'Pedindo…' : ready ? 'Gerar de novo' : 'Gerar'}
               </Button>
               {material && canEdit ? (
-                <Button variant="plain-danger" disabled={busy} onClick={() => setConfirming('delete')}>
+                <Button
+                  variant="plain-danger"
+                  disabled={busy}
+                  onClick={() => setConfirming('delete')}
+                >
                   Apagar
                 </Button>
               ) : null}

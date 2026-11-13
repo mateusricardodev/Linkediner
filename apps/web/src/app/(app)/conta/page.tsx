@@ -335,7 +335,12 @@ function DeleteSection({ email }: { email: string }) {
               <Notice tone="danger">{message(error)}</Notice>
             ) : null}
             <div className={styles.actions}>
-              <Button type="submit" variant="danger" disabled={!matches || busy}>
+              <Button
+                type="submit"
+                variant="danger"
+                disabled={!matches || busy}
+                reason={!matches && !busy ? 'Digite o e-mail da conta para liberar.' : null}
+              >
                 {busy ? 'Excluindo…' : 'Excluir a conta para sempre'}
               </Button>
               <Button variant="plain" disabled={busy} onClick={() => setOpen(false)}>
