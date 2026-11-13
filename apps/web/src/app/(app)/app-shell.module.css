@@ -130,7 +130,7 @@
 
 .content {
   min-width: 0;
-  padding: var(--spacing-4xl) var(--spacing-4xl) var(--spacing-5xl);
+  padding: var(--spacing-4xl) var(--spacing-2xl) var(--spacing-5xl);
 }
 
 /* Em telas estreitas, o menu vira uma barra translúcida, com o conteúdo rolando por baixo. */
