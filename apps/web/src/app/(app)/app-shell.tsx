@@ -3,7 +3,16 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Briefcase, ClipboardCheck, FileText, House, LogOut, Settings, User } from 'lucide-react';
-import { createContext, use, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Button, Notice, Spinner } from '../../components/ui';
 import { api } from '../../lib/api';
 import type { Me } from '../../lib/types';
@@ -58,6 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: me, error, reload } = useResource(() => api<Me>('/v1/me'));
   const [leaving, setLeaving] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
 
   const unauthenticated = error?.status === 401;
   const missingConsents = (me?.consents.missingRequired.length ?? 0) > 0;
@@ -74,6 +85,31 @@ export function AppShell({ children }: { children: ReactNode }) {
       .querySelector('nav [aria-current="page"]')
       ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [pathname, me]);
+
+  // A pílula do menu desliza até o item clicado. A rota confirma depois, e ela se ajusta à página atual.
+  const place = useCallback((target: Element | null) => {
+    const nav = navRef.current;
+    const bar = indicatorRef.current;
+    if (!nav || !bar) return;
+    const link =
+      (target?.closest('a') as HTMLElement | null) ??
+      nav.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!link) {
+      bar.style.opacity = '0';
+      return;
+    }
+    bar.style.setProperty('--y', `${link.offsetTop}px`);
+    bar.style.opacity = '1';
+  }, []);
+
+  // A primeira posição é sem animação: a pílula só desliza a partir daí.
+  useLayoutEffect(() => {
+    place(null);
+    const frame = requestAnimationFrame(() => {
+      if (indicatorRef.current) indicatorRef.current.dataset.ready = '';
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pathname, place]);
 
   async function signOut() {
     setLeaving(true);
@@ -107,7 +143,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
           LinkedIner
         </div>
-        <nav className={styles.nav} aria-label="Principal">
+        <nav
+          ref={navRef}
+          className={styles.nav}
+          aria-label="Principal"
+          onClick={(event) => place(event.target as Element)}
+        >
+          <span ref={indicatorRef} className={styles.indicator} aria-hidden />
           {NAV.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
