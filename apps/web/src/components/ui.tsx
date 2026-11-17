@@ -173,6 +173,16 @@ export function ScoreRing({ value, size = 112 }: { value: number; size?: number 
   );
 }
 
+/** Carregamento de tela inteira: a bolinha girando no centro, à frente do conteúdo. */
+export function Spinner({ label = 'Carregando…' }: { label?: string }) {
+  return (
+    <div role="status" className={styles.spinnerOverlay}>
+      <span className={styles.spinner} aria-hidden />
+      <span className="visually-hidden">{label}</span>
+    </div>
+  );
+}
+
 export function Skeleton({
   width = '100%',
   height = 16,

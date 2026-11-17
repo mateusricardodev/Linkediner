@@ -7,6 +7,8 @@
 
 html {
   color-scheme: light;
+  /* A barra de rolagem aparecendo ou sumindo não empurra o conteúdo para os lados. */
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
 }
 

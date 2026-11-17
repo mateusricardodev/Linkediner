@@ -254,6 +254,40 @@
   }
 }
 
+/* Fica à frente do conteúdo, que continua visível e esmaecido por trás. */
+.spinnerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-bg-canvas) 65%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .spinnerOverlay {
+    background: var(--color-bg-canvas);
+    backdrop-filter: none;
+  }
+}
+
+.spinner {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-bg-fill);
+  border-top-color: var(--color-accent-default);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button,
   .ring-value {
@@ -266,5 +300,10 @@
 
   .skeleton {
     animation: none;
+  }
+
+  /* Sem sumir: um giro lento ainda diz que algo está acontecendo. */
+  .spinner {
+    animation-duration: 2.4s;
   }
 }

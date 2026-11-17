@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
-import { Button, Notice } from '../../components/ui';
+import { Button, Notice, Spinner } from '../../components/ui';
 import { api } from '../../lib/api';
 import type { Me } from '../../lib/types';
 import { useResource } from '../../lib/use-resource';
@@ -93,57 +93,68 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
     );
   }
-  // Nada da área logada aparece antes de confirmar a sessão e os consentimentos.
-  if (!me || missingConsents) return <div className={styles.blocked} aria-busy="true" />;
+  // Dados e telas da área logada só aparecem depois de confirmar a sessão e os consentimentos.
+  // Antes disso, só a estrutura fica à vista, inativa, com o spinner por cima.
+  const loading = !me || missingConsents;
 
-  return (
-    <MeContext value={me}>
-      <div className={styles.shell}>
-        <aside className={styles.sidebar}>
-          <div className={styles.brand}>
-            <span className={styles.mark} aria-hidden>
-              L
-            </span>
-            LinkedIner
-          </div>
-          <nav className={styles.nav} aria-label="Principal">
-            {NAV.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={active ? `${styles.link} ${styles.active}` : styles.link}
-                  aria-current={active ? 'page' : undefined}
+  const shell = (
+    <div className={styles.shell} inert={loading} aria-busy={loading}>
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <span className={styles.mark} aria-hidden>
+            L
+          </span>
+          LinkedIner
+        </div>
+        <nav className={styles.nav} aria-label="Principal">
+          {NAV.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={active ? `${styles.link} ${styles.active}` : styles.link}
+                aria-current={active ? 'page' : undefined}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d={item.icon} />
-                  </svg>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <PlanUsage />
-          <div className={styles.account}>
-            <span className={styles.accountName}>{me.user.name ?? me.user.email}</span>
-            <Button variant="plain" disabled={leaving} onClick={() => void signOut()}>
-              Sair
-            </Button>
-          </div>
-        </aside>
-        <main className={styles.content}>{children}</main>
-      </div>
-    </MeContext>
+                  <path d={item.icon} />
+                </svg>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        {me && !loading ? (
+          <>
+            <PlanUsage />
+            <div className={styles.account}>
+              <span className={styles.accountName}>{me.user.name ?? me.user.email}</span>
+              <Button variant="plain" disabled={leaving} onClick={() => void signOut()}>
+                Sair
+              </Button>
+            </div>
+          </>
+        ) : null}
+      </aside>
+      <main className={styles.content}>{me && !loading ? children : null}</main>
+    </div>
+  );
+
+  if (me && !loading) return <MeContext value={me}>{shell}</MeContext>;
+  return (
+    <>
+      {shell}
+      <Spinner />
+    </>
   );
 }

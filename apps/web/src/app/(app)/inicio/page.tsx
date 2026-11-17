@@ -83,7 +83,6 @@ export default function HomePage() {
           aiAllowed: Boolean(me.consents.granted.ai_processing),
         })
       : null;
-  const stepLoading = !documents.data || !facts.data || !dashboard.data || !recommendations.data;
   const checklistDone = profile.data?.linkedinChecklist.length ?? 0;
   const firstName = me.user.name?.split(' ')[0];
   const gaps = score.data?.factors.filter((f) => f.kind === 'gap').slice(0, 3) ?? [];
@@ -102,11 +101,7 @@ export default function HomePage() {
         ) : null}
       </header>
 
-      {stepLoading && !documents.error && !facts.error ? (
-        <Skeleton height={104} />
-      ) : step ? (
-        <NextStep step={step} />
-      ) : null}
+      {step ? <NextStep step={step} /> : null}
 
       <nav className={styles.shortcuts} aria-label="Atalhos">
         {SHORTCUTS.map((item) => (
