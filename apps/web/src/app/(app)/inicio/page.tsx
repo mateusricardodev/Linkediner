@@ -5,10 +5,19 @@ import { APPLICATION_STATE_LABELS } from '../../../components/application-state'
 import { Badge, ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
 import { api } from '../../../lib/api';
 import { CHECKLIST } from '../../../lib/linkedin-checklist';
-import type { Dashboard, Profile, ProfileScore, Recommendations } from '../../../lib/types';
+import type {
+  Dashboard,
+  DocumentRecord,
+  Profile,
+  ProfileFact,
+  ProfileScore,
+  Recommendations,
+} from '../../../lib/types';
+import { usePollWhile } from '../../../lib/use-poll';
 import { useResource } from '../../../lib/use-resource';
 import { useMe } from '../app-shell';
 import styles from './inicio.module.css';
+import { NextStep, pickStep } from './next-step';
 import { ScoreTrend } from './score-trend';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -56,6 +65,25 @@ export default function HomePage() {
   const recommendations = useResource(() => api<Recommendations>('/v1/jobs/recommendations'));
   const score = useResource(() => api<ProfileScore>('/v1/profile/score'));
   const profile = useResource(() => api<Profile>('/v1/profile'));
+  const documents = useResource(() => api<DocumentRecord[]>('/v1/documents'));
+  const facts = useResource(() => api<ProfileFact[]>('/v1/profile/facts'));
+
+  // Enquanto a análise roda, o bloco acompanha e muda sozinho quando ela termina.
+  const processing = (documents.data ?? []).some((d) => d.status === 'processing');
+  usePollWhile(processing, documents.reload, documents.data);
+  usePollWhile(processing, facts.reload, facts.data);
+
+  const step =
+    documents.data && facts.data && dashboard.data && recommendations.data
+      ? pickStep({
+          documents: documents.data,
+          facts: facts.data,
+          dashboard: dashboard.data,
+          recommendations: recommendations.data,
+          aiAllowed: Boolean(me.consents.granted.ai_processing),
+        })
+      : null;
+  const stepLoading = !documents.data || !facts.data || !dashboard.data || !recommendations.data;
   const checklistDone = profile.data?.linkedinChecklist.length ?? 0;
   const firstName = me.user.name?.split(' ')[0];
   const gaps = score.data?.factors.filter((f) => f.kind === 'gap').slice(0, 3) ?? [];
@@ -73,6 +101,12 @@ export default function HomePage() {
           </p>
         ) : null}
       </header>
+
+      {stepLoading && !documents.error && !facts.error ? (
+        <Skeleton height={104} />
+      ) : step ? (
+        <NextStep step={step} />
+      ) : null}
 
       <nav className={styles.shortcuts} aria-label="Atalhos">
         {SHORTCUTS.map((item) => (
