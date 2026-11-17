@@ -1,0 +1,128 @@
+/* Avisos no canto: nunca bloqueiam o uso (design.md, seção 6). Só transform e opacity animam. */
+.viewport {
+  position: fixed;
+  right: var(--spacing-xl);
+  bottom: var(--spacing-xl);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+  /* O contêiner não intercepta cliques: só os avisos em si. */
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  max-width: min(420px, calc(100vw - 2 * var(--spacing-xl)));
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  box-shadow: var(--shadow-popover);
+  font-size: var(--type-callout-size);
+  line-height: var(--type-callout-line);
+  animation: toast-in 200ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* O tom nunca vai só na cor: o ícone muda junto. */
+.glyph {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.success .glyph {
+  background: var(--color-status-success);
+  color: var(--color-text-on-accent);
+}
+
+.danger .glyph {
+  background: var(--color-status-danger);
+  color: var(--color-text-on-accent);
+}
+
+.message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.action,
+.close {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color 150ms ease-out;
+}
+
+.action {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-weight: var(--type-headline-weight);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.close {
+  width: 28px;
+  height: 28px;
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+@media (hover: hover) {
+  .action:hover,
+  .close:hover {
+    background: color-mix(in srgb, var(--color-bg-surface) 18%, transparent);
+  }
+
+  .close:hover {
+    opacity: 1;
+  }
+}
+
+.action:focus-visible,
+.close:focus-visible {
+  outline: 2px solid var(--color-bg-surface);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .viewport {
+    left: var(--spacing-lg);
+    right: var(--spacing-lg);
+    bottom: var(--spacing-lg);
+    align-items: stretch;
+  }
+
+  .toast {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
