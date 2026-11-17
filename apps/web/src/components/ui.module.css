@@ -66,6 +66,20 @@
   color: var(--color-text-on-accent);
 }
 
+@media (hover: hover) {
+  .primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-accent-default), black 14%);
+  }
+
+  .secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-bg-fill), var(--color-text-primary) 10%);
+  }
+
+  .danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-status-danger-text), black 14%);
+  }
+}
+
 .full {
   width: 100%;
 }

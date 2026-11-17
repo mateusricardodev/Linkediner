@@ -58,18 +58,32 @@
 
 .nav {
   display: flex;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-xs);
   font-size: var(--type-subheadline-size);
   color: var(--color-text-secondary);
 }
 
-.nav a {
+.nav a,
+.footerNav a {
   color: var(--color-text-secondary);
   text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
-.nav a:hover {
+.nav a:hover,
+.footerNav a:hover {
   color: var(--color-text-primary);
+}
+
+@media (hover: hover) {
+  .nav a:hover,
+  .footerNav a:hover {
+    background: var(--color-bg-fill);
+  }
 }
 
 .headerActions {
@@ -84,6 +98,15 @@
   font-weight: 500;
   color: var(--color-text-primary);
   text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: background-color 150ms ease-out;
+}
+
+@media (hover: hover) {
+  .signIn:hover {
+    background: var(--color-bg-fill);
+  }
 }
 
 /* Tipografia comum */
@@ -612,12 +635,7 @@
 
 .footerNav {
   display: flex;
-  gap: var(--spacing-xl);
-}
-
-.footerNav a {
-  color: var(--color-text-secondary);
-  text-decoration: none;
+  gap: var(--spacing-xs);
 }
 
 /* Telas menores */
