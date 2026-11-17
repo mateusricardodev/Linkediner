@@ -16,6 +16,7 @@ import {
 } from '../../../lib/goals';
 import type { CareerGoal } from '../../../lib/types';
 import { useResource } from '../../../lib/use-resource';
+import { useUndoableDelete } from '../../../lib/use-undoable-delete';
 import { GoalSuggestion } from './goal-suggestion';
 import styles from './perfil.module.css';
 
@@ -148,9 +149,16 @@ function GoalEditor({
   );
 }
 
-function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void }) {
+function GoalRow({
+  goal,
+  onChanged,
+  onRemove,
+}: {
+  goal: CareerGoal;
+  onChanged: () => void;
+  onRemove: () => void;
+}) {
   const [editing, setEditing] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,7 +167,6 @@ function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void 
     setError(null);
     try {
       await action();
-      setConfirming(false);
       onChanged();
     } catch (cause) {
       setError(message(cause));
@@ -194,44 +201,28 @@ function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void 
         {goal.isActive ? null : <Badge tone="neutral">Inativo</Badge>}
       </div>
       {error ? <Notice tone="danger">{error}</Notice> : null}
-      {confirming ? (
-        <div className={styles.actions}>
-          <p className={styles.confirmText}>Apagar este objetivo? Isso não pode ser desfeito.</p>
-          <Button
-            variant="danger"
-            disabled={busy}
-            onClick={() => void run(() => api(`/v1/career-goals/${goal.id}`, { method: 'DELETE' }))}
-          >
-            {busy ? 'Apagando…' : 'Apagar'}
-          </Button>
-          <Button variant="plain" disabled={busy} onClick={() => setConfirming(false)}>
-            Manter
-          </Button>
-        </div>
-      ) : (
-        <div className={styles.actions}>
-          <Button variant="plain" disabled={busy} onClick={() => setEditing(true)}>
-            Editar
-          </Button>
-          <Button
-            variant="plain"
-            disabled={busy}
-            onClick={() =>
-              void run(() =>
-                api(`/v1/career-goals/${goal.id}`, {
-                  method: 'PATCH',
-                  body: { isActive: !goal.isActive },
-                }),
-              )
-            }
-          >
-            {goal.isActive ? 'Desativar' : 'Ativar'}
-          </Button>
-          <Button variant="plain-danger" disabled={busy} onClick={() => setConfirming(true)}>
-            Apagar
-          </Button>
-        </div>
-      )}
+      <div className={styles.actions}>
+        <Button variant="plain" disabled={busy} onClick={() => setEditing(true)}>
+          Editar
+        </Button>
+        <Button
+          variant="plain"
+          disabled={busy}
+          onClick={() =>
+            void run(() =>
+              api(`/v1/career-goals/${goal.id}`, {
+                method: 'PATCH',
+                body: { isActive: !goal.isActive },
+              }),
+            )
+          }
+        >
+          {goal.isActive ? 'Desativar' : 'Ativar'}
+        </Button>
+        <Button variant="plain-danger" disabled={busy} onClick={onRemove}>
+          Apagar
+        </Button>
+      </div>
     </li>
   );
 }
@@ -239,13 +230,19 @@ function GoalRow({ goal, onChanged }: { goal: CareerGoal; onChanged: () => void 
 export function GoalsSection({ onChanged }: { onChanged: () => void }) {
   const goals = useResource(() => api<CareerGoal[]>('/v1/career-goals'));
   const [creating, setCreating] = useState<GoalForm | null>(null);
-  const list = goals.data ?? [];
-  const activeCount = list.filter((goal) => goal.isActive).length;
-
   const changed = () => {
     void goals.reload();
     onChanged();
   };
+  const { hidden, remove } = useUndoableDelete(
+    (id) => api(`/v1/career-goals/${id}`, { method: 'DELETE' }),
+    async () => {
+      await goals.reload();
+      onChanged();
+    },
+  );
+  const list = (goals.data ?? []).filter((goal) => !hidden.has(goal.id));
+  const activeCount = list.filter((goal) => goal.isActive).length;
 
   return (
     <section id="objetivos" aria-labelledby="objetivos-titulo" className={styles.section}>
@@ -261,7 +258,12 @@ export function GoalsSection({ onChanged }: { onChanged: () => void }) {
           {list.length > 0 ? (
             <ul className={styles.list}>
               {list.map((goal) => (
-                <GoalRow key={goal.id} goal={goal} onChanged={changed} />
+                <GoalRow
+                  key={goal.id}
+                  goal={goal}
+                  onChanged={changed}
+                  onRemove={() => remove(goal.id, `Objetivo “${goal.title}” apagado.`)}
+                />
               ))}
             </ul>
           ) : !creating ? (

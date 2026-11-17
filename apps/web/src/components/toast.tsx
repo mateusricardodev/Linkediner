@@ -28,7 +28,8 @@ const DEFAULT_MS = 4000;
 const ACTION_MS = 6000;
 const MAX_VISIBLE = 3;
 
-const ToastContext = createContext<((options: ToastOptions) => void) | null>(null);
+/** Devolve uma função que fecha o aviso, para quem precisa tirá-lo antes do tempo. */
+const ToastContext = createContext<((options: ToastOptions) => () => void) | null>(null);
 
 /** Mostra um aviso curto no canto da tela, sem bloquear o uso. */
 export function useToast() {
@@ -92,10 +93,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setItems((current) => current.filter((item) => item.id !== id));
   }, []);
 
-  const show = useCallback((options: ToastOptions) => {
-    const id = ++nextId.current;
-    setItems((current) => [...current, { ...options, id }].slice(-MAX_VISIBLE));
-  }, []);
+  const show = useCallback(
+    (options: ToastOptions) => {
+      const id = ++nextId.current;
+      setItems((current) => [...current, { ...options, id }].slice(-MAX_VISIBLE));
+      return () => close(id);
+    },
+    [close],
+  );
 
   return (
     <ToastContext value={show}>
