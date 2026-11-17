@@ -1,5 +1,6 @@
 'use client';
 
+import { FileSearch } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -137,6 +138,7 @@ export default function JobsPage() {
             />
             <div>
               <Button
+                icon={FileSearch}
                 type="submit"
                 disabled={busy || text.trim().length === 0}
                 reason={

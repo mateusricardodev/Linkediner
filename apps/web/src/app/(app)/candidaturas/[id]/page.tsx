@@ -1,5 +1,6 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -219,7 +220,7 @@ export default function ApplicationPage() {
                   Ao aprovar, o material fica congelado. Nada é enviado: o envio é feito por você.
                 </p>
                 <div className={styles.actions}>
-                  <Button disabled={busy} onClick={() => void run(post('approve'))}>
+                  <Button icon={Check} disabled={busy} onClick={() => void run(post('approve'))}>
                     Aprovar candidatura
                   </Button>
                   <Button
@@ -295,11 +296,7 @@ export default function ApplicationPage() {
                   <p className={styles.confirmText}>
                     Desistir desta candidatura? Ela fica encerrada e não pode ser reaberta.
                   </p>
-                  <Button
-                    variant="danger"
-                    disabled={busy}
-                    onClick={() => void run(post('close'))}
-                  >
+                  <Button variant="danger" disabled={busy} onClick={() => void run(post('close'))}>
                     Desistir
                   </Button>
                   <Button variant="plain" disabled={busy} onClick={() => setConfirmingClose(false)}>

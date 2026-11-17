@@ -1,5 +1,6 @@
 'use client';
 
+import { Briefcase, FilePlus, FileSearch, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { APPLICATION_STATE_LABELS } from '../../../components/application-state';
 import { Badge, ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
@@ -29,21 +30,21 @@ const SHORTCUTS = [
     title: 'Analisar currículo',
     text: 'Veja o score e como os sistemas de recrutamento leem o seu arquivo.',
     action: 'Analisar',
-    icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M9 13l2 2 4-4',
+    Icon: FileSearch,
   },
   {
     href: '/curriculo',
     title: 'Gerar currículo',
     text: 'Em português ou inglês, geral ou pensado para uma vaga salva.',
     action: 'Gerar',
-    icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M12 11v6M9 14h6',
+    Icon: FilePlus,
   },
   {
     href: '/vagas',
     title: 'Ver vagas',
     text: 'Compare o seu perfil com cada vaga, requisito por requisito.',
     action: 'Ver vagas',
-    icon: 'M4 8h16v11H4zM9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16',
+    Icon: Briefcase,
   },
 ];
 
@@ -107,18 +108,7 @@ export default function HomePage() {
         {SHORTCUTS.map((item) => (
           <Link key={item.href} href={item.href} className={styles.shortcut}>
             <span className={styles.shortcutIcon} aria-hidden>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d={item.icon} />
-              </svg>
+              <item.Icon size={20} strokeWidth={1.75} />
             </span>
             <span className={styles.shortcutTitle}>{item.title}</span>
             <span className={styles.shortcutText}>{item.text}</span>
@@ -140,7 +130,7 @@ export default function HomePage() {
             ) : dashboard.data.needsAttention.length === 0 ? (
               <div className={styles.empty}>
                 <p>Nenhuma candidatura esperando por você.</p>
-                <ButtonLink variant="secondary" href="/vagas">
+                <ButtonLink icon={Search} variant="secondary" href="/vagas">
                   Encontrar uma vaga
                 </ButtonLink>
               </div>
@@ -177,7 +167,7 @@ export default function HomePage() {
             ) : recommendations.data.items.length === 0 ? (
               <div className={styles.empty}>
                 <p>Importe uma vaga para ver o quanto ela combina com o seu perfil.</p>
-                <ButtonLink variant="secondary" href="/vagas">
+                <ButtonLink icon={Plus} variant="secondary" href="/vagas">
                   Importar vaga
                 </ButtonLink>
               </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Check, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Badge, Button, Field, Notice, TextAreaField } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
@@ -106,6 +107,7 @@ export function FactItem({ fact, onChanged }: { fact: ProfileFact; onChanged: ()
       <div className={styles.actions}>
         {fact.verification !== 'user_confirmed' ? (
           <Button
+            icon={Check}
             variant="secondary"
             disabled={busy}
             onClick={() => void decide({ verification: 'user_confirmed' })}
@@ -119,6 +121,7 @@ export function FactItem({ fact, onChanged }: { fact: ProfileFact; onChanged: ()
               Corrigir
             </Button>
             <Button
+              icon={X}
               variant="plain"
               disabled={busy}
               onClick={() => void decide({ verification: 'rejected' })}

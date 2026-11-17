@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Notice } from '../../../../components/ui';
 import { ApiError } from '../../../../lib/api';
@@ -13,6 +14,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <Button
+      icon={Copy}
       variant="plain"
       aria-label={label}
       onClick={() =>
@@ -63,10 +65,11 @@ export function ManualPackage({
           Exatamente como você aprovou, mesmo que o currículo mude depois.
         </p>
         <div className={styles.actions}>
-          <Button disabled={busy !== null} onClick={() => void download('pdf')}>
+          <Button icon={Download} disabled={busy !== null} onClick={() => void download('pdf')}>
             {busy === 'pdf' ? 'Gerando…' : 'Baixar PDF'}
           </Button>
           <Button
+            icon={Download}
             variant="secondary"
             disabled={busy !== null}
             onClick={() => void download('docx')}

@@ -1,5 +1,6 @@
 'use client';
 
+import { Check, Download, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -116,6 +117,7 @@ export default function ResumePage() {
                     : `${pending} frases ainda precisam da sua decisão.`}
               </p>
               <Button
+                icon={Check}
                 disabled={pending > 0 || busy !== null}
                 onClick={() =>
                   void run('approve', async () => {
@@ -135,12 +137,14 @@ export default function ResumePage() {
               </p>
               <div className={styles.actions}>
                 <Button
+                  icon={Download}
                   disabled={busy !== null}
                   onClick={() => void run('pdf', () => downloadResume(resume.id, 'pdf'))}
                 >
                   {busy === 'pdf' ? 'Gerando…' : 'Baixar PDF'}
                 </Button>
                 <Button
+                  icon={Download}
                   variant="secondary"
                   disabled={busy !== null}
                   onClick={() => void run('docx', () => downloadResume(resume.id, 'docx'))}
@@ -181,7 +185,7 @@ export default function ResumePage() {
               </Button>
             </>
           ) : (
-            <Button variant="plain-danger" onClick={() => setConfirmingDelete(true)}>
+            <Button icon={Trash2} variant="plain-danger" onClick={() => setConfirmingDelete(true)}>
               Apagar currículo
             </Button>
           )}

@@ -12,14 +12,15 @@
   "dependencies": {
     "@fontsource/inter": "5.3.0",
     "@linkediner/ui": "workspace:*",
+    "lucide-react": "^1.74.0",
     "next": "16.4.5",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@linkediner/contracts": "workspace:*",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@linkediner/contracts": "workspace:*",
     "zod": "4.6.7"
   }
 }

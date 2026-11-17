@@ -1,5 +1,6 @@
 'use client';
 
+import { Download, FileSearch, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge, Button, Notice, type BadgeTone } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
@@ -94,6 +95,7 @@ export function DocumentRow({
         <div className={styles.actions}>
           {aiAllowed && canAnalyze(document) ? (
             <Button
+              icon={FileSearch}
               variant="secondary"
               disabled={busy}
               onClick={() =>
@@ -107,6 +109,7 @@ export function DocumentRow({
             </Button>
           ) : null}
           <Button
+            icon={Download}
             variant="plain"
             disabled={busy}
             onClick={() =>
@@ -118,7 +121,12 @@ export function DocumentRow({
           >
             Baixar
           </Button>
-          <Button variant="plain-danger" disabled={busy} onClick={() => setConfirming(true)}>
+          <Button
+            icon={Trash2}
+            variant="plain-danger"
+            disabled={busy}
+            onClick={() => setConfirming(true)}
+          >
             Apagar
           </Button>
         </div>

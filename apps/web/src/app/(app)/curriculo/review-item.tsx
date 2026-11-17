@@ -1,5 +1,6 @@
 'use client';
 
+import { Check, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Badge, Button, Notice, TextAreaField } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
@@ -118,6 +119,7 @@ export function ReviewItem({
         <div className={styles.actions}>
           {suggested ? (
             <Button
+              icon={Check}
               variant="secondary"
               disabled={busy}
               onClick={() => void decide({ action: 'confirm' })}
@@ -148,6 +150,7 @@ export function ReviewItem({
                 Corrigir
               </Button>
               <Button
+                icon={Trash2}
                 variant="plain"
                 disabled={busy}
                 onClick={() => void decide({ action: 'remove' })}

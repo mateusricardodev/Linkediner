@@ -1,9 +1,14 @@
+import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useId, type ComponentProps, type ReactNode } from 'react';
 import styles from './ui.module.css';
 
 /** `danger` confirma o que não tem volta; `plain-danger` é o gatilho que leva até essa confirmação. */
 type ButtonVariant = 'primary' | 'secondary' | 'plain' | 'danger' | 'plain-danger';
+
+/** O ícone vai junto do texto, nunca no lugar dele. */
+const iconOf = (Icon?: LucideIcon) =>
+  Icon ? <Icon size={16} strokeWidth={1.9} aria-hidden /> : null;
 
 const buttonClass = (variant: ButtonVariant, full?: boolean, extra?: string) =>
   [styles.button, styles[variant], full ? styles.full : '', extra ?? ''].filter(Boolean).join(' ');
@@ -14,10 +19,13 @@ export function Button({
   className,
   type = 'button',
   reason,
+  icon,
+  children,
   ...props
 }: ComponentProps<'button'> & {
   variant?: ButtonVariant;
   full?: boolean;
+  icon?: LucideIcon;
   /** O que falta para liberar o botão. Passe só enquanto ele estiver bloqueado por falta de algo. */
   reason?: string | null;
 }) {
@@ -28,7 +36,10 @@ export function Button({
       className={buttonClass(variant, full, className)}
       {...props}
       aria-describedby={reason ? reasonId : props['aria-describedby']}
-    />
+    >
+      {iconOf(icon)}
+      {children}
+    </button>
   );
   if (!reason) return button;
   return (
@@ -45,9 +56,20 @@ export function ButtonLink({
   variant = 'primary',
   full,
   className,
+  icon,
+  children,
   ...props
-}: ComponentProps<typeof Link> & { variant?: ButtonVariant; full?: boolean }) {
-  return <Link className={buttonClass(variant, full, className)} {...props} />;
+}: ComponentProps<typeof Link> & {
+  variant?: ButtonVariant;
+  full?: boolean;
+  icon?: LucideIcon;
+}) {
+  return (
+    <Link className={buttonClass(variant, full, className)} {...props}>
+      {iconOf(icon)}
+      {children}
+    </Link>
+  );
 }
 
 export function Field({

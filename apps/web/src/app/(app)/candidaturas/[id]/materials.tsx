@@ -1,5 +1,6 @@
 'use client';
 
+import { Sparkles, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge, Button, Notice, TextAreaField } from '../../../../components/ui';
 import { api, ApiError } from '../../../../lib/api';
@@ -201,6 +202,7 @@ function MaterialCard({
           ) : (
             <div className={styles.actions}>
               <Button
+                icon={Sparkles}
                 variant="secondary"
                 disabled={
                   busy || (kind === 'form_answers' && parseQuestions(questions).length === 0)
@@ -216,6 +218,7 @@ function MaterialCard({
               </Button>
               {material && canEdit ? (
                 <Button
+                  icon={Trash2}
                   variant="plain-danger"
                   disabled={busy}
                   onClick={() => setConfirming('delete')}

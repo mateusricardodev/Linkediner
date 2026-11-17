@@ -1,5 +1,6 @@
 'use client';
 
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Badge, Button, Field, Notice, SelectField, Skeleton } from '../../../components/ui';
 import { api, ApiError } from '../../../lib/api';
@@ -202,7 +203,7 @@ function GoalRow({
       </div>
       {error ? <Notice tone="danger">{error}</Notice> : null}
       <div className={styles.actions}>
-        <Button variant="plain" disabled={busy} onClick={() => setEditing(true)}>
+        <Button icon={Pencil} variant="plain" disabled={busy} onClick={() => setEditing(true)}>
           Editar
         </Button>
         <Button
@@ -219,7 +220,7 @@ function GoalRow({
         >
           {goal.isActive ? 'Desativar' : 'Ativar'}
         </Button>
-        <Button variant="plain-danger" disabled={busy} onClick={onRemove}>
+        <Button icon={Trash2} variant="plain-danger" disabled={busy} onClick={onRemove}>
           Apagar
         </Button>
       </div>
@@ -290,7 +291,7 @@ export function GoalsSection({ onChanged }: { onChanged: () => void }) {
             </p>
           ) : (
             <div>
-              <Button variant="secondary" onClick={() => setCreating(EMPTY_GOAL_FORM)}>
+              <Button icon={Plus} variant="secondary" onClick={() => setCreating(EMPTY_GOAL_FORM)}>
                 Novo objetivo
               </Button>
             </div>

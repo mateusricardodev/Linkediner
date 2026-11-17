@@ -1,5 +1,6 @@
 'use client';
 
+import { Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button, ButtonLink, Notice, SelectField } from '../../../components/ui';
@@ -105,7 +106,7 @@ export function GenerateForm({
             Ir para o perfil
           </ButtonLink>
         ) : null}
-        <Button disabled={busy || generating} onClick={() => void generate()}>
+        <Button icon={Sparkles} disabled={busy || generating} onClick={() => void generate()}>
           {busy ? 'Pedindo…' : generating ? 'Gerando…' : 'Gerar currículo'}
         </Button>
       </section>

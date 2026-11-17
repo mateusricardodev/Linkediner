@@ -1,5 +1,6 @@
 'use client';
 
+import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -148,7 +149,7 @@ export default function JobPage() {
               </Button>
             </>
           ) : (
-            <Button variant="plain-danger" onClick={() => setConfirmingDelete(true)}>
+            <Button icon={Trash2} variant="plain-danger" onClick={() => setConfirmingDelete(true)}>
               Apagar vaga
             </Button>
           )}
