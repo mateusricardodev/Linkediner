@@ -55,6 +55,21 @@ export default function ProfilePage() {
 
   const aiAllowed = Boolean(me.data?.consents.granted.ai_processing);
   const pending = visible.filter(canAnalyze);
+
+  // Com a IA autorizada, enviar já é pedir a análise. O botão "Analisar" fica como alternativa.
+  async function uploaded(document: DocumentRecord) {
+    if (aiAllowed && canAnalyze(document)) {
+      setGrantError(null);
+      try {
+        await api(`/v1/documents/${document.id}/extract`, { method: 'POST' });
+      } catch (cause) {
+        setGrantError(
+          cause instanceof ApiError ? cause.message : 'Algo deu errado. Tente de novo.',
+        );
+      }
+    }
+    refresh();
+  }
   const active = facts.data?.filter((f) => f.verification !== 'rejected') ?? [];
   const rejected = facts.data?.filter((f) => f.verification === 'rejected') ?? [];
 
@@ -95,8 +110,8 @@ export default function ProfilePage() {
         </h2>
         {me.data?.syntheticDataOnly ? <SyntheticDataNotice /> : null}
         <div className={styles.uploads}>
-          <UploadCard kind="resume" onUploaded={refresh} />
-          <UploadCard kind="linkedin_pdf" onUploaded={refresh} />
+          <UploadCard kind="resume" onUploaded={(d) => void uploaded(d)} />
+          <UploadCard kind="linkedin_pdf" onUploaded={(d) => void uploaded(d)} />
         </div>
 
         {me.data && !aiAllowed ? (

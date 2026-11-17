@@ -4,10 +4,16 @@ import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { Button, Notice } from '../../../components/ui';
 import { ApiError } from '../../../lib/api';
 import { DOCUMENT_KINDS, uploadDocument, validateFile } from '../../../lib/documents';
-import type { DocumentKind } from '../../../lib/types';
+import type { DocumentKind, DocumentRecord } from '../../../lib/types';
 import styles from './perfil.module.css';
 
-export function UploadCard({ kind, onUploaded }: { kind: DocumentKind; onUploaded: () => void }) {
+export function UploadCard({
+  kind,
+  onUploaded,
+}: {
+  kind: DocumentKind;
+  onUploaded: (document: DocumentRecord) => void;
+}) {
   const info = DOCUMENT_KINDS[kind];
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +30,8 @@ export function UploadCard({ kind, onUploaded }: { kind: DocumentKind; onUploade
     controller.current = new AbortController();
     setProgress(0);
     try {
-      await uploadDocument(kind, file, setProgress, controller.current.signal);
-      onUploaded();
+      const document = await uploadDocument(kind, file, setProgress, controller.current.signal);
+      onUploaded(document);
     } catch (cause) {
       if (!(cause instanceof DOMException && cause.name === 'AbortError')) {
         setError(cause instanceof ApiError ? cause.message : 'Algo deu errado. Tente de novo.');
