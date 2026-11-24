@@ -6,6 +6,7 @@ import {
   createAiProvider,
   DrizzleAiGenerationLog,
   analyzeLinkedinV1,
+  analyzeResumeV1,
   extractProfileV2,
   FakeAiProvider,
   formAnswersV2,
@@ -65,6 +66,7 @@ import {
   PurgeUser,
 } from '@linkediner/core/privacy/account';
 import { AnalyzeLinkedin, DrizzleLinkedinAnalysisRepository } from '@linkediner/core/linkedin';
+import { AnalyzeResume, DrizzleResumeAnalysisRepository } from '@linkediner/core/resume-analysis';
 import { buildExportZip } from '@linkediner/core/privacy/account-worker';
 import { DOCUMENTS_EXTRACT_QUEUE } from '@linkediner/core/extraction';
 import { MATERIALS_GENERATE_QUEUE } from '@linkediner/core/applications';
@@ -90,6 +92,7 @@ import { analyticsExpireEvents } from './handlers/analytics-expire-events';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
 import { linkedinAnalyze } from './handlers/linkedin-analyze';
+import { resumeAnalyze } from './handlers/resume-analyze';
 import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { sourcesStructure, sourcesSync } from './handlers/sources-catalog';
@@ -238,6 +241,21 @@ const tasks = [
       users: new DrizzleUserReader(database.db),
       ai,
       prompt: analyzeLinkedinV1,
+      generations,
+      quota,
+      audit,
+    }),
+  }),
+  resumeAnalyze({
+    analyze: new AnalyzeResume({
+      analyses: new DrizzleResumeAnalysisRepository(database.db, cipher),
+      documents: new DrizzleDocumentRepository(database.db),
+      storage,
+      text: new FileTextExtractor(),
+      consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+      users: new DrizzleUserReader(database.db),
+      ai,
+      prompt: analyzeResumeV1,
       generations,
       quota,
       audit,

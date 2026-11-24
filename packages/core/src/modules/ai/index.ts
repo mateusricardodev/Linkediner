@@ -19,6 +19,7 @@ export { DrizzleAiGenerationLog } from './infrastructure/drizzle-ai-generation-l
 export { extractProfileV1 } from './prompts/extract-profile/v1';
 export { extractProfileV2 } from './prompts/extract-profile/v2';
 export { analyzeLinkedinV1 } from './prompts/analyze-linkedin/v1';
+export { analyzeResumeV1 } from './prompts/analyze-resume/v1';
 export { generateResumeV1 } from './prompts/generate-resume/v1';
 export { generateResumeV2 } from './prompts/generate-resume/v2';
 export { generateResumeV3 } from './prompts/generate-resume/v3';

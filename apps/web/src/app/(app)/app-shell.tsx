@@ -37,6 +37,16 @@ const NAV: NavItem[] = [
     icon: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM8 10v7M8 7v.01M12 17v-4a2 2 0 0 1 4 0v4M12 10v7',
   },
   {
+    href: '/analise-curriculo',
+    label: 'Análise de currículo',
+    icon: 'M7 3h7l4 4v6M14 3v4h4M6 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1M9 12h4M9 16h2M17.5 20.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM21 22l-1.7-1.7',
+  },
+  {
+    href: '/curriculo',
+    label: 'Gerar currículo',
+    icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M12 11v6M9 14h6',
+  },
+  {
     href: '/vagas',
     label: 'Vagas',
     icon: 'M4 8h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1ZM9 8V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M3 13h18',
@@ -45,11 +55,6 @@ const NAV: NavItem[] = [
     href: '/candidaturas',
     label: 'Candidaturas',
     icon: 'M9 5H7a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1H9V5ZM9 13l2 2 4-4',
-  },
-  {
-    href: '/curriculo',
-    label: 'Currículo',
-    icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M9 12h6M9 16h6',
   },
 ];
 

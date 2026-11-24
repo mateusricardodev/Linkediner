@@ -27,7 +27,7 @@ export default function ResumesPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Currículo</h1>
+        <h1 className={styles.title}>Gerar currículo</h1>
         <p className={styles.subtitle}>
           Geramos uma versão melhorada a partir do seu perfil. O que não estiver comprovado fica
           marcado para você decidir, e nada sai no arquivo sem a sua aprovação.

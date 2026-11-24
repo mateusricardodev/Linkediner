@@ -11,7 +11,7 @@ import type { LinkedinAnalysisSummary, Me } from '../../../lib/types';
 import { usePollWhile } from '../../../lib/use-poll';
 import { useResource } from '../../../lib/use-resource';
 import { LinkedinChecklist } from '../perfil/linkedin-checklist';
-import styles from './linkedin.module.css';
+import styles from '../../../components/analysis/analysis.module.css';
 
 const CHECKS = [
   'Título e "Sobre"',

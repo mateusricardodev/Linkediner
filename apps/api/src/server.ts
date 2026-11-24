@@ -28,6 +28,7 @@ import type { DocumentService } from '@linkediner/core/documents';
 import type { ResumeAtsService, ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
 import type { LinkedinAnalysisService } from '@linkediner/core/linkedin';
+import type { ResumeAnalysisService } from '@linkediner/core/resume-analysis';
 import type { ProductEvents } from '@linkediner/core/analytics';
 import type { ApplicationService, MaterialService } from '@linkediner/core/applications';
 import type { JobService } from '@linkediner/core/jobs';
@@ -39,6 +40,7 @@ import { billingRoutes, type BillingDeps } from './routes/billing';
 import { jobRoutes } from './routes/jobs';
 import { privacyRoutes, type PrivacyDeps } from './routes/privacy';
 import { linkedinRoutes } from './routes/linkedin';
+import { resumeAnalysisRoutes } from './routes/resume-analysis';
 import { resumeRoutes } from './routes/resumes';
 
 export interface ServerDeps {
@@ -63,6 +65,7 @@ export interface ServerDeps {
     resumeExport: ResumeExportService;
     extraction: ExtractionRequests;
     linkedin: LinkedinAnalysisService;
+    resumeAnalysis: ResumeAnalysisService;
     events: ProductEvents;
   } & MeDeps &
     PrivacyDeps &
@@ -124,6 +127,7 @@ export async function buildServer(deps: ServerDeps) {
     await app.register(documentRoutes(deps.account));
     await app.register(resumeRoutes(deps.account));
     await app.register(linkedinRoutes(deps.account));
+    await app.register(resumeAnalysisRoutes(deps.account));
     await app.register(jobRoutes(deps.account));
     await app.register(discoveryRoutes(deps.account));
     await app.register(applicationRoutes(deps.account));

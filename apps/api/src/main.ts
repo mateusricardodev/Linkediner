@@ -82,6 +82,12 @@ import {
   LinkedinAnalysisService,
   type AnalyzeLinkedinJob,
 } from '@linkediner/core/linkedin';
+import {
+  DrizzleResumeAnalysisRepository,
+  RESUME_ANALYZE_QUEUE,
+  ResumeAnalysisService,
+  type AnalyzeResumeJob,
+} from '@linkediner/core/resume-analysis';
 import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
 
@@ -267,6 +273,15 @@ const app = await buildServer({
       queue: await createQueue<AnalyzeLinkedinJob>(boss, LINKEDIN_ANALYZE_QUEUE),
       quota,
       features: quota,
+      audit,
+    }),
+    resumeAnalysis: new ResumeAnalysisService({
+      repo: new DrizzleResumeAnalysisRepository(database.db, cipher),
+      documents: documentRepository,
+      goals: profileRepository,
+      consents,
+      queue: await createQueue<AnalyzeResumeJob>(boss, RESUME_ANALYZE_QUEUE),
+      quota,
       audit,
     }),
     entitlements: quota,

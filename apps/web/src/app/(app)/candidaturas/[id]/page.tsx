@@ -116,7 +116,7 @@ export default function ApplicationPage() {
               {approvedResumes.length === 0 ? (
                 <p className={styles.description}>
                   Você não tem um currículo aprovado. Aprove um em{' '}
-                  <Link href="/curriculo">Currículo</Link>
+                  <Link href="/curriculo">Gerar currículo</Link>
                   {canTailor ? ' ou gere um para esta vaga abaixo.' : ' e volte para esta página.'}
                 </p>
               ) : (
