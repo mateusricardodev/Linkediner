@@ -295,6 +295,13 @@
       "when": 1795524385300,
       "tag": "0041_perfil_localizacao_setor",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1795530040109,
+      "tag": "0042_analise_linkedin",
+      "breakpoints": true
     }
   ]
 }

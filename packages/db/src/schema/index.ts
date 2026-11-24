@@ -13,3 +13,4 @@ export * from './materials';
 export * from './privacy';
 export * from './billing';
 export * from './analytics';
+export * from './linkedin';

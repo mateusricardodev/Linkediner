@@ -1,6 +1,8 @@
 /** Funcionalidades com limite por plano. Os limites são dados no banco, nunca código (ADR 0010). */
 export const FEATURE_KEYS = [
   'profile.analysis',
+  'linkedin.analysis',
+  'linkedin.rewrites',
   'resume.improved',
   'resume.tailored',
   'cover_letter',

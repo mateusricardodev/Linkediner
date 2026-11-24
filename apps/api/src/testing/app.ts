@@ -66,6 +66,11 @@ import {
 import { startTestS3 } from '@linkediner/core/testing';
 import { startTestDatabase } from '@linkediner/db/testing';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
+import {
+  DrizzleLinkedinAnalysisRepository,
+  LinkedinAnalysisService,
+  type AnalyzeLinkedinJob,
+} from '@linkediner/core/linkedin';
 import { buildServer } from '../server';
 
 export const WEB = 'http://localhost:3000';
@@ -120,6 +125,12 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     jobs: [] as StructureJobPayload[],
     enqueue: async (job: StructureJobPayload) => {
       jobQueue.jobs.push(job);
+    },
+  };
+  const linkedinQueue = {
+    jobs: [] as AnalyzeLinkedinJob[],
+    async enqueue(job: AnalyzeLinkedinJob) {
+      linkedinQueue.jobs.push(job);
     },
   };
   const resumeQueue = {
@@ -253,6 +264,16 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         jobRepository,
       ),
       extraction: new ExtractionRequests(documentRepository, consents, queue, quota),
+      linkedin: new LinkedinAnalysisService({
+        repo: new DrizzleLinkedinAnalysisRepository(db, cipher),
+        documents: documentRepository,
+        goals: profileRepository,
+        consents,
+        queue: linkedinQueue,
+        quota,
+        features: entitlements,
+        audit,
+      }),
       entitlements,
       subscriptions,
       events,
@@ -328,6 +349,7 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     consents,
     queue,
     resumeQueue,
+    linkedinQueue,
     jobQueue,
     materialQueue,
     purgeQueue,

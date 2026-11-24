@@ -3,6 +3,7 @@ import type { ZodType } from 'zod';
 /** Tarefas de IA do produto (docs/arquitetura/05-ia-e-documentos.md). */
 export type AiTask =
   | 'extract_profile'
+  | 'analyze_linkedin'
   | 'score_profile_signals'
   | 'structure_job'
   | 'match_explain'

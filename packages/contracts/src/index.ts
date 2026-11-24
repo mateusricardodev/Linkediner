@@ -69,3 +69,4 @@ export {
 export { DataExportDto, DeleteAccountBody, DeletionAcceptedDto } from './privacy';
 export { BillingSummaryDto, BillingUrlDto, CheckoutBody } from './billing';
 export * from './discovery';
+export * from './linkedin';
