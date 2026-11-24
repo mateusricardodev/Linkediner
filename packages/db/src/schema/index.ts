@@ -14,3 +14,4 @@ export * from './privacy';
 export * from './billing';
 export * from './analytics';
 export * from './linkedin';
+export * from './resume-analysis';

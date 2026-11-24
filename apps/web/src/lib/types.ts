@@ -17,6 +17,8 @@ import type {
   JobMatchResponse,
   LinkedinAnalysisDto,
   LinkedinAnalysisSummaryDto,
+  ResumeAnalysisDto,
+  ResumeAnalysisSummaryDto,
   MeResponse as MeSchema,
   ProfileDto,
   ProfileFactDto,
@@ -62,3 +64,6 @@ export type Discovery = z.infer<typeof DiscoveryResponse>;
 export type LinkedinAnalysis = z.infer<typeof LinkedinAnalysisDto>;
 export type LinkedinAnalysisSummary = z.infer<typeof LinkedinAnalysisSummaryDto>;
 export type LinkedinSection = NonNullable<LinkedinAnalysis['result']>['sections'][number];
+export type ResumeAnalysis = z.infer<typeof ResumeAnalysisDto>;
+export type ResumeAnalysisSummary = z.infer<typeof ResumeAnalysisSummaryDto>;
+export type ResumeAnalysisSection = NonNullable<ResumeAnalysis['result']>['sections'][number];

@@ -71,6 +71,11 @@ import {
   LinkedinAnalysisService,
   type AnalyzeLinkedinJob,
 } from '@linkediner/core/linkedin';
+import {
+  DrizzleResumeAnalysisRepository,
+  ResumeAnalysisService,
+  type AnalyzeResumeJob,
+} from '@linkediner/core/resume-analysis';
 import { buildServer } from '../server';
 
 export const WEB = 'http://localhost:3000';
@@ -125,6 +130,12 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     jobs: [] as StructureJobPayload[],
     enqueue: async (job: StructureJobPayload) => {
       jobQueue.jobs.push(job);
+    },
+  };
+  const resumeAnalysisQueue = {
+    jobs: [] as AnalyzeResumeJob[],
+    async enqueue(job: AnalyzeResumeJob) {
+      resumeAnalysisQueue.jobs.push(job);
     },
   };
   const linkedinQueue = {
@@ -274,6 +285,15 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         features: entitlements,
         audit,
       }),
+      resumeAnalysis: new ResumeAnalysisService({
+        repo: new DrizzleResumeAnalysisRepository(db, cipher),
+        documents: documentRepository,
+        goals: profileRepository,
+        consents,
+        queue: resumeAnalysisQueue,
+        quota,
+        audit,
+      }),
       entitlements,
       subscriptions,
       events,
@@ -350,6 +370,7 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     queue,
     resumeQueue,
     linkedinQueue,
+    resumeAnalysisQueue,
     jobQueue,
     materialQueue,
     purgeQueue,

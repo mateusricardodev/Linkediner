@@ -3,6 +3,7 @@ export const FEATURE_KEYS = [
   'profile.analysis',
   'linkedin.analysis',
   'linkedin.rewrites',
+  'resume.analysis',
   'resume.improved',
   'resume.tailored',
   'cover_letter',

@@ -16,9 +16,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 /** Os três caminhos principais, sempre à mão no topo. */
 const SHORTCUTS = [
   {
-    href: '/perfil?tab=profissional#documentos',
+    href: '/analise-curriculo',
     title: 'Analisar currículo',
-    text: 'Veja o score e como os sistemas de recrutamento leem o seu arquivo.',
+    text: 'Veja a nota de cada parte e como os sistemas de recrutamento leem o seu arquivo.',
     action: 'Analisar',
     icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M9 13l2 2 4-4',
   },

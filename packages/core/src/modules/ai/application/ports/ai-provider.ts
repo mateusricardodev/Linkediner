@@ -4,6 +4,7 @@ import type { ZodType } from 'zod';
 export type AiTask =
   | 'extract_profile'
   | 'analyze_linkedin'
+  | 'analyze_resume'
   | 'score_profile_signals'
   | 'structure_job'
   | 'match_explain'

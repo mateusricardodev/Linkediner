@@ -1,4 +1,4 @@
-import type { BadgeTone } from '../components/ui';
+import { actionProgress as progressOf } from './analysis';
 import type { LinkedinAnalysis, LinkedinSection } from './types';
 
 export const SECTION_LABELS: Record<LinkedinSection['key'], string> = {
@@ -34,20 +34,6 @@ export const EDITABLE_ON_LINKEDIN = new Set<LinkedinSection['key']>([
 /** Abre o próprio perfil de quem está logado no LinkedIn, sem o LinkedIner saber qual é. */
 export const LINKEDIN_PROFILE_URL = 'https://www.linkedin.com/in/me/';
 
-export function scoreTone(score: number): BadgeTone {
-  if (score >= 80) return 'success';
-  if (score >= 60) return 'warning';
-  return 'danger';
-}
-
-export function scoreLabel(score: number): string {
-  if (score >= 90) return 'Excelente, nível de topo';
-  if (score >= 80) return 'Perfil forte';
-  if (score >= 60) return 'Bom, com ajustes que fazem diferença';
-  if (score >= 40) return 'Precisa de atenção';
-  return 'Precisa de bastante trabalho';
-}
-
 const FAILURES: Record<string, string> = {
   document_missing: 'O PDF foi apagado antes da análise. Envie de novo.',
   unreadable: 'Não conseguimos ler o PDF. Exporte de novo pelo LinkedIn e envie.',
@@ -60,16 +46,6 @@ export const failureMessage = (code: string | null) =>
   FAILURES[code ?? ''] ?? FAILURES.processing_error!;
 
 /** Ações por seção, com o que já foi feito: alimenta o painel de próximos passos. */
-export function actionProgress(analysis: LinkedinAnalysis) {
-  const done = new Set(analysis.doneActions);
-  const sections = (analysis.result?.sections ?? [])
-    .filter((section) => section.actions.length > 0)
-    .map((section) => ({
-      key: section.key,
-      label: SECTION_LABELS[section.key],
-      actions: section.actions.map((action) => ({ ...action, done: done.has(action.id) })),
-    }));
-  const total = sections.reduce((n, s) => n + s.actions.length, 0);
-  const completed = sections.reduce((n, s) => n + s.actions.filter((a) => a.done).length, 0);
-  return { sections, total, completed };
-}
+export const actionProgress = (analysis: LinkedinAnalysis) => progressOf(analysis, SECTION_LABELS);
+
+export { scoreLabel, scoreTone } from './analysis';
