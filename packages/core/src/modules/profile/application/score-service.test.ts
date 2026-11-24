@@ -16,6 +16,8 @@ function setup(initialFacts: ProfileFact[] = []) {
         id: 'p1',
         headline: null,
         summary: null,
+        location: null,
+        industry: null,
         yearsExperience: null,
         linkedinChecklist: [],
       }),

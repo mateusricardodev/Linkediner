@@ -28,6 +28,10 @@ export const profiles = pgTable('profiles', {
     .references(() => users.id, { onDelete: 'cascade' }),
   headline: text(),
   summary: text(),
+  /** Como a pessoa escreve no LinkedIn, ex.: "São José dos Campos, São Paulo, Brasil". */
+  location: text(),
+  /** Setor do LinkedIn, ex.: "Tecnologia da informação". */
+  industry: text(),
   yearsExperience: integer(),
   /** Ajustes do LinkedIn que a própria pessoa marcou como feitos. Nada é lido do LinkedIn. */
   linkedinChecklist: text().array().notNull().default([]),

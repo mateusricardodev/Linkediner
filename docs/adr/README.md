@@ -35,3 +35,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0029 | [Currículo em inglês e orientado por uma vaga salva](0029-curriculo-idioma-e-vaga.md) | Proposto |
 | 0030 | [Material por vaga aprende com as correções](0030-correcoes-no-material.md) | Proposto |
 | 0031 | [Portais de vagas remotas: Himalayas e Jobicy](0031-portais-de-vagas-remotas.md) | Proposto |
+| 0032 | [Perfil profissional preenchido pelo documento e editado num formulário](0032-perfil-preenchido-pelo-documento.md) | Proposto |

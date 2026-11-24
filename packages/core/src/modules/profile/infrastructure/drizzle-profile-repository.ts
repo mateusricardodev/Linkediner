@@ -16,6 +16,8 @@ const toProfile = (r: typeof profiles.$inferSelect): Profile => ({
   id: r.id,
   headline: r.headline,
   summary: r.summary,
+  location: r.location,
+  industry: r.industry,
   yearsExperience: r.yearsExperience,
   linkedinChecklist: r.linkedinChecklist.filter((item): item is LinkedinChecklistItem =>
     (LINKEDIN_CHECKLIST_ITEMS as readonly string[]).includes(item),

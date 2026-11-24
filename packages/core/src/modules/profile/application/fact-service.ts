@@ -4,6 +4,7 @@ import {
   FACT_DATA_SCHEMAS,
   fingerprintFact,
   type FactData,
+  type FactType,
   type ProfileFact,
 } from '../domain/facts';
 import type { FactRepository } from './ports/fact-repository';
@@ -20,6 +21,34 @@ export class FactService {
 
   list(userId: string): Promise<ProfileFact[]> {
     return this.repo.list(userId);
+  }
+
+  /**
+   * Item digitado pela própria pessoa, como uma experiência que não está nos documentos. Entra como
+   * confirmado por ela: é a palavra dela, não uma dedução da IA.
+   */
+  async create(
+    userId: string,
+    input: { type: FactType; data: Record<string, unknown> },
+  ): Promise<ProfileFact> {
+    const parsed = FACT_DATA_SCHEMAS[input.type].safeParse(input.data);
+    if (!parsed.success) {
+      throw new AppError('VALIDATION_FAILED', 'Preencha os campos obrigatórios deste item.');
+    }
+    const created = await this.repo.create(userId, {
+      type: input.type,
+      data: parsed.data as FactData,
+    });
+    if (!created) throw new AppError('CONFLICT', 'Este item já está no seu perfil.');
+    await this.audit.record({
+      actorType: 'user',
+      actorId: userId,
+      action: 'fact.created',
+      entityType: 'profile_fact',
+      entityId: created.id,
+      metadata: { type: input.type },
+    });
+    return created;
   }
 
   async decide(userId: string, factId: string, decision: FactDecision): Promise<ProfileFact> {

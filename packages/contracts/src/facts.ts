@@ -33,3 +33,12 @@ export const DecideFactBody = z
     z.object({ verification: z.literal('rejected') }).strict(),
   ])
   .meta({ id: 'DecideFactBody' });
+
+/** Item que a própria pessoa digitou. Entra como confirmado por ela, sem documento de origem. */
+export const CreateFactBody = z
+  .object({
+    type: FactType,
+    data: z.record(z.string(), z.string().nullable()),
+  })
+  .strict()
+  .meta({ id: 'CreateFactBody' });

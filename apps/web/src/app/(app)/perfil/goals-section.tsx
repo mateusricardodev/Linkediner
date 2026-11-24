@@ -248,10 +248,16 @@ export function GoalsSection({ onChanged }: { onChanged: () => void }) {
   };
 
   return (
-    <section id="objetivos" aria-labelledby="objetivos-titulo" className={styles.section}>
-      <h2 id="objetivos-titulo" className={styles.sectionTitle}>
-        Objetivos de carreira
-      </h2>
+    <section id="objetivos" aria-labelledby="objetivos-titulo" className={styles.formCard}>
+      <div className={styles.sectionHead}>
+        <h2 id="objetivos-titulo" className={styles.cardTitle}>
+          Objetivo profissional
+        </h2>
+        <p className={styles.sectionHint}>
+          Para que tipo de vaga você está mirando? Guia as análises, o currículo e as vagas
+          encontradas para você.
+        </p>
+      </div>
       {goals.error && !goals.data ? (
         <Notice tone="danger">{goals.error.message}</Notice>
       ) : !goals.data ? (

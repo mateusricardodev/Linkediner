@@ -23,7 +23,13 @@ export {
   RequestUploadBody,
   RequestUploadResponse,
 } from './documents';
-export { DecideFactBody, FactType, FactVerification, ProfileFactDto } from './facts';
+export {
+  CreateFactBody,
+  DecideFactBody,
+  FactType,
+  FactVerification,
+  ProfileFactDto,
+} from './facts';
 export { ProfileScoreResponse, ScoreCriterion, ScoreFactorDto } from './score';
 export {
   ExportResumeQuery,

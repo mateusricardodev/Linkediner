@@ -5,7 +5,7 @@ import {
   coverLetterV2,
   createAiProvider,
   DrizzleAiGenerationLog,
-  extractProfileV1,
+  extractProfileV2,
   FakeAiProvider,
   formAnswersV2,
   generateResumeV3,
@@ -73,6 +73,7 @@ import {
   DrizzleProfileRepository,
   DrizzleScoreRepository,
   ProfileScoreService,
+  ProfileService,
 } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { applicationsGenerateMaterial } from './handlers/applications-generate-material';
@@ -200,8 +201,9 @@ const tasks = [
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       users: new DrizzleUserReader(database.db),
       ai,
-      prompt: extractProfileV1,
+      prompt: extractProfileV2,
       facts: factRepository,
+      profile: new ProfileService(new DrizzleProfileRepository(database.db)),
       generations,
       quota,
       audit,

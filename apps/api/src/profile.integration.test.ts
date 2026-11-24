@@ -40,6 +40,51 @@ describe('perfil profissional', () => {
     });
   });
 
+  it('guarda localização e setor, e limpa quando vêm vazios', async () => {
+    const res = await t.call(alice, 'PATCH', '/v1/profile', {
+      location: '  São José dos Campos, São Paulo  ',
+      industry: 'Tecnologia da informação',
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      location: 'São José dos Campos, São Paulo',
+      industry: 'Tecnologia da informação',
+    });
+    const long = await t.call(alice, 'PATCH', '/v1/profile', { location: 'x'.repeat(121) });
+    expect(long.statusCode).toBe(400);
+    const cleared = await t.call(alice, 'PATCH', '/v1/profile', { location: '', industry: null });
+    expect(cleared.json()).toMatchObject({ location: null, industry: null });
+  });
+
+  it('adiciona um item digitado pela pessoa, já confirmado e sem documento', async () => {
+    const data = {
+      company: 'Empresa Fictícia',
+      title: 'Analista de Dados',
+      startDate: '2024-01',
+      endDate: null,
+      location: null,
+      description: null,
+    };
+    const res = await t.call(alice, 'POST', '/v1/profile/facts', { type: 'experience', data });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({
+      type: 'experience',
+      verification: 'user_confirmed',
+      sourceDocumentId: null,
+      data,
+    });
+    const again = await t.call(alice, 'POST', '/v1/profile/facts', { type: 'experience', data });
+    expect(again.statusCode).toBe(409);
+    const missing = await t.call(alice, 'POST', '/v1/profile/facts', {
+      type: 'experience',
+      data: { ...data, company: '' },
+    });
+    expect(missing.statusCode).toBe(400);
+    await t.call(alice, 'PATCH', `/v1/profile/facts/${res.json().id}`, {
+      verification: 'rejected',
+    });
+  });
+
   it('guarda os ajustes do LinkedIn marcados, na ordem da lista e sem repetir', async () => {
     const res = await t.call(alice, 'PATCH', '/v1/profile', {
       linkedinChecklist: ['skills', 'open_to_work', 'skills'],

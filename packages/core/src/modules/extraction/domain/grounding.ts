@@ -11,8 +11,21 @@ const withSpan = <T extends z.ZodObject>(schema: T) =>
   schema.extend({ sourceSpan: z.string().trim().min(1).max(2000) });
 const list = <T extends z.ZodObject>(schema: T) => z.array(withSpan(schema)).max(200);
 
+const headerValue = z.string().trim().min(1).max(3000).nullable();
+
+/** Cabeçalho do perfil: título, "Sobre", localização e setor, copiados como estão no documento. */
+export const ProfileHeaderOutput = z.object({
+  headline: headerValue,
+  about: headerValue,
+  location: headerValue,
+  industry: headerValue,
+});
+export type ProfileHeaderOutput = z.infer<typeof ProfileHeaderOutput>;
+
 /** Formato pedido à IA. Listas por tipo, com o trecho do documento que comprova cada item. */
 export const ExtractionOutput = z.object({
+  /** Opcional: respostas da versão 1 do prompt não trazem o cabeçalho. */
+  profile: ProfileHeaderOutput.optional(),
   experiences: list(FACT_DATA_SCHEMAS.experience),
   skills: list(FACT_DATA_SCHEMAS.skill),
   projects: list(FACT_DATA_SCHEMAS.project),
@@ -33,7 +46,7 @@ export const EMPTY_EXTRACTION: ExtractionOutput = {
   achievements: [],
 };
 
-const TYPE_BY_KEY: Record<keyof ExtractionOutput, FactType> = {
+const TYPE_BY_KEY: Record<Exclude<keyof ExtractionOutput, 'profile'>, FactType> = {
   experiences: 'experience',
   skills: 'skill',
   projects: 'project',
@@ -92,7 +105,7 @@ export function groundFacts(
     droppedFields: 0,
   };
 
-  for (const key of Object.keys(TYPE_BY_KEY) as (keyof ExtractionOutput)[]) {
+  for (const key of Object.keys(TYPE_BY_KEY) as (keyof typeof TYPE_BY_KEY)[]) {
     for (const item of output[key]) {
       const { sourceSpan, ...values } = item as FactData & { sourceSpan: string };
       if (!source.includes(normalizeText(sourceSpan))) {
@@ -118,4 +131,39 @@ export function groundFacts(
     }
   }
   return { facts, report };
+}
+
+/** Campos do perfil que a extração pode preencher, com o nome usado no perfil. */
+export interface GroundedHeader {
+  headline: string | null;
+  summary: string | null;
+  location: string | null;
+  industry: string | null;
+}
+
+/**
+ * A mesma regra dos fatos vale para o cabeçalho: só entra o valor que está escrito no documento.
+ * O que não estiver comprovado vira null e não preenche nada.
+ */
+export function groundHeader(
+  output: ExtractionOutput,
+  documentText: string,
+): { header: GroundedHeader; dropped: number } {
+  const source = normalizeText(documentText);
+  const header: GroundedHeader = { headline: null, summary: null, location: null, industry: null };
+  let dropped = 0;
+  const values = output.profile;
+  if (!values) return { header, dropped };
+  const pairs: [keyof GroundedHeader, string | null][] = [
+    ['headline', values.headline],
+    ['summary', values.about],
+    ['location', values.location],
+    ['industry', values.industry],
+  ];
+  for (const [field, value] of pairs) {
+    if (value === null) continue;
+    if (isSupported(source, value)) header[field] = value;
+    else dropped++;
+  }
+  return { header, dropped };
 }
