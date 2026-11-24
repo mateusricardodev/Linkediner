@@ -78,6 +78,7 @@ import {
 } from '@linkediner/core/matching';
 import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
+import { waitUntilReady } from './wait-until-ready';
 
 const config = loadConfig();
 const logger = createLogger({
@@ -108,9 +109,20 @@ const keyStorage = new S3ObjectStorage({
 });
 // Em produção os buckets são criados pela infraestrutura. O de documentos expira objetos em 30 dias
 // e precisa da mesma regra de CORS (docs/arquitetura/08-operacao.md).
+// O S3 local leva alguns segundos para aceitar conexões depois que o contêiner sobe.
 if (config.NODE_ENV === 'development') {
-  await storage.ensureBucket({ uploadOrigin: config.WEB_ORIGIN });
-  await keyStorage.ensureBucket();
+  await waitUntilReady(
+    async () => {
+      await storage.ensureBucket({ uploadOrigin: config.WEB_ORIGIN });
+      await keyStorage.ensureBucket();
+    },
+    {
+      timeoutMs: 60_000,
+      intervalMs: 2_000,
+      onRetry: (err, attempt) =>
+        logger.warn({ err, attempt }, 'armazenamento ainda não respondeu; tentando de novo'),
+    },
+  );
 }
 const cipher = createFieldCipher({
   db: database.db,
