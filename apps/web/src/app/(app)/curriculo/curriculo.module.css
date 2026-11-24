@@ -572,3 +572,12 @@
     animation-duration: 3s;
   }
 }
+
+.failedCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}

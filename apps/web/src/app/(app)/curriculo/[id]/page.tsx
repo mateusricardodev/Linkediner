@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Notice, Skeleton } from '../../../../components/ui';
+import { Badge, Button, ButtonLink, Notice, Skeleton } from '../../../../components/ui';
 import { api, ApiError } from '../../../../lib/api';
 import { formatDate } from '../../../../lib/documents';
 import {
@@ -143,7 +143,32 @@ export default function ResumePage() {
       ) : resume.status === 'generating' ? (
         <GeneratingState description={resumeDescription(resume, jobs.data ?? [])} />
       ) : resume.status === 'failed' ? (
-        <Notice tone="danger">{resumeFailureMessage(resume.failureCode)}</Notice>
+        <div className={styles.failedCard}>
+          <Notice tone="danger">{resumeFailureMessage(resume.failureCode)}</Notice>
+          <p className={styles.footnote}>
+            O limite do seu plano foi devolvido: tentar de novo não conta duas vezes.
+          </p>
+          {actionError ? <Notice tone="danger">{actionError}</Notice> : null}
+          <div className={styles.actions}>
+            <Button
+              disabled={busy !== null}
+              onClick={() =>
+                void run('retry', async () => {
+                  const next = await api<Resume>('/v1/resumes', {
+                    method: 'POST',
+                    body: { language: resume.language, jobId: resume.jobId },
+                  });
+                  router.replace(`/curriculo/${next.id}`);
+                })
+              }
+            >
+              {busy === 'retry' ? 'Pedindo…' : 'Tentar de novo'}
+            </Button>
+            <ButtonLink href="/curriculo" variant="plain">
+              Mudar as escolhas
+            </ButtonLink>
+          </div>
+        </div>
       ) : null}
 
       {resume?.content ? (
@@ -247,7 +272,9 @@ export default function ResumePage() {
               Apagar currículo
             </Button>
           )}
-          {!reviewable && actionError ? <Notice tone="danger">{actionError}</Notice> : null}
+          {!reviewable && resume.status !== 'failed' && actionError ? (
+            <Notice tone="danger">{actionError}</Notice>
+          ) : null}
         </div>
       ) : null}
     </div>

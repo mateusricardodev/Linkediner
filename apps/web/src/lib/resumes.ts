@@ -32,7 +32,8 @@ export function resumeDescription(resume: Pick<Resume, 'language' | 'jobId'>, jo
 const FAILURE_MESSAGES: Record<string, string> = {
   no_facts: 'Não há informações suficientes no seu perfil. Envie um documento e tente de novo.',
   consent_revoked: 'A análise por IA foi desligada antes de terminar. Autorize e gere de novo.',
-  processing_error: 'A geração não terminou por um problema nosso. Gere de novo.',
+  processing_error:
+    'A geração não terminou. Isso costuma acontecer quando o serviço de IA está sobrecarregado: tente de novo em alguns minutos.',
 };
 
 export const resumeFailureMessage = (code: string | null) =>
