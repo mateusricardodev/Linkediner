@@ -5,8 +5,11 @@ import { newId } from '../../shared';
 export const RESUMES_GENERATE_QUEUE = {
   name: 'resumes.generate',
   deadLetter: 'resumes.generate.dead',
-  /** O provedor de IA fica sobrecarregado por minutos: as tentativas se espaçam (20 s, 40 s, 80 s...). */
-  retryLimit: 4,
+  /**
+   * O provedor de IA fica sobrecarregado por até dezenas de minutos: as tentativas se espaçam
+   * (20 s, 40 s, 80 s... até cerca de 10 min), somando uns 20 minutos antes de desistir.
+   */
+  retryLimit: 6,
   retryDelay: 20,
   expireInSeconds: 5 * 60,
 } as const;

@@ -51,8 +51,8 @@ describe('documents.extract', () => {
   it.each([
     [0, false],
     [1, false],
-    [3, false],
-    [4, true],
+    [5, false],
+    [6, true],
   ])('tentativa com retryCount %i: última = %s', async (retryCount, isLastAttempt) => {
     const run = vi.fn(async () => 'processed' as const);
     const task = documentsExtract({ extract: { run }, scores });
@@ -120,7 +120,7 @@ describe('resumes.generate', () => {
   it('informa quando é a última tentativa', async () => {
     const run = vi.fn(async () => 'draft' as const);
     const task = resumesGenerate({ generate: { run } });
-    await runTask(task, { id: 'j', data: job, retryCount: 4 }, logger);
+    await runTask(task, { id: 'j', data: job, retryCount: task.retryLimit }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
   });
 });
@@ -202,7 +202,7 @@ describe('applications.generate_material', () => {
   it('informa quando é a última tentativa', async () => {
     const run = vi.fn(async () => 'ready' as const);
     const task = applicationsGenerateMaterial({ generate: { run } });
-    await runTask(task, { id: 'j', data: job, retryCount: 4 }, logger);
+    await runTask(task, { id: 'j', data: job, retryCount: task.retryLimit }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
   });
 });
@@ -228,7 +228,7 @@ describe('jobs.structure', () => {
   it('informa quando é a última tentativa', async () => {
     const run = vi.fn(async () => 'ready' as const);
     const task = jobsStructure({ structure: { run } });
-    await runTask(task, { id: 'j', data: job, retryCount: 4 }, logger);
+    await runTask(task, { id: 'j', data: job, retryCount: task.retryLimit }, logger);
     expect(run).toHaveBeenCalledWith(job, { isLastAttempt: true });
   });
 });
