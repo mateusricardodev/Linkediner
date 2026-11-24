@@ -9,7 +9,7 @@ export function createAiProvider(
   config: Pick<
     AppConfig,
     'AI_PROVIDER' | 'GEMINI_API_KEY' | 'AI_MODEL_EXTRACT' | 'AI_MODEL_GENERATE'
-  >,
+  > & { AI_MODEL_FALLBACK?: string[] | undefined },
 ): AiProvider {
   if (config.AI_PROVIDER === 'gemini') {
     // A validação da configuração já garante a chave quando o provedor é Gemini.
@@ -23,6 +23,7 @@ export function createAiProvider(
       generate
         ? { generate_resume: generate, generate_cover_letter: generate, answer_form: generate }
         : {},
+      config.AI_MODEL_FALLBACK ?? [],
     );
   }
   return new FakeAiProvider();

@@ -10,6 +10,17 @@ import type {
 /** Menor que o prazo da fila (5 min): a falha volta como erro, e a fila tenta de novo. */
 const REQUEST_TIMEOUT_MS = 120_000;
 
+/**
+ * Depois disso, não tenta outro modelo: o pedido já gastou parte do prazo da fila e um modelo
+ * lento pode levar o resto. A falha volta para a fila, que tenta de novo mais tarde.
+ */
+const FALLBACK_BUDGET_MS = 150_000;
+
+/** Sobrecarga, limite de cota ou falha passageira do provedor: vale tentar outro modelo. */
+const TEMPORARY_STATUSES = new Set([429, 500, 503, 504]);
+const isTemporaryUnavailability = (error: unknown) =>
+  TEMPORARY_STATUSES.has((error as { status?: unknown }).status as number);
+
 /** Parte do SDK @google/genai usada aqui. Permite testar o adaptador sem chamar a rede. */
 export interface GeminiClient {
   models: {
@@ -76,6 +87,8 @@ export class GeminiProvider implements AiProvider {
     private readonly defaultModel?: string,
     private readonly now: () => number = Date.now,
     private readonly modelsByTask: Partial<Record<AiTask, string>> = {},
+    /** Modelos de reserva, do mais potente ao mais leve, para quando o principal cair. */
+    private readonly fallbackModels: string[] = [],
   ) {}
 
   async generateStructured<T>(req: GenerateStructuredRequest<T>): Promise<AiResult<T>> {
@@ -90,33 +103,45 @@ export class GeminiProvider implements AiProvider {
     }
 
     const started = this.now();
-    let response: Awaited<ReturnType<GeminiClient['models']['generateContent']>>;
-    try {
-      response = await this.client.models.generateContent({
-        model,
-        contents: [{ role: 'user', parts }],
-        config: {
-          systemInstruction: req.prompt.system,
-          temperature: req.temperature ?? 0,
-          responseMimeType: 'application/json',
-          responseJsonSchema: toGeminiJsonSchema(req.schema),
-          httpOptions: { timeout: REQUEST_TIMEOUT_MS },
-          ...(req.maxOutputTokens ? { maxOutputTokens: req.maxOutputTokens } : {}),
-        },
-      });
-    } catch (error) {
-      throw providerError(req.task, error);
+    // O modelo da tarefa vem primeiro. Se estiver sobrecarregado ou sem cota, tenta as reservas,
+    // na ordem configurada, enquanto ainda houver tempo antes do prazo da fila.
+    const candidates = [model, ...this.fallbackModels.filter((m) => m !== model)];
+    let response: Awaited<ReturnType<GeminiClient['models']['generateContent']>> | undefined;
+    let used = model;
+    for (const [index, candidate] of candidates.entries()) {
+      used = candidate;
+      try {
+        response = await this.client.models.generateContent({
+          model: candidate,
+          contents: [{ role: 'user', parts }],
+          config: {
+            systemInstruction: req.prompt.system,
+            temperature: req.temperature ?? 0,
+            responseMimeType: 'application/json',
+            responseJsonSchema: toGeminiJsonSchema(req.schema),
+            httpOptions: { timeout: REQUEST_TIMEOUT_MS },
+            ...(req.maxOutputTokens ? { maxOutputTokens: req.maxOutputTokens } : {}),
+          },
+        });
+        break;
+      } catch (error) {
+        const isLast = index === candidates.length - 1;
+        const outOfTime = this.now() - started > FALLBACK_BUDGET_MS;
+        if (isLast || outOfTime || !isTemporaryUnavailability(error)) {
+          throw providerError(req.task, error);
+        }
+      }
     }
 
     return {
-      data: parseOutput(response.text, req),
+      data: parseOutput(response!.text, req),
       usage: {
         provider: this.id,
-        model,
+        model: used,
         promptId: req.prompt.id,
         promptVersion: req.prompt.version,
-        tokensIn: response.usageMetadata?.promptTokenCount ?? 0,
-        tokensOut: response.usageMetadata?.candidatesTokenCount ?? 0,
+        tokensIn: response!.usageMetadata?.promptTokenCount ?? 0,
+        tokensOut: response!.usageMetadata?.candidatesTokenCount ?? 0,
         latencyMs: this.now() - started,
       },
     };
