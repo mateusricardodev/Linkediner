@@ -46,6 +46,30 @@ function Card({
   );
 }
 
+/** Partes do formulário. O assistente de currículo mostra só algumas em cada etapa. */
+export type ProfileFormSection =
+  | 'header'
+  | 'about'
+  | 'experience'
+  | 'education'
+  | 'skills'
+  | 'languages'
+  | 'certifications'
+  | 'projects'
+  | 'achievements';
+
+const ALL_SECTIONS: ProfileFormSection[] = [
+  'header',
+  'about',
+  'experience',
+  'education',
+  'skills',
+  'languages',
+  'certifications',
+  'projects',
+  'achievements',
+];
+
 const message = (cause: unknown) =>
   cause instanceof ApiError ? cause.message : 'Algo deu errado. Tente de novo.';
 
@@ -60,11 +84,19 @@ export function ProfileForm({
   profile,
   facts,
   onSaved,
+  sections = ALL_SECTIONS,
+  onDirtyChange,
+  saveLabel = 'Salvar perfil',
 }: {
   name: string | null;
   profile: Profile;
   facts: ProfileFact[];
   onSaved: () => unknown;
+  /** Partes mostradas. As outras continuam salvas como estão. */
+  sections?: ProfileFormSection[];
+  /** Avisa quando há alterações não salvas, para quem usa o formulário poder segurar a saída. */
+  onDirtyChange?: (dirty: boolean) => void;
+  saveLabel?: string;
 }) {
   const [baseline, setBaseline] = useState(() => initialState(name, profile, facts));
   const [state, setState] = useState(baseline);
@@ -97,6 +129,10 @@ export function ProfileForm({
     }
     apply(next);
   }, [name, profile, facts]);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -211,6 +247,7 @@ export function ProfileForm({
   }
 
   const h = state.header;
+  const show = (section: ProfileFormSection) => sections.includes(section);
   return (
     <div className={styles.profileForm}>
       {incoming ? (
@@ -219,139 +256,167 @@ export function ProfileForm({
         </Notice>
       ) : null}
 
-      <Card
-        id="cabecalho"
-        title="Cabeçalho"
-        hint="Nome, título, localização e setor: a base do seu perfil."
-      >
-        <Field
-          label="Nome completo *"
-          autoComplete="name"
-          maxLength={120}
-          value={h.name}
-          onChange={(event) => setHeader({ name: event.target.value })}
-        />
-        <Field
-          label="Título profissional (headline)"
-          hint={`O mesmo que aparece abaixo do seu nome no LinkedIn · ${h.headline.length}/${HEADLINE_MAX}`}
-          placeholder="Ex.: Analista de Dados | SQL, Python e Power BI"
-          maxLength={HEADLINE_MAX}
-          value={h.headline}
-          onChange={(event) => setHeader({ headline: event.target.value })}
-        />
-        <div className={styles.fieldRow}>
+      {show('header') ? (
+        <Card
+          id="cabecalho"
+          title="Cabeçalho"
+          hint="Nome, título, localização e setor: a base do seu perfil."
+        >
           <Field
-            label="Localização"
-            placeholder="Ex.: São José dos Campos, São Paulo, Brasil"
+            label="Nome completo *"
+            autoComplete="name"
             maxLength={120}
-            value={h.location}
-            onChange={(event) => setHeader({ location: event.target.value })}
+            value={h.name}
+            onChange={(event) => setHeader({ name: event.target.value })}
           />
           <Field
-            label="Setor"
-            placeholder="Ex.: Tecnologia da informação"
-            maxLength={120}
-            value={h.industry}
-            onChange={(event) => setHeader({ industry: event.target.value })}
+            label="Título profissional (headline)"
+            hint={`O mesmo que aparece abaixo do seu nome no LinkedIn · ${h.headline.length}/${HEADLINE_MAX}`}
+            placeholder="Ex.: Analista de Dados | SQL, Python e Power BI"
+            maxLength={HEADLINE_MAX}
+            value={h.headline}
+            onChange={(event) => setHeader({ headline: event.target.value })}
           />
-        </div>
-        <div className={styles.linkFields}>
-          <Field
-            label="URL do LinkedIn"
-            type="url"
-            inputMode="url"
-            placeholder="https://www.linkedin.com/in/seu-nome"
-            value={h.links.linkedin}
-            onChange={(event) => setHeader({ links: { ...h.links, linkedin: event.target.value } })}
+          <div className={styles.fieldRow}>
+            <Field
+              label="Localização"
+              placeholder="Ex.: São José dos Campos, São Paulo, Brasil"
+              maxLength={120}
+              value={h.location}
+              onChange={(event) => setHeader({ location: event.target.value })}
+            />
+            <Field
+              label="Setor"
+              placeholder="Ex.: Tecnologia da informação"
+              maxLength={120}
+              value={h.industry}
+              onChange={(event) => setHeader({ industry: event.target.value })}
+            />
+          </div>
+          <div className={styles.linkFields}>
+            <Field
+              label="URL do LinkedIn"
+              type="url"
+              inputMode="url"
+              placeholder="https://www.linkedin.com/in/seu-nome"
+              value={h.links.linkedin}
+              onChange={(event) =>
+                setHeader({ links: { ...h.links, linkedin: event.target.value } })
+              }
+            />
+            <Field
+              label="GitHub"
+              type="url"
+              inputMode="url"
+              placeholder="https://github.com/seu-usuario"
+              value={h.links.github}
+              onChange={(event) => setHeader({ links: { ...h.links, github: event.target.value } })}
+            />
+            <Field
+              label="Portfólio"
+              type="url"
+              inputMode="url"
+              placeholder="https://seu-site.com"
+              value={h.links.portfolio}
+              onChange={(event) =>
+                setHeader({ links: { ...h.links, portfolio: event.target.value } })
+              }
+            />
+          </div>
+        </Card>
+      ) : null}
+
+      {show('about') ? (
+        <Card
+          id="sobre"
+          title="Sobre você"
+          hint="Resumo da sua trajetória. Usado para gerar o currículo e nas análises."
+        >
+          <div className={styles.longField}>
+            <TextAreaField
+              label="Sobre"
+              rows={7}
+              placeholder="Conte em poucas linhas o que você faz, com o que trabalha e o que busca."
+              maxLength={SUMMARY_MAX}
+              value={h.summary}
+              onChange={(event) => setHeader({ summary: event.target.value })}
+            />
+            <p className={styles.counter}>
+              {h.summary.length}/{SUMMARY_MAX}
+            </p>
+          </div>
+        </Card>
+      ) : null}
+
+      {show('experience') ? (
+        <Card
+          id="experiencia"
+          title="Experiência"
+          hint="Suas experiências profissionais, usadas nas análises e no currículo."
+        >
+          <AccordionList
+            type="experience"
+            addLabel="Adicionar experiência"
+            {...listProps('experience')}
           />
-          <Field
-            label="GitHub"
-            type="url"
-            inputMode="url"
-            placeholder="https://github.com/seu-usuario"
-            value={h.links.github}
-            onChange={(event) => setHeader({ links: { ...h.links, github: event.target.value } })}
+        </Card>
+      ) : null}
+
+      {show('education') ? (
+        <Card id="formacao" title="Formação" hint="Formação acadêmica e cursos longos.">
+          <AccordionList
+            type="education"
+            addLabel="Adicionar formação"
+            {...listProps('education')}
           />
-          <Field
-            label="Portfólio"
-            type="url"
-            inputMode="url"
-            placeholder="https://seu-site.com"
-            value={h.links.portfolio}
-            onChange={(event) =>
-              setHeader({ links: { ...h.links, portfolio: event.target.value } })
-            }
+        </Card>
+      ) : null}
+
+      {show('skills') ? (
+        <Card id="skills" title="Skills" hint="Habilidades técnicas e comportamentais.">
+          <SkillsEditor {...listProps('skill')} />
+        </Card>
+      ) : null}
+
+      {show('languages') ? (
+        <Card id="idiomas" title="Idiomas" hint="Idiomas que você fala e o nível de cada um.">
+          <LanguagesEditor {...listProps('language')} />
+        </Card>
+      ) : null}
+
+      {show('certifications') ? (
+        <Card id="certificacoes" title="Certificações" hint="Cursos curtos e certificações.">
+          <AccordionList
+            type="certification"
+            addLabel="Adicionar certificação"
+            {...listProps('certification')}
           />
-        </div>
-      </Card>
+        </Card>
+      ) : null}
 
-      <Card
-        id="sobre"
-        title="Sobre você"
-        hint="Resumo da sua trajetória. Usado para gerar o currículo e nas análises."
-      >
-        <div className={styles.longField}>
-          <TextAreaField
-            label="Sobre"
-            rows={7}
-            placeholder="Conte em poucas linhas o que você faz, com o que trabalha e o que busca."
-            maxLength={SUMMARY_MAX}
-            value={h.summary}
-            onChange={(event) => setHeader({ summary: event.target.value })}
+      {show('projects') ? (
+        <Card
+          id="projetos"
+          title="Projetos"
+          hint="Projetos que você construiu ou de que participou."
+        >
+          <AccordionList type="project" addLabel="Adicionar projeto" {...listProps('project')} />
+        </Card>
+      ) : null}
+
+      {show('achievements') ? (
+        <Card
+          id="conquistas"
+          title="Conquistas"
+          hint="Resultados que você alcançou, com números reais quando houver."
+        >
+          <AccordionList
+            type="achievement"
+            addLabel="Adicionar conquista"
+            {...listProps('achievement')}
           />
-          <p className={styles.counter}>
-            {h.summary.length}/{SUMMARY_MAX}
-          </p>
-        </div>
-      </Card>
-
-      <Card
-        id="experiencia"
-        title="Experiência"
-        hint="Suas experiências profissionais, usadas nas análises e no currículo."
-      >
-        <AccordionList
-          type="experience"
-          addLabel="Adicionar experiência"
-          {...listProps('experience')}
-        />
-      </Card>
-
-      <Card id="formacao" title="Formação" hint="Formação acadêmica e cursos longos.">
-        <AccordionList type="education" addLabel="Adicionar formação" {...listProps('education')} />
-      </Card>
-
-      <Card id="skills" title="Skills" hint="Habilidades técnicas e comportamentais.">
-        <SkillsEditor {...listProps('skill')} />
-      </Card>
-
-      <Card id="idiomas" title="Idiomas" hint="Idiomas que você fala e o nível de cada um.">
-        <LanguagesEditor {...listProps('language')} />
-      </Card>
-
-      <Card id="certificacoes" title="Certificações" hint="Cursos curtos e certificações.">
-        <AccordionList
-          type="certification"
-          addLabel="Adicionar certificação"
-          {...listProps('certification')}
-        />
-      </Card>
-
-      <Card id="projetos" title="Projetos" hint="Projetos que você construiu ou de que participou.">
-        <AccordionList type="project" addLabel="Adicionar projeto" {...listProps('project')} />
-      </Card>
-
-      <Card
-        id="conquistas"
-        title="Conquistas"
-        hint="Resultados que você alcançou, com números reais quando houver."
-      >
-        <AccordionList
-          type="achievement"
-          addLabel="Adicionar conquista"
-          {...listProps('achievement')}
-        />
-      </Card>
+        </Card>
+      ) : null}
 
       <div className={styles.saveBar} role="region" aria-label="Salvar o perfil">
         <span className={styles.saveStatus} aria-live="polite">
@@ -375,7 +440,7 @@ export function ProfileForm({
             Descartar
           </Button>
           <Button disabled={busy || !dirty} onClick={() => void save()}>
-            {busy ? 'Salvando…' : 'Salvar perfil'}
+            {busy ? 'Salvando…' : saveLabel}
           </Button>
         </div>
       </div>

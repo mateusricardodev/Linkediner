@@ -5,16 +5,17 @@ import { Badge, ButtonLink, Notice, Skeleton, SyntheticDataNotice } from '../../
 import { api } from '../../../lib/api';
 import { formatDate } from '../../../lib/documents';
 import { RESUME_STATUS, resumeDescription, resumeFailureMessage } from '../../../lib/resumes';
-import type { Job, Me, ProfileFact, Resume } from '../../../lib/types';
+import type { Job, Me, Profile, ProfileFact, Resume } from '../../../lib/types';
 import { usePollWhile } from '../../../lib/use-poll';
 import { useResource } from '../../../lib/use-resource';
 import styles from './curriculo.module.css';
-import { GenerateForm } from './generate-form';
+import { ResumeWizard } from './wizard';
 
 export default function ResumesPage() {
   const me = useResource(() => api<Me>('/v1/me'));
   const resumes = useResource(() => api<Resume[]>('/v1/resumes'));
   const facts = useResource(() => api<ProfileFact[]>('/v1/profile/facts'));
+  const profile = useResource(() => api<Profile>('/v1/profile'));
   const jobs = useResource(() => api<Job[]>('/v1/jobs'));
 
   // A API lista do mais antigo para o mais novo.
@@ -29,8 +30,8 @@ export default function ResumesPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Gerar currículo</h1>
         <p className={styles.subtitle}>
-          Geramos uma versão melhorada a partir do seu perfil. O que não estiver comprovado fica
-          marcado para você decidir, e nada sai no arquivo sem a sua aprovação.
+          Em seis etapas: escolha a vaga e o idioma, confira os seus dados e gere. O que não estiver
+          comprovado fica marcado para você decidir, e nada sai no arquivo sem a sua aprovação.
         </p>
       </header>
 
@@ -46,15 +47,19 @@ export default function ResumesPage() {
       ) : me.data ? (
         <>
           {me.data.syntheticDataOnly ? <SyntheticDataNotice /> : null}
-          <GenerateForm
+          <ResumeWizard
             name={me.data.user.name}
-            facts={facts.data ?? []}
+            profile={profile.data}
+            facts={facts.data}
             jobs={jobs.data ?? []}
             generating={generating}
+            onDataChanged={() => Promise.all([facts.reload(), profile.reload(), me.reload()])}
+            onJobsChanged={jobs.reload}
           />
         </>
       ) : null}
 
+      <h2 className={styles.sectionTitle}>Currículos gerados</h2>
       {resumes.error && !resumes.data ? (
         <Notice tone="danger">{resumes.error.message}</Notice>
       ) : !resumes.data ? (
