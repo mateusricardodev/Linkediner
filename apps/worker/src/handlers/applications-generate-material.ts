@@ -23,6 +23,7 @@ export const applicationsGenerateMaterial = (deps: {
       })
       .strict(),
     retryLimit: MATERIALS_GENERATE_QUEUE.retryLimit,
+    retryDelay: MATERIALS_GENERATE_QUEUE.retryDelay,
     expireInSeconds: MATERIALS_GENERATE_QUEUE.expireInSeconds,
     async handle(payload, ctx) {
       const outcome = await deps.generate.run(payload, { isLastAttempt: ctx.isLastAttempt });

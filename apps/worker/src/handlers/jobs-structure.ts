@@ -15,6 +15,7 @@ export const jobsStructure = (deps: {
     name: JOBS_STRUCTURE_QUEUE.name,
     payload: z.object({ userId: z.uuid(), jobId: z.uuid(), usageId: z.uuid() }).strict(),
     retryLimit: JOBS_STRUCTURE_QUEUE.retryLimit,
+    retryDelay: JOBS_STRUCTURE_QUEUE.retryDelay,
     expireInSeconds: JOBS_STRUCTURE_QUEUE.expireInSeconds,
     async handle(payload, ctx) {
       const outcome = await deps.structure.run(payload, { isLastAttempt: ctx.isLastAttempt });
