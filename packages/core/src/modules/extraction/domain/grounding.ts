@@ -133,6 +133,9 @@ export function groundFacts(
   return { facts, report };
 }
 
+/** Texto sem nenhum espaço, para comparar ignorando só espaços e quebras de linha. */
+const compact = (value: string) => normalizeText(value).replace(/\s/g, '');
+
 /** Campos do perfil que a extração pode preencher, com o nome usado no perfil. */
 export interface GroundedHeader {
   headline: string | null;
@@ -150,6 +153,7 @@ export function groundHeader(
   documentText: string,
 ): { header: GroundedHeader; dropped: number } {
   const source = normalizeText(documentText);
+  const compactSource = compact(documentText);
   const header: GroundedHeader = { headline: null, summary: null, location: null, industry: null };
   let dropped = 0;
   const values = output.profile;
@@ -162,8 +166,11 @@ export function groundHeader(
   ];
   for (const [field, value] of pairs) {
     if (value === null) continue;
-    if (isSupported(source, value)) header[field] = value;
-    else dropped++;
+    // O PDF do LinkedIn cola frases ("saúde.Trabalho") e quebra linhas no meio do título. A IA
+    // costuma acertar o espaço: só espaços e quebras podem diferir, nenhuma letra.
+    if (isSupported(source, value) || compactSource.includes(compact(value))) {
+      header[field] = value.replace(/\s+/g, ' ').trim();
+    } else dropped++;
   }
   return { header, dropped };
 }
