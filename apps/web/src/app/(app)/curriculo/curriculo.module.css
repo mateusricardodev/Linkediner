@@ -420,3 +420,155 @@
     transition: none;
   }
 }
+
+/* Revisão: o currículo no centro e, ao lado, a conferência ATS e o que fazer em seguida. */
+.reviewLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--spacing-xl);
+  align-items: start;
+}
+
+.reviewMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  min-width: 0;
+}
+
+.reviewAside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.reviewAside .actionBar {
+  position: static;
+}
+
+.reviewAside .ats {
+  padding: var(--spacing-xl);
+}
+
+.reviewAside .actionRow {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.reviewAside .actionText {
+  flex: none;
+}
+
+.reviewAside .actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sideCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-border-separator);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.sideTitle {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.generatingCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+.generatingHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.generatingTitle {
+  margin: 0 0 var(--spacing-xs);
+  font-size: 1.25rem;
+}
+
+.spinner {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-accent-subtle);
+  border-top-color: var(--color-accent-default);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.generatingSteps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin: 0;
+  padding-left: var(--spacing-xl);
+  color: var(--color-text-secondary);
+}
+
+.paperSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+}
+
+@media (max-width: 1100px) {
+  .reviewLayout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* No estreito, a conferência ATS vem antes do currículo e a barra de aprovar fica presa embaixo. */
+  .reviewAside {
+    display: contents;
+  }
+
+  .atsSlot {
+    order: -1;
+  }
+
+  .reviewAside .actionBar {
+    position: sticky;
+    order: 1;
+  }
+
+  .reviewAside .actionRow {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .reviewAside .actions {
+    flex-direction: row;
+  }
+
+  .reviewAside .actionText {
+    flex: 1 1 240px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}

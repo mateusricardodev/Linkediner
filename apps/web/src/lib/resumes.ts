@@ -16,7 +16,11 @@ export const RESUME_LANGUAGE_LABELS: Record<Resume['language'], string> = {
 
 /** "Senior Backend Engineer · Empresa": como a vaga aparece nas escolhas e na lista. */
 export const jobLabel = (job: Pick<Job, 'title' | 'company'>) =>
-  [job.title ?? 'Vaga sem título', job.company].filter(Boolean).join(' · ');
+  job.title
+    ? [job.title, job.company].filter(Boolean).join(' · ')
+    : job.company
+      ? `Vaga na ${job.company}`
+      : 'Vaga sem título';
 
 /** "Inglês · Para Senior Backend Engineer · Empresa": o que distingue um currículo do outro. */
 export function resumeDescription(resume: Pick<Resume, 'language' | 'jobId'>, jobs: Job[]) {

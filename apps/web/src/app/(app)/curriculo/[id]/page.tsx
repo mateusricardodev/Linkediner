@@ -20,6 +20,61 @@ import styles from '../curriculo.module.css';
 import { AtsPanel } from '../ats-panel';
 import { ResumeContentView } from '../resume-content';
 
+/** Enquanto a IA escreve: o que está acontecendo, sem barra de progresso inventada. */
+function GeneratingState({ description }: { description: string }) {
+  const steps = [
+    'Lemos as experiências, a formação e as competências confirmadas do seu perfil.',
+    'Escrevemos o resumo e os tópicos de cada experiência.',
+    'Conferimos cada frase com o seu perfil. O que não tiver fonte fica marcado para você decidir.',
+  ];
+  return (
+    <div className={styles.reviewLayout}>
+      <div className={styles.reviewMain}>
+        <section className={styles.generatingCard} aria-live="polite">
+          <div className={styles.generatingHead}>
+            <span className={styles.spinner} aria-hidden />
+            <div>
+              <h2 className={styles.generatingTitle}>Escrevendo o seu currículo</h2>
+              <p className={styles.footnote}>
+                Leva alguns minutos. Você pode sair desta página: o currículo aparece em Gerar
+                currículo quando ficar pronto.
+              </p>
+            </div>
+          </div>
+          <ol className={styles.generatingSteps}>
+            {steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </section>
+        <div className={styles.paperSkeleton} aria-hidden>
+          <Skeleton width="45%" height={28} />
+          <Skeleton width="30%" height={16} />
+          <Skeleton height={14} />
+          <Skeleton width="92%" height={14} />
+          <Skeleton width="40%" height={20} />
+          <Skeleton height={14} />
+          <Skeleton width="85%" height={14} />
+          <Skeleton width="88%" height={14} />
+          <Skeleton width="40%" height={20} />
+          <Skeleton width="70%" height={14} />
+        </div>
+      </div>
+      <aside className={styles.reviewAside}>
+        <section className={styles.sideCard} aria-labelledby="pedido">
+          <h2 id="pedido" className={styles.sideTitle}>
+            Seu pedido
+          </h2>
+          <p className={styles.footnote}>{description}</p>
+          <p className={styles.footnote}>
+            Quando terminar, você revisa cada frase, aprova e baixa em PDF ou DOCX.
+          </p>
+        </section>
+      </aside>
+    </div>
+  );
+}
+
 export default function ResumePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -64,7 +119,7 @@ export default function ResumePage() {
   const reviewable = resume?.status === 'draft' || resume?.status === 'approved';
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.pageWide}`}>
       <header className={styles.header}>
         <Link href="/curriculo" className={styles.back}>
           ‹ Currículos
@@ -75,7 +130,8 @@ export default function ResumePage() {
         </div>
         {resume ? (
           <p className={styles.subtitle}>
-            Gerado em {formatDate(resume.createdAt)} · {resumeDescription(resume, jobs.data ?? [])}
+            {resume.status === 'generating' ? 'Pedido em' : 'Gerado em'}{' '}
+            {formatDate(resume.createdAt)} · {resumeDescription(resume, jobs.data ?? [])}
           </p>
         ) : null}
       </header>
@@ -85,71 +141,77 @@ export default function ResumePage() {
       ) : !resume ? (
         <Skeleton height={240} />
       ) : resume.status === 'generating' ? (
-        <p className={styles.empty} aria-live="polite">
-          Estamos gerando o seu currículo. Isso pode levar alguns minutos, e você pode sair desta
-          página.
-        </p>
+        <GeneratingState description={resumeDescription(resume, jobs.data ?? [])} />
       ) : resume.status === 'failed' ? (
         <Notice tone="danger">{resumeFailureMessage(resume.failureCode)}</Notice>
-      ) : resume.content ? (
-        <>
-          {ats ? <AtsPanel report={ats} /> : null}
-          <ResumeContentView
-            content={resume.content}
-            path={(itemId) => `/v1/resumes/${resume.id}/items/${itemId}`}
-            onChanged={() => void reload()}
-            tips={tips}
-          />
-        </>
       ) : null}
 
-      {reviewable ? (
-        <div className={styles.actionBar} aria-live="polite">
-          {actionError ? <Notice tone="danger">{actionError}</Notice> : null}
-          {resume.status === 'draft' ? (
-            <div className={styles.actionRow}>
-              <p className={styles.actionText}>
-                {pending === 0
-                  ? 'Tudo revisado. Aprove para poder baixar o arquivo.'
-                  : pending === 1
-                    ? '1 frase ainda precisa da sua decisão.'
-                    : `${pending} frases ainda precisam da sua decisão.`}
-              </p>
-              <Button
-                disabled={pending > 0 || busy !== null}
-                onClick={() =>
-                  void run('approve', async () => {
-                    await api(`/v1/resumes/${resume.id}/approve`, { method: 'POST' });
-                    await reload();
-                  })
-                }
-              >
-                {busy === 'approve' ? 'Aprovando…' : 'Aprovar currículo'}
-              </Button>
-            </div>
-          ) : (
-            <div className={styles.actionRow}>
-              <p className={styles.actionText}>
-                Aprovado{resume.approvedAt ? ` em ${formatDate(resume.approvedAt)}` : ''}. Qualquer
-                alteração exige aprovar de novo.
-              </p>
-              <div className={styles.actions}>
-                <Button
-                  disabled={busy !== null}
-                  onClick={() => void run('pdf', () => downloadResume(resume.id, 'pdf'))}
-                >
-                  {busy === 'pdf' ? 'Gerando…' : 'Baixar PDF'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={busy !== null}
-                  onClick={() => void run('docx', () => downloadResume(resume.id, 'docx'))}
-                >
-                  {busy === 'docx' ? 'Gerando…' : 'Baixar DOCX'}
-                </Button>
+      {resume?.content ? (
+        <div className={styles.reviewLayout}>
+          <div className={styles.reviewMain}>
+            <ResumeContentView
+              content={resume.content}
+              path={(itemId) => `/v1/resumes/${resume.id}/items/${itemId}`}
+              onChanged={() => void reload()}
+              tips={tips}
+            />
+          </div>
+          <aside className={styles.reviewAside}>
+            {reviewable ? (
+              <div className={styles.actionBar} aria-live="polite">
+                {actionError ? <Notice tone="danger">{actionError}</Notice> : null}
+                {resume.status === 'draft' ? (
+                  <div className={styles.actionRow}>
+                    <p className={styles.actionText}>
+                      {pending === 0
+                        ? 'Tudo revisado. Aprove para poder baixar o arquivo.'
+                        : pending === 1
+                          ? '1 frase ainda precisa da sua decisão.'
+                          : `${pending} frases ainda precisam da sua decisão.`}
+                    </p>
+                    <Button
+                      disabled={pending > 0 || busy !== null}
+                      onClick={() =>
+                        void run('approve', async () => {
+                          await api(`/v1/resumes/${resume.id}/approve`, { method: 'POST' });
+                          await reload();
+                        })
+                      }
+                    >
+                      {busy === 'approve' ? 'Aprovando…' : 'Aprovar currículo'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className={styles.actionRow}>
+                    <p className={styles.actionText}>
+                      Aprovado{resume.approvedAt ? ` em ${formatDate(resume.approvedAt)}` : ''}.
+                      Qualquer alteração exige aprovar de novo.
+                    </p>
+                    <div className={styles.actions}>
+                      <Button
+                        disabled={busy !== null}
+                        onClick={() => void run('pdf', () => downloadResume(resume.id, 'pdf'))}
+                      >
+                        {busy === 'pdf' ? 'Gerando…' : 'Baixar PDF'}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        disabled={busy !== null}
+                        onClick={() => void run('docx', () => downloadResume(resume.id, 'docx'))}
+                      >
+                        {busy === 'docx' ? 'Gerando…' : 'Baixar DOCX'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            ) : null}
+            {ats ? (
+              <div className={styles.atsSlot}>
+                <AtsPanel report={ats} />
+              </div>
+            ) : null}
+          </aside>
         </div>
       ) : null}
 
