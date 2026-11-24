@@ -6,6 +6,10 @@
   gap: var(--spacing-2xl);
 }
 
+.pageWide {
+  max-width: 1180px;
+}
+
 .header {
   display: flex;
   flex-direction: column;

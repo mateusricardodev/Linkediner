@@ -26,7 +26,7 @@ export default function ResumesPage() {
   const aiAllowed = Boolean(me.data?.consents.granted.ai_processing);
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.pageWide}`}>
       <header className={styles.header}>
         <h1 className={styles.title}>Gerar currículo</h1>
         <p className={styles.subtitle}>

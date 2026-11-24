@@ -292,7 +292,7 @@ function Review({
     ['Nome', name ?? 'Sem nome'],
     ['Experiências', String(count('experience'))],
     ['Formação e certificações', String(count('education') + count('certification'))],
-    ['Competências', String(count('skill'))],
+    ['Competências e idiomas', String(count('skill') + count('language'))],
     ['Projetos e conquistas', String(count('project') + count('achievement'))],
   ];
   return (
@@ -314,6 +314,94 @@ function Review({
         </Notice>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Resumo ao lado das etapas: mostra o currículo tomando forma enquanto a pessoa avança, como o
+ * painel de próximos passos das análises.
+ */
+function Aside({
+  name,
+  facts,
+  job,
+  language,
+  step,
+}: {
+  name: string | null;
+  facts: ProfileFact[] | null;
+  job: Job | null;
+  language: Language;
+  step: WizardStep;
+}) {
+  const proven = provenFacts(facts ?? []);
+  const count = (...types: ProfileFact['type'][]) =>
+    proven.filter((f) => types.includes(f.type)).length;
+  const pending = pendingFacts(facts ?? []).length;
+  const index = stepIndex(step);
+  const rows: { label: string; value: string; step: WizardStep }[] = [
+    { label: 'Vaga', value: job ? jobLabel(job) : 'Currículo geral', step: 'vaga' },
+    { label: 'Idioma', value: RESUME_LANGUAGE_LABELS[language], step: 'idioma' },
+    { label: 'Nome', value: name ?? 'Sem nome', step: 'dados' },
+    { label: 'Experiências', value: String(count('experience')), step: 'mais' },
+    {
+      label: 'Formação e certificações',
+      value: String(count('education', 'certification')),
+      step: 'mais',
+    },
+    { label: 'Competências e idiomas', value: String(count('skill', 'language')), step: 'mais' },
+    {
+      label: 'Projetos e conquistas',
+      value: String(count('project', 'achievement')),
+      step: 'extra',
+    },
+  ];
+  return (
+    <aside
+      className={step === 'gerar' ? `${styles.aside} ${styles.asideOnReview}` : styles.aside}
+      aria-labelledby="resumo-curriculo"
+    >
+      <h2 id="resumo-curriculo" className={styles.asideTitle}>
+        Seu currículo
+      </h2>
+      <p className={styles.muted}>O que vai entrar, atualizado a cada etapa.</p>
+      {facts ? (
+        <dl className={styles.asideList}>
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              data-active={row.step === step}
+              data-future={stepIndex(row.step) > index}
+            >
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <Skeleton height={220} />
+      )}
+      {pending > 0 ? (
+        <p className={styles.asideNote}>
+          {pending === 1
+            ? '1 sugestão espera a sua confirmação.'
+            : `${pending} sugestões esperam a sua confirmação.`}
+        </p>
+      ) : null}
+      {job && job.mustHave.length > 0 ? (
+        <div className={styles.asideJob}>
+          <p className={styles.asideLabel}>Requisitos da vaga</p>
+          <ul className={styles.tags}>
+            {job.mustHave.slice(0, 8).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <p className={styles.muted}>
+            Se você tem algum deles e não está no perfil, inclua em &quot;Mais dados&quot;.
+          </p>
+        </div>
+      ) : null}
+    </aside>
   );
 }
 
@@ -396,83 +484,86 @@ export function ResumeWizard({
     <section className={styles.wizard} aria-labelledby="etapa-titulo">
       <Stepper current={step} reached={reached} onGo={go} />
 
-      <div className={styles.panel}>
-        <header className={styles.panelHead}>
-          <p className={styles.eyebrow}>
-            Etapa {index + 1} de {WIZARD_STEPS.length}
-          </p>
-          <h2 id="etapa-titulo" className={styles.panelTitle}>
-            {intro.title}
-          </h2>
-          <p className={styles.muted}>{intro.text}</p>
-        </header>
+      <div className={styles.layout}>
+        <div className={styles.panel}>
+          <header className={styles.panelHead}>
+            <p className={styles.eyebrow}>
+              Etapa {index + 1} de {WIZARD_STEPS.length}
+            </p>
+            <h2 id="etapa-titulo" className={styles.panelTitle}>
+              {intro.title}
+            </h2>
+            <p className={styles.muted}>{intro.text}</p>
+          </header>
 
-        {step === 'vaga' ? (
-          <JobStep
-            choice={job}
-            onChoice={(next) => {
-              setJob(next);
-              setBlocked(null);
-            }}
-            jobs={jobs}
-            onJobsChanged={onJobsChanged}
-          />
-        ) : null}
-        {step === 'idioma' ? <LanguageStep language={language} onChange={setLanguage} /> : null}
-        {formSections ? (
-          !profile || !facts ? (
-            <Skeleton height={320} />
-          ) : (
-            <ProfileForm
-              key={step}
-              name={name}
-              profile={profile}
-              facts={facts}
-              sections={formSections}
-              onDirtyChange={setDirty}
-              onSaved={onDataChanged}
-              saveLabel="Salvar"
+          {step === 'vaga' ? (
+            <JobStep
+              choice={job}
+              onChoice={(next) => {
+                setJob(next);
+                setBlocked(null);
+              }}
+              jobs={jobs}
+              onJobsChanged={onJobsChanged}
             />
-          )
-        ) : null}
-        {step === 'gerar' ? (
-          facts ? (
-            <Review name={name} facts={facts} job={chosen} language={language} />
-          ) : (
-            <Skeleton height={200} />
-          )
-        ) : null}
-
-        {blocked ? <Notice tone="warning">{blocked}</Notice> : null}
-        {error ? <Notice tone="danger">{error.message}</Notice> : null}
-        {error?.code === 'CONFLICT' ? (
-          <ButtonLink variant="secondary" href="/perfil?tab=profissional">
-            Ir para o perfil
-          </ButtonLink>
-        ) : null}
-
-        <div className={styles.nav}>
-          {index > 0 ? (
-            <Button variant="plain" onClick={() => go(WIZARD_STEPS[index - 1]!.key)}>
-              ‹ Voltar
-            </Button>
-          ) : (
-            <span />
-          )}
+          ) : null}
+          {step === 'idioma' ? <LanguageStep language={language} onChange={setLanguage} /> : null}
+          {formSections ? (
+            !profile || !facts ? (
+              <Skeleton height={320} />
+            ) : (
+              <ProfileForm
+                key={step}
+                name={name}
+                profile={profile}
+                facts={facts}
+                sections={formSections}
+                onDirtyChange={setDirty}
+                onSaved={onDataChanged}
+                saveLabel="Salvar"
+              />
+            )
+          ) : null}
           {step === 'gerar' ? (
-            <Button
-              disabled={busy || generating || Boolean(cannotGenerate)}
-              onClick={() => void generate()}
-            >
-              {busy ? 'Pedindo…' : generating ? 'Gerando outro…' : 'Gerar currículo'}
-            </Button>
-          ) : (
-            <Button onClick={() => go(WIZARD_STEPS[index + 1]!.key)}>Continuar ›</Button>
-          )}
+            facts ? (
+              <Review name={name} facts={facts} job={chosen} language={language} />
+            ) : (
+              <Skeleton height={200} />
+            )
+          ) : null}
+
+          {blocked ? <Notice tone="warning">{blocked}</Notice> : null}
+          {error ? <Notice tone="danger">{error.message}</Notice> : null}
+          {error?.code === 'CONFLICT' ? (
+            <ButtonLink variant="secondary" href="/perfil?tab=profissional">
+              Ir para o perfil
+            </ButtonLink>
+          ) : null}
+
+          <div className={styles.nav}>
+            {index > 0 ? (
+              <Button variant="plain" onClick={() => go(WIZARD_STEPS[index - 1]!.key)}>
+                ‹ Voltar
+              </Button>
+            ) : (
+              <span />
+            )}
+            {step === 'gerar' ? (
+              <Button
+                disabled={busy || generating || Boolean(cannotGenerate)}
+                onClick={() => void generate()}
+              >
+                {busy ? 'Pedindo…' : generating ? 'Gerando outro…' : 'Gerar currículo'}
+              </Button>
+            ) : (
+              <Button onClick={() => go(WIZARD_STEPS[index + 1]!.key)}>Continuar ›</Button>
+            )}
+          </div>
+          {step === 'gerar' && cannotGenerate ? (
+            <p className={styles.muted}>{cannotGenerate}</p>
+          ) : null}
         </div>
-        {step === 'gerar' && cannotGenerate ? (
-          <p className={styles.muted}>{cannotGenerate}</p>
-        ) : null}
+        <Aside name={name} facts={facts} job={chosen} language={language} step={step} />
       </div>
     </section>
   );
