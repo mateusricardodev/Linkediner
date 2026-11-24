@@ -68,7 +68,7 @@ export function GoalSuggestion({
             Ajustar antes
           </Button>
         ) : (
-          <Link href="/perfil#objetivos" className={styles.suggestionLink}>
+          <Link href="/perfil?tab=profissional#objetivos" className={styles.suggestionLink}>
             Ajustar no perfil
           </Link>
         )}

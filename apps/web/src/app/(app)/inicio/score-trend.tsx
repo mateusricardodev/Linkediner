@@ -25,7 +25,7 @@ export function ScoreTrend({ history }: { history: { score: number; calculatedAt
     return (
       <div className={styles.trendEmpty}>
         <p>Envie uma nova versão do currículo para ver o seu score evoluir.</p>
-        <Link href="/perfil#documentos">Enviar currículo</Link>
+        <Link href="/perfil?tab=profissional#documentos">Enviar currículo</Link>
       </div>
     );
   }

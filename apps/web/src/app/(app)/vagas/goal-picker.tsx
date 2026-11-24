@@ -13,7 +13,7 @@ export function GoalPicker({ goalState }: { goalState: ReturnType<typeof useGoal
     return (
       <p className={styles.goalLine}>
         Sem objetivo de carreira ativo, a compatibilidade não considera senioridade nem modelo de
-        trabalho. <Link href="/perfil#objetivos">Definir objetivo</Link>
+        trabalho. <Link href="/perfil?tab=profissional#objetivos">Definir objetivo</Link>
       </p>
     );
   }

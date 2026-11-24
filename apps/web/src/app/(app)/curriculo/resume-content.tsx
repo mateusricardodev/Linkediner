@@ -100,7 +100,7 @@ export function ResumeContentView({
 
       <p className={styles.footnote}>
         Competências, formação e datas vêm direto do seu perfil. Para mudar, corrija em{' '}
-        <Link href="/perfil">Perfil</Link> e gere de novo.
+        <Link href="/perfil?tab=profissional">Perfil</Link> e gere de novo.
       </p>
     </>
   );

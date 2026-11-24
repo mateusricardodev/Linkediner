@@ -55,11 +55,6 @@ const NAV_ACCOUNT: NavItem[] = [
     label: 'Perfil',
     icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0',
   },
-  {
-    href: '/conta',
-    label: 'Conta',
-    icon: 'M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1M15 5v4M9 10v4M17 15v4',
-  },
 ];
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {

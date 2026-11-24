@@ -181,9 +181,9 @@ export default function TermsPage() {
           title: 'Encerramento da conta',
           body: (
             <p>
-              Você pode encerrar a sua conta quando quiser, na página{' '}
-              <Link href="/conta">Conta</Link>
-              ou pelo e-mail {mail}. Os dados são apagados como descrito na Política de Privacidade.
+              Você pode encerrar a sua conta quando quiser, na aba{' '}
+              <Link href="/perfil?tab=conta">Conta</Link> do seu perfil ou pelo e-mail {mail}. Os
+              dados são apagados como descrito na Política de Privacidade.
             </p>
           ),
         },

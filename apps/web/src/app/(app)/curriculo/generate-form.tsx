@@ -101,7 +101,7 @@ export function GenerateForm({
 
         {error ? <Notice tone="danger">{error.message}</Notice> : null}
         {error?.code === 'CONFLICT' ? (
-          <ButtonLink variant="secondary" href="/perfil">
+          <ButtonLink variant="secondary" href="/perfil?tab=profissional">
             Ir para o perfil
           </ButtonLink>
         ) : null}
