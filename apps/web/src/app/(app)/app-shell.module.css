@@ -46,11 +46,27 @@
   font-weight: 700;
 }
 
-.nav {
+.navArea {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.nav,
+.navAccount {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xs);
+}
+
+.nav {
   flex: 1;
+}
+
+.navAccount {
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-separator);
 }
 
 .link {
@@ -157,9 +173,25 @@
     font-size: 0;
   }
 
-  .nav {
+  /* Os dois grupos seguem numa só faixa rolável: o da conta vem depois das ferramentas. */
+  .navArea {
     flex-direction: row;
+    gap: var(--spacing-2xs);
     overflow-x: auto;
+  }
+
+  .nav,
+  .navAccount {
+    flex-direction: row;
+  }
+
+  .nav {
+    flex: none;
+  }
+
+  .navAccount {
+    padding-top: 0;
+    border-top: 0;
   }
 
   .link {

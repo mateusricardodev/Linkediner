@@ -19,16 +19,17 @@ export function useMe(): Me {
   return me;
 }
 
-const NAV = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+}
+
+const NAV: NavItem[] = [
   {
     href: '/inicio',
     label: 'Início',
     icon: 'M4 11.5 12 4l8 7.5M6 10v9a1 1 0 0 0 1 1h3.5v-5.5h3V20H17a1 1 0 0 0 1-1v-9',
-  },
-  {
-    href: '/perfil',
-    label: 'Perfil',
-    icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0',
   },
   {
     href: '/vagas',
@@ -45,12 +46,47 @@ const NAV = [
     label: 'Currículo',
     icon: 'M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1ZM14 3v4h4M9 12h6M9 16h6',
   },
+];
+
+/** O que é da pessoa fica no rodapé do menu, longe das ferramentas do dia a dia. */
+const NAV_ACCOUNT: NavItem[] = [
+  {
+    href: '/perfil',
+    label: 'Perfil',
+    icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20a7 7 0 0 1 14 0',
+  },
   {
     href: '/conta',
     label: 'Conta',
     icon: 'M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1M15 5v4M9 10v4M17 15v4',
   },
 ];
+
+function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+  return (
+    <Link
+      href={item.href}
+      className={active ? `${styles.link} ${styles.active}` : styles.link}
+      aria-current={active ? 'page' : undefined}
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d={item.icon} />
+      </svg>
+      {item.label}
+    </Link>
+  );
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -106,34 +142,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             LinkedIner
           </div>
-          <nav className={styles.nav} aria-label="Principal">
-            {NAV.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={active ? `${styles.link} ${styles.active}` : styles.link}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d={item.icon} />
-                  </svg>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className={styles.navArea}>
+            <nav className={styles.nav} aria-label="Principal">
+              {NAV.map((item) => (
+                <NavLink key={item.href} item={item} pathname={pathname} />
+              ))}
+            </nav>
+            <nav className={styles.navAccount} aria-label="Sua conta">
+              {NAV_ACCOUNT.map((item) => (
+                <NavLink key={item.href} item={item} pathname={pathname} />
+              ))}
+            </nav>
+          </div>
           <PlanUsage />
           <div className={styles.account}>
             <span className={styles.accountName}>{me.user.name ?? me.user.email}</span>
