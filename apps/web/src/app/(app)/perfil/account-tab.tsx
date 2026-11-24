@@ -24,6 +24,7 @@ interface DataExport {
 /** Contadores mensais, na ordem em que importam para quem usa. */
 const FEATURE_LABELS: Record<string, string> = {
   'profile.analysis': 'Análises de currículo',
+  'linkedin.analysis': 'Análises de LinkedIn',
   'resume.improved': 'Currículos gerados',
   'job.match': 'Vagas importadas',
   'applications.assisted': 'Candidaturas assistidas',

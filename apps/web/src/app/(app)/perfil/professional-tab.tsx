@@ -9,7 +9,6 @@ import { useResource } from '../../../lib/use-resource';
 import { DocumentRow } from './document-row';
 import { FactItem } from './fact-item';
 import { GoalsSection } from './goals-section';
-import { LinkedinChecklist } from './linkedin-checklist';
 import styles from './perfil.module.css';
 import { ProfileForm } from './profile-form';
 import { ScoreSection } from './score-section';
@@ -185,8 +184,6 @@ export function ProfessionalTab() {
       ) : null}
 
       <ScoreSection score={score.data} error={score.error} />
-
-      <LinkedinChecklist />
     </div>
   );
 }

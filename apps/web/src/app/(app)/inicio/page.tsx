@@ -228,7 +228,7 @@ export default function HomePage() {
             )}
           </div>
           {profile.data && checklistDone < CHECKLIST.length ? (
-            <Link href="/perfil?tab=profissional#linkedin" className={styles.linkedinCard}>
+            <Link href="/analise-linkedin#linkedin" className={styles.linkedinCard}>
               <span className={styles.linkedinTitle}>Ajustes no LinkedIn</span>
               <span className={styles.linkedinText}>
                 {checklistDone === 0

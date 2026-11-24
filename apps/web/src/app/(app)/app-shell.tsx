@@ -32,6 +32,11 @@ const NAV: NavItem[] = [
     icon: 'M4 11.5 12 4l8 7.5M6 10v9a1 1 0 0 0 1 1h3.5v-5.5h3V20H17a1 1 0 0 0 1-1v-9',
   },
   {
+    href: '/analise-linkedin',
+    label: 'Análise de LinkedIn',
+    icon: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM8 10v7M8 7v.01M12 17v-4a2 2 0 0 1 4 0v4M12 10v7',
+  },
+  {
     href: '/vagas',
     label: 'Vagas',
     icon: 'M4 8h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1ZM9 8V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M3 13h18',

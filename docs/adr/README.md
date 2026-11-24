@@ -37,3 +37,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0031 | [Portais de vagas remotas: Himalayas e Jobicy](0031-portais-de-vagas-remotas.md) | Proposto |
 | 0032 | [Perfil profissional preenchido pelo documento e editado num formulário](0032-perfil-preenchido-pelo-documento.md) | Proposto |
 | 0033 | [Modelos de reserva quando o Gemini está sobrecarregado](0033-modelos-de-reserva.md) | Proposto |
+| 0034 | [Análise do perfil do LinkedIn a partir do PDF](0034-analise-do-linkedin.md) | Proposto |
