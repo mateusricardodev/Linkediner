@@ -6,7 +6,9 @@ import { AppError } from '../../shared';
 export const JOBS_STRUCTURE_QUEUE = {
   name: 'jobs.structure',
   deadLetter: 'jobs.structure.dead',
-  retryLimit: 2,
+  /** O provedor de IA fica sobrecarregado por minutos: as tentativas se espaçam (20 s, 40 s, 80 s...). */
+  retryLimit: 4,
+  retryDelay: 20,
   expireInSeconds: 5 * 60,
 } as const;
 
