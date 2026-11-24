@@ -15,6 +15,7 @@ export const resumesGenerate = (deps: {
     name: RESUMES_GENERATE_QUEUE.name,
     payload: z.object({ userId: z.uuid(), resumeId: z.uuid() }).strict(),
     retryLimit: RESUMES_GENERATE_QUEUE.retryLimit,
+    retryDelay: RESUMES_GENERATE_QUEUE.retryDelay,
     expireInSeconds: RESUMES_GENERATE_QUEUE.expireInSeconds,
     async handle(payload, ctx) {
       const outcome = await deps.generate.run(payload, { isLastAttempt: ctx.isLastAttempt });

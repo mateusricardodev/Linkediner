@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { DrizzleAiGenerationLog, extractProfileV1, FakeAiProvider } from '@linkediner/core/ai';
+import { DrizzleAiGenerationLog, extractProfileV2, FakeAiProvider } from '@linkediner/core/ai';
 import {
   DrizzleDocumentRepository,
   DrizzleDocumentRetentionRepository,
@@ -12,7 +12,11 @@ import {
   type ExtractionOutput,
 } from '@linkediner/core/extraction/worker';
 import { DrizzleUserReader } from '@linkediner/core/identity';
-import { DrizzleFactRepository } from '@linkediner/core/profile';
+import {
+  DrizzleFactRepository,
+  DrizzleProfileRepository,
+  ProfileService,
+} from '@linkediner/core/profile';
 import { buildTestPdf } from '@linkediner/core/testing';
 import { startTestApp } from './testing/app';
 
@@ -67,8 +71,9 @@ beforeAll(async () => {
     consents: t.consents,
     users: new DrizzleUserReader(db),
     ai,
-    prompt: extractProfileV1,
+    prompt: extractProfileV2,
     facts: new DrizzleFactRepository(db, t.cipher),
+    profile: new ProfileService(new DrizzleProfileRepository(db)),
     generations: new DrizzleAiGenerationLog(db, t.cipher),
     quota: t.quota,
     audit: t.audit,
@@ -149,8 +154,34 @@ describe('extração de currículo', () => {
       task: 'extract_profile',
       provider: 'fake',
       prompt_id: 'extract_profile',
-      prompt_version: 1,
+      prompt_version: 2,
       validation: { accepted: 3, rejectedNoSource: 1, rejectedUnsupportedValue: 1 },
+    });
+  });
+
+  it('preenche o cabeçalho vazio com o que está no documento, sem trocar o que a pessoa escreveu', async () => {
+    const cookie = await t.signUp('cabecalho-extracao@example.com');
+    await grantAi(cookie);
+    await t.call(cookie, 'PATCH', '/v1/profile', { summary: 'Resumo escrito pela pessoa.' });
+    output = {
+      ...GROUNDED,
+      profile: {
+        headline: 'Engenheira Frontend na Nubank',
+        about: 'Competencias: TypeScript e React.',
+        location: 'São Paulo, Brasil',
+        industry: null,
+      },
+    };
+    await upload(cookie);
+    await runQueuedJobs();
+
+    // O título está no documento e o campo estava vazio. O resumo já tinha texto da pessoa.
+    // A localização não está no documento: não entra.
+    expect((await t.call(cookie, 'GET', '/v1/profile')).json()).toMatchObject({
+      headline: 'Engenheira Frontend na Nubank',
+      summary: 'Resumo escrito pela pessoa.',
+      location: null,
+      industry: null,
     });
   });
 

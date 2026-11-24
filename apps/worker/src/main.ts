@@ -5,7 +5,8 @@ import {
   coverLetterV2,
   createAiProvider,
   DrizzleAiGenerationLog,
-  extractProfileV1,
+  analyzeLinkedinV1,
+  extractProfileV2,
   FakeAiProvider,
   formAnswersV2,
   generateResumeV3,
@@ -63,6 +64,7 @@ import {
   ExportUserData,
   PurgeUser,
 } from '@linkediner/core/privacy/account';
+import { AnalyzeLinkedin, DrizzleLinkedinAnalysisRepository } from '@linkediner/core/linkedin';
 import { buildExportZip } from '@linkediner/core/privacy/account-worker';
 import { DOCUMENTS_EXTRACT_QUEUE } from '@linkediner/core/extraction';
 import { MATERIALS_GENERATE_QUEUE } from '@linkediner/core/applications';
@@ -73,6 +75,7 @@ import {
   DrizzleProfileRepository,
   DrizzleScoreRepository,
   ProfileScoreService,
+  ProfileService,
 } from '@linkediner/core/profile';
 import { createLogger, createPseudonymizer } from '@linkediner/observability';
 import { applicationsGenerateMaterial } from './handlers/applications-generate-material';
@@ -86,6 +89,7 @@ import { PgBossPendingTasks } from './pg-boss-pending-tasks';
 import { analyticsExpireEvents } from './handlers/analytics-expire-events';
 import { documentsExtract } from './handlers/documents-extract';
 import { jobsStructure } from './handlers/jobs-structure';
+import { linkedinAnalyze } from './handlers/linkedin-analyze';
 import { resumesGenerate } from './handlers/resumes-generate';
 import { privacyExpireAiGenerations } from './handlers/privacy-expire-ai-generations';
 import { sourcesStructure, sourcesSync } from './handlers/sources-catalog';
@@ -200,8 +204,9 @@ const tasks = [
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       users: new DrizzleUserReader(database.db),
       ai,
-      prompt: extractProfileV1,
+      prompt: extractProfileV2,
       facts: factRepository,
+      profile: new ProfileService(new DrizzleProfileRepository(database.db)),
       generations,
       quota,
       audit,
@@ -218,6 +223,21 @@ const tasks = [
       consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
       ai,
       prompt: structureJobV1,
+      generations,
+      quota,
+      audit,
+    }),
+  }),
+  linkedinAnalyze({
+    analyze: new AnalyzeLinkedin({
+      analyses: new DrizzleLinkedinAnalysisRepository(database.db, cipher),
+      documents: new DrizzleDocumentRepository(database.db),
+      storage,
+      text: new FileTextExtractor(),
+      consents: new ConsentService(new DrizzleConsentRepository(database.db), audit),
+      users: new DrizzleUserReader(database.db),
+      ai,
+      prompt: analyzeLinkedinV1,
       generations,
       quota,
       audit,

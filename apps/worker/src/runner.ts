@@ -17,12 +17,25 @@ export async function runTask(
   }
   const started = Date.now();
   const retryCount = job.retryCount ?? 0;
-  await task.handle(parsed.data, {
-    logger: log,
-    jobId: job.id,
-    attempt: retryCount + 1,
-    isLastAttempt: retryCount >= task.retryLimit,
-  });
+  const isLastAttempt = retryCount >= task.retryLimit;
+  try {
+    await task.handle(parsed.data, {
+      logger: log,
+      jobId: job.id,
+      attempt: retryCount + 1,
+      isLastAttempt,
+    });
+  } catch (err) {
+    // Sem isso, a falha só fica no banco da fila. O payload não entra: leva só IDs, mas não ajuda aqui.
+    const { code, details } = err as { code?: unknown; details?: unknown };
+    log.warn(
+      { attempt: retryCount + 1, isLastAttempt, code, details, message: (err as Error).message },
+      isLastAttempt
+        ? 'tarefa falhou sem novas tentativas'
+        : 'tarefa falhou, nova tentativa agendada',
+    );
+    throw err;
+  }
   log.debug({ durationMs: Date.now() - started }, 'tarefa concluída');
 }
 
@@ -35,12 +48,15 @@ export async function registerTasks(
   for (const task of tasks) {
     const dead = deadLetterQueue(task.name);
     await boss.createQueue(dead);
-    await boss.createQueue(task.name, {
+    const retry = {
       retryLimit: task.retryLimit,
+      retryDelay: task.retryDelay ?? 0,
       retryBackoff: true,
       expireInSeconds: task.expireInSeconds,
-      deadLetter: dead,
-    });
+    };
+    await boss.createQueue(task.name, { ...retry, deadLetter: dead });
+    // Criar não altera uma fila que já existe: a atualização leva as mudanças de tentativas.
+    await boss.updateQueue(task.name, retry);
     await boss.work(
       task.name,
       { localConcurrency: concurrency, includeMetadata: true },

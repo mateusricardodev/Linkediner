@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   CareerGoalDto,
   CreateCareerGoalBody,
+  CreateFactBody,
   DecideFactBody,
   ProblemDetails,
   ProfileDto,
@@ -64,10 +65,13 @@ export const profileRoutes =
         },
       },
       async (req) => {
-        const { headline, summary, yearsExperience, linkedinChecklist } = req.body;
+        const { headline, summary, location, industry, yearsExperience, linkedinChecklist } =
+          req.body;
         return deps.profile.update(actorOf(req).userId, {
           ...(headline !== undefined ? { headline } : {}),
           ...(summary !== undefined ? { summary } : {}),
+          ...(location !== undefined ? { location } : {}),
+          ...(industry !== undefined ? { industry } : {}),
           ...(yearsExperience !== undefined ? { yearsExperience } : {}),
           ...(linkedinChecklist !== undefined ? { linkedinChecklist } : {}),
         });
@@ -111,6 +115,23 @@ export const profileRoutes =
         },
       },
       async (req) => (await deps.facts.list(actorOf(req).userId)).map(toFactDto),
+    );
+
+    app.post(
+      '/v1/profile/facts',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'Adiciona um item digitado pela própria pessoa',
+          body: CreateFactBody,
+          response: { 201: ProfileFactDto, 409: ProblemDetails, ...errors },
+        },
+      },
+      async (req, reply) => {
+        const fact = await deps.facts.create(actorOf(req).userId, req.body);
+        return reply.code(201).send(toFactDto(fact));
+      },
     );
 
     app.patch(

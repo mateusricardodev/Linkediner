@@ -1,3 +1,10 @@
 # Falsos positivos já revisados: senha fictícia dos testes de integração (ver commit seguinte, que usa gitleaks:allow).
 e0202c1d54dcfe2e2c6df742de6577de1fcc9cea:apps/api/src/account.integration.test.ts:generic-api-key:30
 e0202c1d54dcfe2e2c6df742de6577de1fcc9cea:apps/api/src/account.integration.test.ts:generic-api-key:91
+# Falso positivo revisado: a regra linkedin-client-id lê "analyzeLinkedinV1, FakeAiProvider" como um client id.
+e431cdaa7e90fbd50f245667f8064aedd571661d:packages/core/src/modules/linkedin/application/linkedin-analysis.test.ts:linkedin-client-id:2
+e431cdaa7e90fbd50f245667f8064aedd571661d:apps/api/src/linkedin.integration.test.ts:linkedin-client-id:2
+# Mesmo caso com a regra linkedin-client-secret, em um import do ports.ts.
+e431cdaa7e90fbd50f245667f8064aedd571661d:packages/core/src/modules/linkedin/application/ports.ts:linkedin-client-secret:1
+# O comentário de um registro acima também cai na regra de client id.
+35013e7566b4fb13feaecf4b048b228e8984e1ab:.gitleaksignore:linkedin-client-id:4

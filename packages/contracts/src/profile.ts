@@ -22,6 +22,9 @@ export const ProfileDto = z
     id: z.uuid(),
     headline: z.string().nullable(),
     summary: z.string().nullable(),
+    location: z.string().nullable(),
+    /** Setor, como no LinkedIn. */
+    industry: z.string().nullable(),
     yearsExperience: z.number().int().nullable(),
     /** Ajustes do LinkedIn que a pessoa marcou como feitos. */
     linkedinChecklist: z.array(LinkedinChecklistItem),
@@ -33,6 +36,8 @@ export const UpdateProfileBody = z
   .object({
     headline: z.string().max(500).nullable().optional(),
     summary: z.string().max(5000).nullable().optional(),
+    location: z.string().max(300).nullable().optional(),
+    industry: z.string().max(300).nullable().optional(),
     yearsExperience: z.number().int().nullable().optional(),
     linkedinChecklist: z.array(LinkedinChecklistItem).max(20).optional(),
   })

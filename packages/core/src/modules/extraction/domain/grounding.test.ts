@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_EXTRACTION, ExtractionOutput, groundFacts } from './grounding';
+import { EMPTY_EXTRACTION, ExtractionOutput, groundFacts, groundHeader } from './grounding';
 
 const DOC = `Experiência
 Engenheira Frontend na Nubank, jan 2021 - atual
@@ -201,5 +201,55 @@ describe('ExtractionOutput', () => {
     const { sourceSpan: _removed, ...semTrecho } = experience;
     const result = ExtractionOutput.safeParse({ ...EMPTY_EXTRACTION, experiences: [semTrecho] });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('groundHeader', () => {
+  // Como o texto sai do PDF do LinkedIn: título quebrado e frases coladas depois do ponto.
+  const PDF_TEXT = `SQL • Python • BI / Analista de Dados @ Hi! Healthcare Intelligence
+| Machine Learning & AI
+São José dos Campos, São Paulo, Brasil
+Resumo
+Analista de dados atuando Business Intelligence na área da
+saúde.Trabalho com Python, SQL e Power BI.`;
+
+  const header = (profile: NonNullable<ExtractionOutput['profile']>) =>
+    groundHeader({ ...EMPTY_EXTRACTION, profile }, PDF_TEXT);
+
+  it('aceita o texto do PDF com espaços e quebras diferentes, e grava numa linha só', () => {
+    const { header: h, dropped } = header({
+      headline:
+        'SQL • Python • BI / Analista de Dados @ Hi! Healthcare Intelligence\n| Machine Learning & AI',
+      about:
+        'Analista de dados atuando Business Intelligence na área da saúde. Trabalho com Python, SQL e Power BI.',
+      location: 'São José dos Campos, São Paulo, Brasil',
+      industry: null,
+    });
+    expect(dropped).toBe(0);
+    expect(h).toEqual({
+      headline:
+        'SQL • Python • BI / Analista de Dados @ Hi! Healthcare Intelligence | Machine Learning & AI',
+      summary:
+        'Analista de dados atuando Business Intelligence na área da saúde. Trabalho com Python, SQL e Power BI.',
+      location: 'São José dos Campos, São Paulo, Brasil',
+      industry: null,
+    });
+  });
+
+  it('descarta o que não está escrito no documento, mesmo com uma palavra a mais', () => {
+    const { header: h, dropped } = header({
+      headline: 'Analista de Dados Sênior',
+      about: 'Analista de dados atuando Business Intelligence na área da saúde e finanças.',
+      location: null,
+      industry: 'Tecnologia da informação',
+    });
+    expect(h).toEqual({ headline: null, summary: null, location: null, industry: null });
+    expect(dropped).toBe(3);
+  });
+
+  it('resposta sem cabeçalho não preenche nada', () => {
+    const { header: h, dropped } = groundHeader(EMPTY_EXTRACTION, PDF_TEXT);
+    expect(h).toEqual({ headline: null, summary: null, location: null, industry: null });
+    expect(dropped).toBe(0);
   });
 });

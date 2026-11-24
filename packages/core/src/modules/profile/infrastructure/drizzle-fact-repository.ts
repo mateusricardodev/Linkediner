@@ -104,8 +104,12 @@ export class DrizzleFactRepository implements FactRepository {
   }
 
   async addConfirmed(userId: string, fact: { type: FactType; data: FactData }) {
+    await this.create(userId, fact);
+  }
+
+  async create(userId: string, fact: { type: FactType; data: FactData }) {
     const c = await this.cipher.forUser(userId);
-    await withUserContext(this.db, userId, async (tx) => {
+    return withUserContext(this.db, userId, async (tx) => {
       await tx
         .insert(profiles)
         .values({ id: newId(), userId })
@@ -114,7 +118,7 @@ export class DrizzleFactRepository implements FactRepository {
         .select({ id: profiles.id })
         .from(profiles)
         .where(eq(profiles.userId, userId));
-      await tx
+      const [row] = await tx
         .insert(profileFacts)
         .values({
           id: newId(),
@@ -125,7 +129,9 @@ export class DrizzleFactRepository implements FactRepository {
           fingerprint: fingerprintFact(fact.type, fact.data),
           verification: 'user_confirmed',
         })
-        .onConflictDoNothing({ target: [profileFacts.profileId, profileFacts.fingerprint] });
+        .onConflictDoNothing({ target: [profileFacts.profileId, profileFacts.fingerprint] })
+        .returning();
+      return row ? toFact(c, row) : null;
     });
   }
 

@@ -17,6 +17,7 @@ export const documentsExtract = (deps: {
     name: DOCUMENTS_EXTRACT_QUEUE.name,
     payload: z.object({ userId: z.uuid(), documentId: z.uuid(), usageId: z.uuid() }).strict(),
     retryLimit: DOCUMENTS_EXTRACT_QUEUE.retryLimit,
+    retryDelay: DOCUMENTS_EXTRACT_QUEUE.retryDelay,
     expireInSeconds: DOCUMENTS_EXTRACT_QUEUE.expireInSeconds,
     async handle(payload, ctx) {
       const outcome = await deps.extract.run(payload, { isLastAttempt: ctx.isLastAttempt });

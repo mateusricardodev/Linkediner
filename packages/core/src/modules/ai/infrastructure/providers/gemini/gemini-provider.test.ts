@@ -120,6 +120,56 @@ describe('GeminiProvider', () => {
     expect(error.cause).toBeUndefined();
   });
 
+  describe('modelos de reserva', () => {
+    const failing = (statusByModel: Record<string, number>) => {
+      const generateContent = vi.fn(async ({ model }: { model: string }) => {
+        const status = statusByModel[model];
+        if (status) throw Object.assign(new Error('falhou'), { status });
+        return { text: JSON.stringify({ skills: [], nota: null }) };
+      });
+      const client = { models: { generateContent, embedContent: vi.fn() } } as GeminiClient;
+      return { client, generateContent };
+    };
+    const triedModels = (fn: ReturnType<typeof vi.fn>) =>
+      fn.mock.calls.map((call) => (call[0] as { model: string }).model);
+
+    it('com o principal sobrecarregado, usa a primeira reserva que responder', async () => {
+      const { client, generateContent } = failing({ principal: 503, forte: 429 });
+      const ai = new GeminiProvider(client, 'principal', Date.now, {}, ['forte', 'leve']);
+      const result = await ai.generateStructured(req);
+      expect(triedModels(generateContent)).toEqual(['principal', 'forte', 'leve']);
+      expect(result.usage.model).toBe('leve');
+    });
+
+    it('erro do próprio pedido não troca de modelo', async () => {
+      const { client, generateContent } = failing({ principal: 400 });
+      const ai = new GeminiProvider(client, 'principal', Date.now, {}, ['forte']);
+      const error = await ai.generateStructured(req).catch((e) => e);
+      expect(error.details).toEqual({ providerStatus: 400 });
+      expect(triedModels(generateContent)).toEqual(['principal']);
+    });
+
+    it('se todos caírem, devolve o erro do último para a fila tentar de novo', async () => {
+      const { client } = failing({ principal: 503, forte: 503 });
+      const ai = new GeminiProvider(client, 'principal', Date.now, {}, ['forte', 'principal']);
+      const error = await ai.generateStructured(req).catch((e) => e);
+      expect(error.code).toBe('DEPENDENCY_UNAVAILABLE');
+      expect(error.details).toEqual({ providerStatus: 503 });
+    });
+
+    it('não tenta outro modelo depois de gastar o tempo de reserva', async () => {
+      const { client, generateContent } = failing({ principal: 503 });
+      const times = [0, 200_000];
+      const ai = new GeminiProvider(client, 'principal', () => times.shift() ?? 200_000, {}, [
+        'forte',
+      ]);
+      await expect(ai.generateStructured(req)).rejects.toMatchObject({
+        code: 'DEPENDENCY_UNAVAILABLE',
+      });
+      expect(triedModels(generateContent)).toEqual(['principal']);
+    });
+  });
+
   it('exige um modelo configurado', async () => {
     const ai = new GeminiProvider(clientReturning({ text: '{}' }).client);
     await expect(ai.generateStructured(req)).rejects.toThrow(/Modelo não configurado/);

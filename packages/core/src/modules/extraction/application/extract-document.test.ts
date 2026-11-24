@@ -4,7 +4,7 @@ import type { AuditEntry } from '../../audit';
 import type { DocumentRecord } from '../../documents';
 import { AppError } from '../../shared';
 import { EMPTY_EXTRACTION, type ExtractionOutput } from '../domain/grounding';
-import { ExtractDocument } from './extract-document';
+import { ExtractDocument, type ExtractDocumentDeps } from './extract-document';
 import { ExtractionRequests } from './extraction-requests';
 
 const USER = '0193b2b0-0000-7000-8000-00000000000a';
@@ -59,6 +59,10 @@ function setup(
       },
   );
   const refund = vi.fn(async () => {});
+  type Header = Parameters<ExtractDocumentDeps['profile']['fillEmpty']>[1];
+  const fillEmpty = vi.fn(async (_u: string, values: Header) =>
+    (Object.keys(values) as (keyof Header)[]).filter((k) => values[k] != null),
+  );
   const use = new ExtractDocument({
     documents: {
       find: async () => (o.doc === undefined ? document() : o.doc),
@@ -77,6 +81,7 @@ function setup(
     ai,
     prompt: extractProfileV1,
     facts: { replaceExtracted },
+    profile: { fillEmpty },
     quota: { refund },
     generations: {
       record: async (e) => {
@@ -89,13 +94,57 @@ function setup(
       },
     },
   });
-  return { use, ai, setStatus, markProcessed, replaceExtracted, generations, audit, refund };
+  return {
+    use,
+    ai,
+    setStatus,
+    markProcessed,
+    replaceExtracted,
+    fillEmpty,
+    generations,
+    audit,
+    refund,
+  };
 }
 
 const job = { userId: USER, documentId: DOC_ID, usageId: 'u1' };
 const run = (use: ExtractDocument, isLastAttempt = false) => use.run(job, { isLastAttempt });
 
 describe('ExtractDocument', () => {
+  it('preenche o cabeçalho só com o que está escrito no documento', async () => {
+    const s = setup({
+      output: {
+        ...EMPTY_EXTRACTION,
+        profile: {
+          headline: 'Engenheira Frontend na Nubank',
+          about: 'Resumo que não está no documento.',
+          location: null,
+          industry: null,
+        },
+      },
+    });
+    await run(s.use);
+    expect(s.fillEmpty).toHaveBeenCalledWith(USER, {
+      headline: 'Engenheira Frontend na Nubank',
+      summary: null,
+      location: null,
+      industry: null,
+    });
+    expect(s.audit.at(-1)?.metadata).toMatchObject({ headerFilled: ['headline'] });
+    expect(s.generations[0]?.validation).toMatchObject({ headerDropped: 1 });
+  });
+
+  it('resposta sem cabeçalho (prompt v1) não preenche nada', async () => {
+    const s = setup();
+    await run(s.use);
+    expect(s.fillEmpty).toHaveBeenCalledWith(USER, {
+      headline: null,
+      summary: null,
+      location: null,
+      industry: null,
+    });
+  });
+
   it('só conta no limite a análise que deu certo', async () => {
     const ok = setup();
     await run(ok.use);

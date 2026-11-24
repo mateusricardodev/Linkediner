@@ -20,8 +20,11 @@ export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
 export type LinkKind = (typeof LINK_KINDS)[number];
 
 export const LIMITS = {
-  headline: 160,
-  summary: 2000,
+  /** Os mesmos limites do LinkedIn: o que veio de lá cabe aqui sem cortar. */
+  headline: 220,
+  summary: 2600,
+  location: 120,
+  industry: 120,
   maxYearsExperience: 60,
   maxLinks: 10,
   /** Limite inicial. Vai virar entitlement por plano no módulo billing (ADR 0010). */
@@ -50,6 +53,8 @@ export interface Profile {
   id: string;
   headline: string | null;
   summary: string | null;
+  location: string | null;
+  industry: string | null;
   yearsExperience: number | null;
   linkedinChecklist: LinkedinChecklistItem[];
 }
@@ -94,6 +99,16 @@ export function validateProfilePatch(
     if (v && v.length > LIMITS.summary)
       throw invalid(`O resumo deve ter até ${LIMITS.summary} caracteres.`, 'summary');
     out.summary = v;
+  }
+  for (const [field, label] of [
+    ['location', 'A localização'],
+    ['industry', 'O setor'],
+  ] as const) {
+    if (patch[field] === undefined) continue;
+    const v = patch[field]?.trim() || null;
+    if (v && v.length > LIMITS[field])
+      throw invalid(`${label} deve ter até ${LIMITS[field]} caracteres.`, field);
+    out[field] = v;
   }
   if (patch.yearsExperience !== undefined) {
     const v = patch.yearsExperience;

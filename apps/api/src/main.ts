@@ -76,6 +76,12 @@ import {
   FeedbackService,
   MatchingService,
 } from '@linkediner/core/matching';
+import {
+  DrizzleLinkedinAnalysisRepository,
+  LINKEDIN_ANALYZE_QUEUE,
+  LinkedinAnalysisService,
+  type AnalyzeLinkedinJob,
+} from '@linkediner/core/linkedin';
 import { createQueue } from './pg-boss-queues';
 import { buildServer } from './server';
 
@@ -253,6 +259,16 @@ const app = await buildServer({
       await createQueue<ExtractJobPayload>(boss, DOCUMENTS_EXTRACT_QUEUE),
       quota,
     ),
+    linkedin: new LinkedinAnalysisService({
+      repo: new DrizzleLinkedinAnalysisRepository(database.db, cipher),
+      documents: documentRepository,
+      goals: profileRepository,
+      consents,
+      queue: await createQueue<AnalyzeLinkedinJob>(boss, LINKEDIN_ANALYZE_QUEUE),
+      quota,
+      features: quota,
+      audit,
+    }),
     entitlements: quota,
     events,
     subscriptions: new SubscriptionService(

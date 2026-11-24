@@ -23,7 +23,13 @@ export {
   RequestUploadBody,
   RequestUploadResponse,
 } from './documents';
-export { DecideFactBody, FactType, FactVerification, ProfileFactDto } from './facts';
+export {
+  CreateFactBody,
+  DecideFactBody,
+  FactType,
+  FactVerification,
+  ProfileFactDto,
+} from './facts';
 export { ProfileScoreResponse, ScoreCriterion, ScoreFactorDto } from './score';
 export {
   ExportResumeQuery,
@@ -63,3 +69,4 @@ export {
 export { DataExportDto, DeleteAccountBody, DeletionAcceptedDto } from './privacy';
 export { BillingSummaryDto, BillingUrlDto, CheckoutBody } from './billing';
 export * from './discovery';
+export * from './linkedin';

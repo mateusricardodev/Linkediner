@@ -21,6 +21,8 @@ export interface FactRepository {
   ): Promise<{ inserted: number }>;
   /** Adiciona um fato afirmado pelo usuário, sem documento de origem. Se já existir, nada muda. */
   addConfirmed(userId: string, fact: { type: FactType; data: FactData }): Promise<void>;
+  /** Como `addConfirmed`, mas devolve o fato criado, ou null se já existir um igual. */
+  create(userId: string, fact: { type: FactType; data: FactData }): Promise<ProfileFact | null>;
   /** Devolve null se a alteração colidir com outro fato igual do usuário. */
   update(
     userId: string,

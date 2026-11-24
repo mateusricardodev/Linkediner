@@ -17,6 +17,8 @@ export interface TaskDefinition<P> {
   name: string;
   payload: ZodType<P>;
   retryLimit: number;
+  /** Espera antes da primeira nova tentativa, em segundos. Dobra a cada uma. Sem ela, é imediata. */
+  retryDelay?: number;
   expireInSeconds: number;
   /** Agendamento cron opcional (ex.: tarefas diárias de expiração). */
   cron?: string;

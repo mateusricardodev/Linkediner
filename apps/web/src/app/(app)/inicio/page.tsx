@@ -16,7 +16,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 /** Os três caminhos principais, sempre à mão no topo. */
 const SHORTCUTS = [
   {
-    href: '/perfil#documentos',
+    href: '/perfil?tab=profissional#documentos',
     title: 'Analisar currículo',
     text: 'Veja o score e como os sistemas de recrutamento leem o seu arquivo.',
     action: 'Analisar',
@@ -220,7 +220,7 @@ export default function HomePage() {
                   </div>
                 ) : null}
                 <ScoreTrend history={score.data.history} />
-                <ButtonLink variant="secondary" full href="/perfil">
+                <ButtonLink variant="secondary" full href="/perfil?tab=profissional">
                   Documentos e fatos
                 </ButtonLink>
                 <p className={styles.disclaimer}>{score.data.disclaimer}</p>
@@ -228,7 +228,7 @@ export default function HomePage() {
             )}
           </div>
           {profile.data && checklistDone < CHECKLIST.length ? (
-            <Link href="/perfil#linkedin" className={styles.linkedinCard}>
+            <Link href="/analise-linkedin#linkedin" className={styles.linkedinCard}>
               <span className={styles.linkedinTitle}>Ajustes no LinkedIn</span>
               <span className={styles.linkedinText}>
                 {checklistDone === 0

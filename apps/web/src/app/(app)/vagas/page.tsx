@@ -110,7 +110,7 @@ export default function JobsPage() {
             <p className={styles.calloutText}>
               Para analisar vagas, autorize a análise por IA na página do seu perfil.
             </p>
-            <ButtonLink variant="secondary" href="/perfil">
+            <ButtonLink variant="secondary" href="/perfil?tab=profissional">
               Ir para o perfil
             </ButtonLink>
           </div>

@@ -32,6 +32,33 @@ describe('runTask', () => {
       runTask(systemHeartbeat({ ping }), { id: 'job-3', data: {} }, logger),
     ).rejects.toThrow('db fora');
   });
+
+  it('registra a falha no log, dizendo se haverá nova tentativa', async () => {
+    const lines: string[] = [];
+    const captured = createLogger({
+      service: 'test',
+      level: 'warn',
+      destination: new Writable({
+        write: (chunk, _e, cb) => {
+          lines.push(String(chunk));
+          cb();
+        },
+      }),
+    });
+    const ping = vi.fn(async () =>
+      Promise.reject(Object.assign(new Error('provedor'), { code: 'DEPENDENCY_UNAVAILABLE' })),
+    );
+    const task = systemHeartbeat({ ping });
+    await expect(runTask(task, { id: 'job-4', data: {} }, captured)).rejects.toThrow();
+    await expect(
+      runTask(task, { id: 'job-5', data: {}, retryCount: task.retryLimit }, captured),
+    ).rejects.toThrow();
+    const logged = lines.map((line) => JSON.parse(line));
+    expect(logged).toMatchObject([
+      { msg: 'tarefa falhou, nova tentativa agendada', code: 'DEPENDENCY_UNAVAILABLE', attempt: 1 },
+      { msg: 'tarefa falhou sem novas tentativas', isLastAttempt: true },
+    ]);
+  });
 });
 
 describe('privacy.expire_documents', () => {

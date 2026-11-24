@@ -35,3 +35,6 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0029 | [Currículo em inglês e orientado por uma vaga salva](0029-curriculo-idioma-e-vaga.md) | Proposto |
 | 0030 | [Material por vaga aprende com as correções](0030-correcoes-no-material.md) | Proposto |
 | 0031 | [Portais de vagas remotas: Himalayas e Jobicy](0031-portais-de-vagas-remotas.md) | Proposto |
+| 0032 | [Perfil profissional preenchido pelo documento e editado num formulário](0032-perfil-preenchido-pelo-documento.md) | Proposto |
+| 0033 | [Modelos de reserva quando o Gemini está sobrecarregado](0033-modelos-de-reserva.md) | Proposto |
+| 0034 | [Análise do perfil do LinkedIn a partir do PDF](0034-analise-do-linkedin.md) | Proposto |

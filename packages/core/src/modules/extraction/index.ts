@@ -1,6 +1,7 @@
 // Entrada usada pela API: sem bibliotecas de leitura de PDF nem SDK de IA.
 export {
   DOCUMENTS_EXTRACT_QUEUE,
+  TEXT_LIMITS,
   FAILURE_CODES,
   type ExtractJobPayload,
 } from './domain/extraction-rules';

@@ -61,6 +61,19 @@ export const envSchema = z
     AI_MODEL_EXTRACT: z.string().min(1).optional(),
     /** Modelo das tarefas de redação. Sem ele, usa AI_MODEL_EXTRACT. */
     AI_MODEL_GENERATE: z.string().min(1).optional(),
+    /**
+     * Modelos de reserva, separados por vírgula, do mais potente ao mais leve. Usados quando o
+     * modelo da tarefa está sobrecarregado ou sem cota (429, 5xx). Vazio: sem reserva.
+     */
+    AI_MODEL_FALLBACK: z
+      .string()
+      .optional()
+      .transform((value) =>
+        (value ?? '')
+          .split(',')
+          .map((model) => model.trim())
+          .filter(Boolean),
+      ),
 
     /** Usado para pseudonimizar IDs em logs (HMAC). Obrigatório fora de dev/test. */
     LOG_PSEUDONYM_SECRET: z.string().min(32).optional(),

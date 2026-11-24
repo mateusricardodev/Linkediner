@@ -126,7 +126,7 @@ export function DiscoverySection({ goalState }: { goalState: ReturnType<typeof u
         <>
           <p className={styles.empty}>
             Para buscarmos vagas, precisamos de um objetivo de carreira.{' '}
-            <Link href="/perfil#objetivos">Definir no perfil</Link>
+            <Link href="/perfil?tab=profissional#objetivos">Definir no perfil</Link>
           </p>
           <GoalSuggestion onCreated={() => void goalState.reload()} />
         </>

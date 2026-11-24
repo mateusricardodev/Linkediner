@@ -3,7 +3,7 @@ import type { AiGenerationLog, AiProvider, VersionedPrompt } from '../../ai';
 import type { AuditLog } from '../../audit';
 import type { DocumentRecord, DocumentRepository, ObjectStorage } from '../../documents';
 import type { ConsentService } from '../../privacy';
-import type { FactRepository } from '../../profile';
+import type { FactRepository, ProfileService } from '../../profile';
 import type { QuotaGate } from '../../shared';
 import {
   FAILURE_CODES,
@@ -11,7 +11,7 @@ import {
   usageKeyFor,
   type ExtractJobPayload,
 } from '../domain/extraction-rules';
-import { ExtractionOutput, groundFacts } from '../domain/grounding';
+import { ExtractionOutput, groundFacts, groundHeader } from '../domain/grounding';
 import { redactSensitiveData } from '../domain/redact';
 import type { TextExtractor } from './ports';
 
@@ -24,6 +24,8 @@ export interface ExtractDocumentDeps {
   ai: AiProvider;
   prompt: VersionedPrompt;
   facts: Pick<FactRepository, 'replaceExtracted'>;
+  /** Preenche título, resumo, localização e setor que ainda estão vazios no perfil. */
+  profile: Pick<ProfileService, 'fillEmpty'>;
   generations: Pick<AiGenerationLog, 'record'>;
   quota: Pick<QuotaGate, 'refund'>;
   audit: AuditLog;
@@ -100,6 +102,8 @@ export class ExtractDocument {
 
     const { facts, report } = groundFacts(data, documentText);
     const { inserted } = await this.deps.facts.replaceExtracted(userId, document.id, facts);
+    const { header, dropped: headerDropped } = groundHeader(data, documentText);
+    const headerFilled = await this.deps.profile.fillEmpty(userId, header);
 
     await this.deps.generations.record({
       userId,
@@ -107,7 +111,7 @@ export class ExtractDocument {
       usage,
       inputHash: createHash('sha256').update(documentText).digest('hex'),
       output: data,
-      validation: { ...report },
+      validation: { ...report, headerDropped },
     });
     await this.deps.documents.markProcessed(userId, document.id, {
       discardedFacts: report.rejectedNoSource + report.rejectedUnsupportedValue,
@@ -119,7 +123,8 @@ export class ExtractDocument {
       action: 'document.processed',
       entityType: 'document',
       entityId: document.id,
-      metadata: { ...report, inserted, promptVersion: usage.promptVersion },
+      // Só os nomes dos campos preenchidos, nunca o conteúdo.
+      metadata: { ...report, inserted, headerFilled, promptVersion: usage.promptVersion },
     });
     return 'processed';
   }
