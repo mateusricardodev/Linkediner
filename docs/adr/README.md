@@ -40,3 +40,4 @@ Formato: contexto, decisão, alternativas e consequências. Para mudar uma decis
 | 0034 | [Análise do perfil do LinkedIn a partir do PDF](0034-analise-do-linkedin.md) | Proposto |
 | 0035 | [Análise de currículo separada da geração](0035-analise-de-curriculo.md) | Proposto |
 | 0036 | [Gerar currículo em etapas](0036-gerar-curriculo-em-etapas.md) | Proposto |
+| 0037 | [Vagas do dia](0037-vagas-do-dia.md) | Proposto |

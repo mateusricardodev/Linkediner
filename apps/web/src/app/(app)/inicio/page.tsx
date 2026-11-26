@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { APPLICATION_STATE_LABELS } from '../../../components/application-state';
-import { Badge, ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
+import { ButtonLink, Notice, ScoreRing, Skeleton } from '../../../components/ui';
 import { api } from '../../../lib/api';
+import { DailyJobsSection } from './daily-jobs';
 import { CHECKLIST } from '../../../lib/linkedin-checklist';
-import type { Dashboard, Profile, ProfileScore, Recommendations } from '../../../lib/types';
+import type { Dashboard, Profile, ProfileScore } from '../../../lib/types';
 import { useResource } from '../../../lib/use-resource';
 import { useMe } from '../app-shell';
 import styles from './inicio.module.css';
@@ -38,22 +38,9 @@ const SHORTCUTS = [
   },
 ];
 
-function Rows({ count = 3 }: { count?: number }) {
-  return (
-    <div className={styles.list} aria-busy="true">
-      {Array.from({ length: count }, (_, i) => (
-        <div key={i} className={styles.row}>
-          <Skeleton width="60%" height={20} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function HomePage() {
   const me = useMe();
   const dashboard = useResource(() => api<Dashboard>('/v1/dashboard'));
-  const recommendations = useResource(() => api<Recommendations>('/v1/jobs/recommendations'));
   const score = useResource(() => api<ProfileScore>('/v1/profile/score'));
   const profile = useResource(() => api<Profile>('/v1/profile'));
   const checklistDone = profile.data?.linkedinChecklist.length ?? 0;
@@ -100,86 +87,7 @@ export default function HomePage() {
 
       <div className={styles.columns}>
         <div className={styles.main}>
-          <section aria-labelledby="atencao">
-            <h2 id="atencao" className={styles.sectionTitle}>
-              Precisa da sua atenção
-            </h2>
-            {dashboard.error ? (
-              <Notice tone="danger">{dashboard.error.message}</Notice>
-            ) : !dashboard.data ? (
-              <Rows count={2} />
-            ) : dashboard.data.needsAttention.length === 0 ? (
-              <div className={styles.empty}>
-                <p>Nenhuma candidatura esperando por você.</p>
-                <ButtonLink variant="secondary" href="/vagas">
-                  Encontrar uma vaga
-                </ButtonLink>
-              </div>
-            ) : (
-              <ul className={styles.list}>
-                {dashboard.data.needsAttention.map((application) => {
-                  const state = APPLICATION_STATE_LABELS[application.state];
-                  return (
-                    <li key={application.id} className={styles.row}>
-                      <div className={styles.rowText}>
-                        <Link href={`/candidaturas/${application.id}`} className={styles.rowLink}>
-                          {application.job.title ?? 'Vaga sem título'}
-                        </Link>
-                        <span className={styles.rowMeta}>
-                          {application.job.company ?? 'Empresa não informada'}
-                        </span>
-                      </div>
-                      <Badge tone={state.tone}>{state.label}</Badge>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-
-          <section aria-labelledby="vagas">
-            <h2 id="vagas" className={styles.sectionTitle}>
-              Vagas recomendadas
-            </h2>
-            {recommendations.error ? (
-              <Notice tone="danger">{recommendations.error.message}</Notice>
-            ) : !recommendations.data ? (
-              <Rows />
-            ) : recommendations.data.items.length === 0 ? (
-              <div className={styles.empty}>
-                <p>Importe uma vaga para ver o quanto ela combina com o seu perfil.</p>
-                <ButtonLink variant="secondary" href="/vagas">
-                  Importar vaga
-                </ButtonLink>
-              </div>
-            ) : (
-              <>
-                <ul className={styles.list}>
-                  {recommendations.data.items.slice(0, 5).map(({ job, score: match }) => (
-                    <li key={job.id} className={styles.row}>
-                      <div className={styles.rowText}>
-                        <Link href={`/vagas/${job.id}`} className={styles.rowLink}>
-                          {job.title ?? 'Vaga sem título'}
-                        </Link>
-                        <span className={styles.rowMeta}>
-                          {[job.company, job.location].filter(Boolean).join(' · ') ||
-                            'Empresa não informada'}
-                        </span>
-                      </div>
-                      {match === null ? (
-                        <span className={styles.noMatch}>Sem dados suficientes</span>
-                      ) : (
-                        <span className={styles.match}>
-                          {match}%<span className={styles.matchLabel}>compatível</span>
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-                <p className={styles.disclaimer}>{recommendations.data.disclaimer}</p>
-              </>
-            )}
-          </section>
+          <DailyJobsSection />
         </div>
 
         <aside aria-labelledby="perfil" className={styles.aside}>

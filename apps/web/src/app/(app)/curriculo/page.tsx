@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Badge, ButtonLink, Notice, Skeleton, SyntheticDataNotice } from '../../../components/ui';
 import { api } from '../../../lib/api';
 import { formatDate } from '../../../lib/documents';
@@ -17,6 +18,7 @@ export default function ResumesPage() {
   const facts = useResource(() => api<ProfileFact[]>('/v1/profile/facts'));
   const profile = useResource(() => api<Profile>('/v1/profile'));
   const jobs = useResource(() => api<Job[]>('/v1/jobs'));
+  const initialJobId = useSearchParams().get('job');
 
   // A API lista do mais antigo para o mais novo.
   const items = [...(resumes.data ?? [])].reverse();
@@ -53,6 +55,7 @@ export default function ResumesPage() {
             facts={facts.data}
             jobs={jobs.data ?? []}
             generating={generating}
+            initialJobId={initialJobId}
             onDataChanged={() => Promise.all([facts.reload(), profile.reload(), me.reload()])}
             onJobsChanged={jobs.reload}
           />

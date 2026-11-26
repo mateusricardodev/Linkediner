@@ -1,8 +1,14 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { DiscoveryResponse, JobDto, JobMatchQuery, ProblemDetails } from '@linkediner/contracts';
+import {
+  DailyJobsResponse,
+  DiscoveryResponse,
+  JobDto,
+  JobMatchQuery,
+  ProblemDetails,
+} from '@linkediner/contracts';
 import type { ProductEvents } from '@linkediner/core/analytics';
-import type { DiscoveryService } from '@linkediner/core/discovery';
+import type { DailySelectionService, DiscoveryService } from '@linkediner/core/discovery';
 import { MATCH_DISCLAIMER } from '@linkediner/core/matching';
 import type { ConsentService } from '@linkediner/core/privacy';
 import { actorOf, requireActor } from '../plugins/auth';
@@ -10,6 +16,7 @@ import { requireConsents } from '../plugins/require-consents';
 
 export interface DiscoveryDeps {
   discovery: DiscoveryService;
+  daily: Pick<DailySelectionService, 'today'>;
   consents: Pick<ConsentService, 'status'>;
   events: Pick<ProductEvents, 'track'>;
 }
@@ -74,6 +81,31 @@ export const discoveryRoutes =
             explanation,
           })),
         };
+      },
+    );
+
+    app.get(
+      '/v1/discovery/today',
+      {
+        preHandler,
+        schema: {
+          tags,
+          summary: 'As 3 a 5 vagas mais compatíveis do dia, fixadas na primeira visita',
+          response: { 200: DailyJobsResponse, ...errors },
+        },
+      },
+      async (req) => {
+        const { userId } = actorOf(req);
+        const selection = await deps.daily.today(userId);
+        if (selection.state !== 'ready') return selection;
+        await deps.events.track(
+          userId,
+          selection.picks.map((pick) => ({
+            name: 'job_recommended' as const,
+            dedupeKey: `vaga-do-dia:${selection.day}:${pick.postingId}`,
+          })),
+        );
+        return { ...selection, disclaimer: MATCH_DISCLAIMER };
       },
     );
 

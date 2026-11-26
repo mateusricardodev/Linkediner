@@ -23,7 +23,7 @@ import { meRoutes, type MeDeps } from './routes/me';
 import { profileRoutes } from './routes/profile';
 import type { ExtractionRequests } from '@linkediner/core/extraction';
 import type { FactService, ProfileScoreService, ProfileService } from '@linkediner/core/profile';
-import type { DiscoveryService } from '@linkediner/core/discovery';
+import type { DailySelectionService, DiscoveryService } from '@linkediner/core/discovery';
 import type { DocumentService } from '@linkediner/core/documents';
 import type { ResumeAtsService, ResumeService } from '@linkediner/core/resumes';
 import type { ResumeExportService } from '@linkediner/core/resumes/export';
@@ -60,6 +60,7 @@ export interface ServerDeps {
     matching: MatchingService;
     feedback: FeedbackService;
     discovery: DiscoveryService;
+    daily: DailySelectionService;
     resumes: ResumeService;
     resumeAts: ResumeAtsService;
     resumeExport: ResumeExportService;

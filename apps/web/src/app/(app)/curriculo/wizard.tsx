@@ -416,6 +416,7 @@ export function ResumeWizard({
   facts,
   jobs,
   generating,
+  initialJobId,
   onDataChanged,
   onJobsChanged,
 }: {
@@ -424,13 +425,17 @@ export function ResumeWizard({
   facts: ProfileFact[] | null;
   jobs: Job[];
   generating: boolean;
+  /** Vaga já escolhida ao chegar das "Vagas do dia": começa na etapa da vaga com ela marcada. */
+  initialJobId?: string | null;
   onDataChanged: () => unknown;
   onJobsChanged: () => unknown;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>('vaga');
   const [reached, setReached] = useState(0);
-  const [job, setJob] = useState<JobChoice>({ mode: 'general' });
+  const [job, setJob] = useState<JobChoice>(
+    initialJobId ? { mode: 'saved', jobId: initialJobId } : { mode: 'general' },
+  );
   const [language, setLanguage] = useState<Language>('pt');
   const [dirty, setDirty] = useState(false);
   const [blocked, setBlocked] = useState<string | null>(null);

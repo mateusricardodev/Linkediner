@@ -19,7 +19,12 @@ import {
   SubscriptionService,
 } from '@linkediner/core/billing';
 import { createFieldCipher } from '@linkediner/core/crypto';
-import { DiscoveryService, DrizzleCatalogReader } from '@linkediner/core/discovery';
+import {
+  DailySelectionService,
+  DiscoveryService,
+  DrizzleCatalogReader,
+  DrizzleDailyPicksRepository,
+} from '@linkediner/core/discovery';
 import { createAuth, DrizzleUserReader } from '@linkediner/core/identity';
 import { ConsentService, DrizzleConsentRepository } from '@linkediner/core/privacy';
 import {
@@ -150,6 +155,15 @@ const userReader = new DrizzleUserReader(database.db);
 const applicationRepository = new DrizzleApplicationRepository(database.db, cipher);
 const materialRepository = new DrizzleMaterialRepository(database.db, cipher);
 const quota = new EntitlementService(new DrizzleUsageRepository(database.db));
+const discovery = new DiscoveryService(
+  new DrizzleCatalogReader(database.db),
+  jobRepository,
+  factRepository,
+  profileRepository,
+  new DrizzleFeedbackRepository(database.db),
+  audit,
+  { allowed: (userId) => quota.enabled(userId, 'monitoring.frequency_hours') },
+);
 
 const app = await buildServer({
   config,
@@ -195,14 +209,10 @@ const app = await buildServer({
       audit,
       quota,
     ),
-    discovery: new DiscoveryService(
-      new DrizzleCatalogReader(database.db),
-      jobRepository,
-      factRepository,
-      profileRepository,
-      new DrizzleFeedbackRepository(database.db),
-      audit,
-      { allowed: (userId) => quota.enabled(userId, 'monitoring.frequency_hours') },
+    discovery,
+    daily: new DailySelectionService(
+      discovery,
+      new DrizzleDailyPicksRepository(database.db, cipher),
     ),
     feedback: new FeedbackService(
       new DrizzleFeedbackRepository(database.db),

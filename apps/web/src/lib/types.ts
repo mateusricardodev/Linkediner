@@ -8,6 +8,7 @@ import type {
   BillingSummaryDto,
   CareerGoalDto,
   DashboardResponse as DashboardSchema,
+  DailyJobsResponse,
   DiscoveryResponse,
   DocumentDto,
   FileCheckDto,
@@ -61,6 +62,7 @@ export interface FormAnswersContent {
 export type BillingSummary = z.infer<typeof BillingSummaryDto>;
 export type CareerGoal = z.infer<typeof CareerGoalDto>;
 export type Discovery = z.infer<typeof DiscoveryResponse>;
+export type DailyJobs = z.infer<typeof DailyJobsResponse>;
 export type LinkedinAnalysis = z.infer<typeof LinkedinAnalysisDto>;
 export type LinkedinAnalysisSummary = z.infer<typeof LinkedinAnalysisSummaryDto>;
 export type LinkedinSection = NonNullable<LinkedinAnalysis['result']>['sections'][number];
