@@ -1,5 +1,5 @@
 .page {
-  max-width: 1120px;
+  max-width: 1420px;
   margin-inline: auto;
   display: flex;
   flex-direction: column;
@@ -408,4 +408,53 @@
   color: var(--color-text-secondary);
   font-size: var(--type-callout-size);
   line-height: var(--type-callout-line);
+}
+
+/* Vagas do dia: cada item tem cabeçalho, motivo e ações, com um separador entre eles. */
+.dailyRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.dailyRow + .dailyRow {
+  box-shadow: 0 -1px 0 var(--color-border-separator);
+}
+
+.dailyHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm) var(--spacing-lg);
+}
+
+.dailyMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--type-footnote-size);
+}
+
+.dailyWhy {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-footnote-size);
+  line-height: var(--type-footnote-line);
+}
+
+.dailyActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.dailyExternal {
+  color: var(--color-text-accent);
+  font-size: var(--type-footnote-size);
+  font-weight: 600;
 }

@@ -36,7 +36,30 @@ export type DiscoveryFeed =
       lastSyncedAt: Date | null;
     };
 
+/** As vagas candidatas, já pontuadas, antes de ordenar ou cortar. Base do feed e das vagas do dia. */
+export type DiscoveryCollect =
+  | { state: 'disabled' }
+  | { state: 'upgrade_required' }
+  | { state: 'needs_goal'; lastSyncedAt: Date | null }
+  | {
+      state: 'ready';
+      goal: Pick<CareerGoal, 'id' | 'title'>;
+      items: DiscoveryItem[];
+      lastSyncedAt: Date | null;
+    };
+
 const FEED_LIMIT = 30;
+
+/** A mesma vaga pode sair em mais de uma comunidade: fica a primeira da ordem recebida. */
+export const dedupeByTitleCompany = (items: DiscoveryItem[]): DiscoveryItem[] => {
+  const seen = new Set<string>();
+  return items.filter(({ posting }) => {
+    const key = normalizeText(`${posting.title}|${posting.company}`);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
 
 /** O plano libera as vagas encontradas? Responde sem saber qual é o plano (ADR 0021). */
 export interface DiscoveryAccess {
@@ -64,6 +87,30 @@ export class DiscoveryService {
    * temos: a comparação com o perfil não chama a IA e não envia nada para fora.
    */
   async feed(userId: string, goalId?: string): Promise<DiscoveryFeed> {
+    const collected = await this.collect(userId, goalId);
+    if (collected.state !== 'ready') return collected;
+    // O foco é o que acabou de sair. Sem data, vai para o fim.
+    const items = [...collected.items].sort(
+      (a, b) =>
+        (b.posting.postedAt?.getTime() ?? 0) - (a.posting.postedAt?.getTime() ?? 0) ||
+        a.posting.id.localeCompare(b.posting.id),
+    );
+    // A mesma vaga pode ser publicada em mais de uma comunidade: fica a publicação mais recente.
+    const unique = dedupeByTitleCompany(items);
+    return {
+      state: 'ready',
+      goal: collected.goal,
+      items: unique.slice(0, FEED_LIMIT),
+      total: unique.length,
+      lastSyncedAt: collected.lastSyncedAt,
+    };
+  }
+
+  /**
+   * As vagas candidatas pontuadas, sem ordenar nem cortar. Tudo roda aqui, com dados que já temos:
+   * a comparação com o perfil não chama a IA e não envia nada para fora.
+   */
+  async collect(userId: string, goalId?: string): Promise<DiscoveryCollect> {
     if (!(await this.catalog.isEnabled(userId))) return { state: 'disabled' };
     if (!(await this.access.allowed(userId))) return { state: 'upgrade_required' };
     const [goals, lastSyncedAt] = await Promise.all([
@@ -94,27 +141,7 @@ export class DiscoveryService {
       if (rank.hidden) continue;
       items.push({ posting, score, explanation: rank.explanation });
     }
-    // O foco é o que acabou de sair. Sem data, vai para o fim.
-    items.sort(
-      (a, b) =>
-        (b.posting.postedAt?.getTime() ?? 0) - (a.posting.postedAt?.getTime() ?? 0) ||
-        a.posting.id.localeCompare(b.posting.id),
-    );
-    // A mesma vaga pode ser publicada em mais de uma comunidade: fica a publicação mais recente.
-    const seen = new Set<string>();
-    const unique = items.filter(({ posting }) => {
-      const key = normalizeText(`${posting.title}|${posting.company}`);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    return {
-      state: 'ready',
-      goal: { id: goal.id, title: goal.title },
-      items: unique.slice(0, FEED_LIMIT),
-      total: unique.length,
-      lastSyncedAt,
-    };
+    return { state: 'ready', goal: { id: goal.id, title: goal.title }, items, lastSyncedAt };
   }
 
   /** Copia a vaga para as da pessoa. A partir daí, ela segue o caminho de qualquer vaga dela. */

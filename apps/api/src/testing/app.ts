@@ -55,7 +55,12 @@ import {
   ResumeService,
   type GenerateResumeJob,
 } from '@linkediner/core/resumes';
-import { DiscoveryService, DrizzleCatalogReader } from '@linkediner/core/discovery';
+import {
+  DailySelectionService,
+  DiscoveryService,
+  DrizzleCatalogReader,
+  DrizzleDailyPicksRepository,
+} from '@linkediner/core/discovery';
 import { DrizzleJobRepository, JobService, type StructureJobPayload } from '@linkediner/core/jobs';
 import {
   DrizzleFeedbackRepository,
@@ -118,6 +123,21 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
     profileRepository,
     factRepository,
     new DrizzleScoreRepository(db),
+  );
+  const discovery = new DiscoveryService(
+    new DrizzleCatalogReader(db),
+    jobRepository,
+    factRepository,
+    profileRepository,
+    new DrizzleFeedbackRepository(db),
+    audit,
+    // Sem limites reais, o plano libera tudo, como nos outros testes de fluxo.
+    {
+      allowed: (userId) =>
+        opts.realQuota
+          ? entitlements.enabled(userId, 'monitoring.frequency_hours')
+          : Promise.resolve(true),
+    },
   );
   // Fila em memória: os testes decidem quando processar cada job.
   const queue = {
@@ -222,21 +242,8 @@ export async function startTestApp(opts: { realQuota?: boolean; payments?: Payme
         audit,
         quota,
       ),
-      discovery: new DiscoveryService(
-        new DrizzleCatalogReader(db),
-        jobRepository,
-        factRepository,
-        profileRepository,
-        new DrizzleFeedbackRepository(db),
-        audit,
-        // Sem limites reais, o plano libera tudo, como nos outros testes de fluxo.
-        {
-          allowed: (userId) =>
-            opts.realQuota
-              ? entitlements.enabled(userId, 'monitoring.frequency_hours')
-              : Promise.resolve(true),
-        },
-      ),
+      discovery,
+      daily: new DailySelectionService(discovery, new DrizzleDailyPicksRepository(db, cipher)),
       feedback: new FeedbackService(
         new DrizzleFeedbackRepository(db),
         jobRepository,

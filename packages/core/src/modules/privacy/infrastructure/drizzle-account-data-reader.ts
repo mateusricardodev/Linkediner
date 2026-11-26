@@ -19,6 +19,7 @@ const TABLES = {
   resumes: s.resumes,
   linkedin_analyses: s.linkedinAnalyses,
   resume_analyses: s.resumeAnalyses,
+  daily_job_picks: s.dailyJobPicks,
   jobs: s.jobs,
   job_matches: s.jobMatches,
   job_feedback: s.jobFeedback,
@@ -64,6 +65,10 @@ function openSealedFields(c: UserCipher, rows: Record<string, unknown[]>) {
   each<typeof s.resumeAnalyses.$inferSelect>('resume_analyses', (r) => ({
     ...r,
     result: c.openJson('resume_analyses.result', r.result),
+  }));
+  each<typeof s.dailyJobPicks.$inferSelect>('daily_job_picks', (r) => ({
+    ...r,
+    items: c.openJson('daily_job_picks.items', r.items),
   }));
   each<typeof s.applicationMaterials.$inferSelect>('application_materials', (r) => ({
     ...r,

@@ -193,6 +193,42 @@ describe('vagas automáticas', () => {
       }
     });
 
+    it('as vagas do dia são as mais compatíveis, fixadas e guardadas uma vez', async () => {
+      const cookie = await t.signUp('vagas-do-dia@example.com');
+      await goalFor(cookie);
+      const first = (await t.call(cookie, 'GET', '/v1/discovery/today')).json();
+      expect(first.state).toBe('ready');
+      expect(first.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(first.picks.length).toBeGreaterThan(0);
+      expect(first.picks.length).toBeLessThanOrEqual(5);
+      expect(first.disclaimer).toMatch(/Não indica chance de contratação/);
+      // Ordenadas pela maior compatibilidade; as sem nota vão para o fim.
+      const scored = first.picks.map((p: { score: number | null }) => p.score ?? -1);
+      expect(scored).toEqual([...scored].sort((a, b) => b - a));
+      expect(first.picks[0].score).not.toBeNull();
+
+      // Segunda visita no mesmo dia devolve o snapshot guardado, sem recalcular.
+      const second = (await t.call(cookie, 'GET', '/v1/discovery/today')).json();
+      expect(second.day).toBe(first.day);
+      expect(second.picks.map((p: { postingId: string }) => p.postingId)).toEqual(
+        first.picks.map((p: { postingId: string }) => p.postingId),
+      );
+      const { rows } = await t.db.pool.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM daily_job_picks
+         WHERE user_id = (SELECT id FROM users WHERE email = 'vagas-do-dia@example.com')`,
+      );
+      expect(rows[0]!.n).toBe(1);
+    });
+
+    it('as vagas do dia pedem um objetivo antes de escolher', async () => {
+      // O gate de plano (upgrade_required) é o mesmo da descoberta e é validado com realQuota.
+      const semObjetivo = await t.signUp('vagas-do-dia-sem-objetivo@example.com');
+      await makePaid(semObjetivo);
+      expect((await t.call(semObjetivo, 'GET', '/v1/discovery/today')).json()).toMatchObject({
+        state: 'needs_goal',
+      });
+    });
+
     it('salvar copia a vaga e ela segue o caminho normal, sem aparecer de novo', async () => {
       const cookie = await t.signUp('salvar@example.com');
       await goalFor(cookie);
