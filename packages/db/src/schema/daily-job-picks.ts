@@ -22,5 +22,8 @@ export const dailyJobPicks = pgTable(
     items: jsonb().$type<unknown>(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [unique('daily_job_picks_user_day').on(t.userId, t.day), index().on(t.userId, t.createdAt)],
+  (t) => [
+    unique('daily_job_picks_user_day').on(t.userId, t.day),
+    index().on(t.userId, t.createdAt),
+  ],
 );
